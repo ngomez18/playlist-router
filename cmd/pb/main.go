@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ngomez18/playlist-router/internal/config"
 	"github.com/ngomez18/playlist-router/internal/controllers"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/ngomez18/playlist-router/internal/repositories/pb"
@@ -32,6 +33,9 @@ type Controllers struct {
 }
 
 func main() {
+	// Load configuration
+	_ = config.MustLoad()
+
 	var deps AppDependencies
 	app := pocketbase.New()
 
@@ -61,12 +65,14 @@ func main() {
 }
 
 func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
+	logger := app.Logger()
+
 	repositories := Repositories{
 		basePlaylistRepository: pb.NewBasePlaylistRepositoryPocketbase(app),
 	}
 
 	services := Services{
-		basePlaylistService: services.NewBasePlaylistService(repositories.basePlaylistRepository),
+		basePlaylistService: services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
 	}
 
 	controllers := Controllers{
