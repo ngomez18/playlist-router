@@ -6,7 +6,8 @@
       "Bash(npm create:*)",
       "Bash(npm install:*)",
       "Bash(ls:*)",
-      "Bash(go doc:*)"
+      "Bash(go doc:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   }

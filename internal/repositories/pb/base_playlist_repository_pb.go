@@ -1,6 +1,7 @@
 package pb
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -24,10 +25,10 @@ func NewBasePlaylistRepositoryPocketbase(pb *pocketbase.PocketBase) *BasePlaylis
 	}
 }
 
-func (bpRepo *BasePlaylistRepositoryPocketbase) Create(userId, name, spotifyPlaylistId string) (*models.BasePlaylist, error) {
+func (bpRepo *BasePlaylistRepositoryPocketbase) Create(ctx context.Context, userId, name, spotifyPlaylistId string) (*models.BasePlaylist, error) {
 	collection, err := bpRepo.app.FindCollectionByNameOrId(bpRepo.collection)
 	if err != nil {
-		bpRepo.log.Error("unable to find collection", "collection", bpRepo.collection, "error", err)
+		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
 		return nil, repositories.ErrCollectionNotFound
 	}
 
@@ -40,11 +41,11 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Create(userId, name, spotifyPlay
 
 	err = bpRepo.app.Save(basePlaylist)
 	if err != nil {
-		bpRepo.log.Error("unable to store base_playlist record", "record", basePlaylist, "error", err)
+		bpRepo.log.ErrorContext(ctx, "unable to store base_playlist record", "record", basePlaylist, "error", err)
 		return nil, fmt.Errorf(`%w: %s`, repositories.ErrInvalidBasePlaylist, err.Error())
 	}
 
-	bpRepo.log.Info("base_playlist stored successfully", "record", basePlaylist)
+	bpRepo.log.InfoContext(ctx, "base_playlist stored successfully", "record", basePlaylist)
 
 	return recordToBasePlaylist(basePlaylist), nil
 }

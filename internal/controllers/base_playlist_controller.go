@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
-	"github.com/pocketbase/pocketbase/apis"
 )
 
 type BasePlaylistController struct {
@@ -20,16 +18,23 @@ func NewBasePlaylistController(bpService services.BasePlaylistServicer) *BasePla
 	}
 }
 
-func (c *BasePlaylistController) Create(ctx echo.Context) error {
+func (c *BasePlaylistController) Create(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateBasePlaylistRequest
-	if err := json.NewDecoder(ctx.Request().Body).Decode(&req); err != nil {
-		return apis.NewBadRequestError("Invalid JSON payload", err)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid payload", http.StatusBadRequest)
+		return
 	}
 
-	newBasePlaylist, err := c.basePlaylistService.CreateBasePlaylist(&req)
+	newBasePlaylist, err := c.basePlaylistService.CreateBasePlaylist(r.Context(), &req)
 	if err != nil {
-		return apis.NewInternalServerError("unable to create base playlist", err)
+		http.Error(w, "unable to create base playlist", http.StatusInternalServerError)
+		return
 	}
 
-	return ctx.JSON(http.StatusCreated, newBasePlaylist)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(newBasePlaylist)
+	if err != nil {
+		http.Error(w, "unable to encode response", http.StatusInternalServerError)
+	}
 }

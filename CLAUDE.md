@@ -100,3 +100,4 @@ TBD
 - Optimize for multiple base playlist scenarios (differentiator from competitors)
 
 ## Claude Instructions
+- Use documentation for Pocketbase v0.29

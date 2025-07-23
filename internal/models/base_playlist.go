@@ -15,5 +15,4 @@ type BasePlaylist struct {
 type CreateBasePlaylistRequest struct {
 	Name              string `json:"name" validate:"required,min=1,max=100"`
 	SpotifyPlaylistID string `json:"spotify_playlist_id" validate:"required"`
-	IsActive          *bool  `json:"is_active,omitempty"`
 }
