@@ -53,5 +53,15 @@ func createBasePlaylistCollection(app *pocketbase.PocketBase) error {
 		Required: false,
 	})
 
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "created",
+		OnCreate: true,
+	})
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "updated",
+		OnCreate: true,
+		OnUpdate: true,
+	})
+
 	return app.Save(collection)
 }

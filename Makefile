@@ -1,0 +1,60 @@
+# PlaylistSync Makefile
+.PHONY: build run dev clean lint fix test deps help
+
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  build    - Build the application"
+	@echo "  run      - Run the application in production mode"
+	@echo "  dev      - Run the application in development mode with hot reload (air)"
+	@echo "  clean    - Clean build artifacts"
+	@echo "  lint     - Run golangci-lint to check code quality"
+	@echo "  fix      - Format and fix code issues"
+	@echo "  test     - Run tests"
+	@echo "  deps     - Download and tidy dependencies"
+	@echo "  help     - Show this help message"
+
+# Build the application
+build:
+	@echo "Building application..."
+	go build -o cmd/pb/main cmd/server/*.go
+
+# Run in production mode
+run: build
+	@echo "Starting server in production mode..."
+	./cmd/pb/main serve
+
+# Run in development mode with hot reload
+dev:
+	@echo "Starting development server with hot reload..."
+	air
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -f cmd/pb/main
+	rm -rf tmp/
+
+# Run linter
+lint:
+	@echo "Running golangci-lint..."
+	golangci-lint run
+
+# Format and fix code issues
+fix:
+	@echo "Formatting code..."
+	gofmt -s -w .
+	goimports -w .
+	@echo "Running golangci-lint --fix..."
+	golangci-lint run --fix
+
+# Run tests
+test:
+	@echo "Running tests..."
+	go test -v ./...
+
+# Download and tidy dependencies
+deps:
+	@echo "Downloading dependencies..."
+	go mod download
+	go mod tidy

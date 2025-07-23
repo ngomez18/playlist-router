@@ -8,6 +8,10 @@
 *.out
 go.work
 
+# Build executables
+cmd/pb/main
+tmp/
+
 # React/Node.js
 web/node_modules/
 web/dist/

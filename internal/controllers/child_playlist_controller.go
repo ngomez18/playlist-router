@@ -1,3 +1,3 @@
 package controllers
 
-type ChildPlaylistController struct {}
+type ChildPlaylistController struct{}
