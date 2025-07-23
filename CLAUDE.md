@@ -101,3 +101,10 @@ TBD
 
 ## Claude Instructions
 - Use documentation for Pocketbase v0.29
+- Maintain a clear separation of concerns:Repositories handle DB related operations. Services handle all business logic, and use repositories. Controllers handle request logic. Parsing, validation, responses, etc. They use the services
+- Logging and proper error handling should always be taken into account
+- Don't add unnecessary comments to the code. Only annotate important functions, types, or important pieces of code
+- Unit tests are important. Opt for table-driven tests when possible. Dependency injection is prefered so test code can be easily generated. Use testify by initializing an assert instance for every test and using that for assertions
+- When asked for your thoughts on something, try to be as critical as possible. Don't blindly accept suggestions, always weigh the pros and cons
+- When asked to plan large features or changes, generate a markdown file in the docs/ directory with the final result of the discussion
+- Continually update this file every time something important changes within the project
