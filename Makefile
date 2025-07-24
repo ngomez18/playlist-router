@@ -1,5 +1,5 @@
 # PlaylistSync Makefile
-.PHONY: build run dev clean lint fix test deps help
+.PHONY: build run dev clean lint fix test deps mocks help
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  fix      - Format and fix code issues"
 	@echo "  test     - Run tests"
 	@echo "  deps     - Download and tidy dependencies"
+	@echo "  mocks    - Generate all mocks using go generate"
 	@echo "  help     - Show this help message"
 
 # Build the application
@@ -58,3 +59,8 @@ deps:
 	@echo "Downloading dependencies..."
 	go mod download
 	go mod tidy
+
+# Generate all mocks
+mocks:
+	@echo "Generating mocks..."
+	go generate ./...

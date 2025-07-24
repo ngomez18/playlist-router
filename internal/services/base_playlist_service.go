@@ -9,6 +9,8 @@ import (
 	"github.com/ngomez18/playlist-router/internal/repositories"
 )
 
+//go:generate mockgen -source=base_playlist_service.go -destination=mocks/mock_base_playlist_service.go -package=mocks
+
 type BasePlaylistServicer interface {
 	CreateBasePlaylist(ctx context.Context, input *models.CreateBasePlaylistRequest) (*models.BasePlaylist, error)
 }

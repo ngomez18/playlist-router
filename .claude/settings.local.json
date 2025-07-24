@@ -9,7 +9,10 @@
       "Bash(go doc:*)",
       "WebFetch(domain:github.com)",
       "Bash(make:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(go get:*)",
+      "Bash(go install:*)",
+      "Bash(mockgen:*)"
     ],
     "deny": []
   }

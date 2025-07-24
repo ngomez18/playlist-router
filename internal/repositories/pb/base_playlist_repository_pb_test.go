@@ -144,8 +144,8 @@ func TestBasePlaylistRepositoryPocketbase_Create_DatabaseErrors(t *testing.T) {
 		playlist, err := repo.Create(ctx, "user123", "Test Playlist", "spotify123")
 
 		// Verify error occurred
-		require.Error(t, err)
-		assert.Nil(t, playlist)
+		assert.Error(err)
+		assert.Nil(playlist)
 	})
 }
 
