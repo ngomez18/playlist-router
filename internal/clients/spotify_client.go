@@ -24,15 +24,14 @@ type SpotifyAPI interface {
 }
 
 type SpotifyClient struct {
+	HttpClient HTTPClient
 	config     *config.AuthConfig
-	httpClient *http.Client
 	logger     *slog.Logger
 }
 
 func NewSpotifyClient(config *config.AuthConfig, logger *slog.Logger) *SpotifyClient {
 	return &SpotifyClient{
-		config: config,
-		httpClient: &http.Client{
+		HttpClient: &http.Client{
 			Timeout: 15 * time.Second,
 			Transport: &http.Transport{
 				MaxIdleConns:       10,
@@ -40,6 +39,7 @@ func NewSpotifyClient(config *config.AuthConfig, logger *slog.Logger) *SpotifyCl
 				DisableCompression: false,
 			},
 		},
+		config: config,
 		logger: logger.With("component", "SpotifyClient"),
 	}
 }
@@ -78,7 +78,7 @@ func (c *SpotifyClient) ExchangeCodeForTokens(ctx context.Context, code string) 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(c.config.SpotifyClientID, c.config.SpotifyClientSecret)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		c.logger.ErrorContext(ctx, "failed to exchange code", "error", err)
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
@@ -117,7 +117,7 @@ func (c *SpotifyClient) GetUserProfile(ctx context.Context, accessToken string) 
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		c.logger.ErrorContext(ctx, "failed to get user profile", "error", err)
 		return nil, fmt.Errorf("failed to get user profile: %w", err)

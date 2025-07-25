@@ -108,3 +108,4 @@ TBD
 - When asked for your thoughts on something, try to be as critical as possible. Don't blindly accept suggestions, always weigh the pros and cons
 - When asked to plan large features or changes, generate a markdown file in the docs/ directory with the final result of the discussion
 - Be concise. Provide only the necessary information
+- When possible use the commands available in the Makefile. Use them for build, tests, formatting, etc

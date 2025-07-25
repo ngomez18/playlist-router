@@ -7,7 +7,6 @@ import (
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/pocketbase/pocketbase"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -152,7 +151,7 @@ func TestBasePlaylistRepositoryPocketbase_Create_DatabaseErrors(t *testing.T) {
 }
 
 func TestBasePlaylistRepositoryPocketbase_Delete_Success(t *testing.T) {
-	assert := assert.New(t)
+	assert := require.New(t)
 
 	// Setup test environment
 	app := NewTestApp(t)
@@ -181,7 +180,7 @@ func TestBasePlaylistRepositoryPocketbase_Delete_Success(t *testing.T) {
 }
 
 func TestBasePlaylistRepositoryPocketbase_Delete_UnauthorizedError(t *testing.T) {
-	assert := assert.New(t)
+	assert := require.New(t)
 
 	// Setup test environment
 	app := NewTestApp(t)
@@ -228,7 +227,7 @@ func TestBasePlaylistRepositoryPocketbase_Delete_NotFoundErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup test environment
 			app := NewTestApp(t)
@@ -249,7 +248,7 @@ func TestBasePlaylistRepositoryPocketbase_Delete_NotFoundErrors(t *testing.T) {
 
 func TestBasePlaylistRepositoryPocketbase_Delete_DatabaseErrors(t *testing.T) {
 	t.Run("collection not found", func(t *testing.T) {
-		assert := assert.New(t)
+		assert := require.New(t)
 
 		// Setup test environment without creating the collection
 		app := NewTestApp(t)
@@ -267,7 +266,7 @@ func TestBasePlaylistRepositoryPocketbase_Delete_DatabaseErrors(t *testing.T) {
 }
 
 func TestBasePlaylistRepositoryPocketbase_GetByID_Success(t *testing.T) {
-	assert := assert.New(t)
+	assert := require.New(t)
 
 	// Setup test environment
 	app := NewTestApp(t)
@@ -295,7 +294,7 @@ func TestBasePlaylistRepositoryPocketbase_GetByID_Success(t *testing.T) {
 }
 
 func TestBasePlaylistRepositoryPocketbase_GetByID_UnauthorizedError(t *testing.T) {
-	assert := assert.New(t)
+	assert := require.New(t)
 
 	// Setup test environment
 	app := NewTestApp(t)
@@ -338,7 +337,7 @@ func TestBasePlaylistRepositoryPocketbase_GetByID_NotFoundErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup test environment
 			app := NewTestApp(t)
@@ -360,7 +359,7 @@ func TestBasePlaylistRepositoryPocketbase_GetByID_NotFoundErrors(t *testing.T) {
 
 func TestBasePlaylistRepositoryPocketbase_GetByID_DatabaseErrors(t *testing.T) {
 	t.Run("collection not found", func(t *testing.T) {
-		assert := assert.New(t)
+		assert := require.New(t)
 
 		// Setup test environment without creating the collection
 		app := NewTestApp(t)

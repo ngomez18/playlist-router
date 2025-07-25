@@ -11,11 +11,11 @@ import (
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/ngomez18/playlist-router/internal/repositories/mocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewBasePlaylistService(t *testing.T) {
-	assert := assert.New(t)
+	require := require.New(t)
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -25,9 +25,9 @@ func TestNewBasePlaylistService(t *testing.T) {
 
 	service := NewBasePlaylistService(mockRepo, logger)
 
-	assert.NotNil(service)
-	assert.Equal(mockRepo, service.basePlaylistRepo)
-	assert.NotNil(service.logger)
+	require.NotNil(service)
+	require.Equal(mockRepo, service.basePlaylistRepo)
+	require.NotNil(service.logger)
 }
 
 func TestBasePlaylistService_CreateBasePlaylist_Success(t *testing.T) {
@@ -71,7 +71,7 @@ func TestBasePlaylistService_CreateBasePlaylist_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			require := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -93,13 +93,13 @@ func TestBasePlaylistService_CreateBasePlaylist_Success(t *testing.T) {
 			result, err := service.CreateBasePlaylist(ctx, tt.userId, tt.input)
 
 			// Verify
-			assert.NoError(err)
-			assert.NotNil(result)
-			assert.Equal(tt.expected.ID, result.ID)
-			assert.Equal(tt.expected.UserID, result.UserID)
-			assert.Equal(tt.expected.Name, result.Name)
-			assert.Equal(tt.expected.SpotifyPlaylistID, result.SpotifyPlaylistID)
-			assert.Equal(tt.expected.IsActive, result.IsActive)
+			require.NoError(err)
+			require.NotNil(result)
+			require.Equal(tt.expected.ID, result.ID)
+			require.Equal(tt.expected.UserID, result.UserID)
+			require.Equal(tt.expected.Name, result.Name)
+			require.Equal(tt.expected.SpotifyPlaylistID, result.SpotifyPlaylistID)
+			require.Equal(tt.expected.IsActive, result.IsActive)
 		})
 	}
 }
@@ -142,7 +142,7 @@ func TestBasePlaylistService_CreateBasePlaylist_RepositoryError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			require := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -164,9 +164,9 @@ func TestBasePlaylistService_CreateBasePlaylist_RepositoryError(t *testing.T) {
 			result, err := service.CreateBasePlaylist(ctx, "placeholder_user_id", tt.input)
 
 			// Verify
-			assert.Error(err)
-			assert.Nil(result)
-			assert.Contains(err.Error(), tt.expectedErr)
+			require.Error(err)
+			require.Nil(result)
+			require.Contains(err.Error(), tt.expectedErr)
 		})
 	}
 }
@@ -191,7 +191,7 @@ func TestBasePlaylistService_DeleteBasePlaylist_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			require := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -213,7 +213,7 @@ func TestBasePlaylistService_DeleteBasePlaylist_Success(t *testing.T) {
 			err := service.DeleteBasePlaylist(ctx, tt.id, tt.userId)
 
 			// Verify
-			assert.NoError(err)
+			require.NoError(err)
 		})
 	}
 }
@@ -251,7 +251,7 @@ func TestBasePlaylistService_DeleteBasePlaylist_RepositoryErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			require := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -273,8 +273,8 @@ func TestBasePlaylistService_DeleteBasePlaylist_RepositoryErrors(t *testing.T) {
 			err := service.DeleteBasePlaylist(ctx, tt.id, tt.userId)
 
 			// Verify
-			assert.Error(err)
-			assert.Contains(err.Error(), tt.expectedErr)
+			require.Error(err)
+			require.Contains(err.Error(), tt.expectedErr)
 		})
 	}
 }
@@ -314,7 +314,7 @@ func TestBasePlaylistService_GetBasePlaylist_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			require := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -336,13 +336,13 @@ func TestBasePlaylistService_GetBasePlaylist_Success(t *testing.T) {
 			result, err := service.GetBasePlaylist(ctx, tt.id, tt.userId)
 
 			// Verify
-			assert.NoError(err)
-			assert.NotNil(result)
-			assert.Equal(tt.expected.ID, result.ID)
-			assert.Equal(tt.expected.UserID, result.UserID)
-			assert.Equal(tt.expected.Name, result.Name)
-			assert.Equal(tt.expected.SpotifyPlaylistID, result.SpotifyPlaylistID)
-			assert.Equal(tt.expected.IsActive, result.IsActive)
+			require.NoError(err)
+			require.NotNil(result)
+			require.Equal(tt.expected.ID, result.ID)
+			require.Equal(tt.expected.UserID, result.UserID)
+			require.Equal(tt.expected.Name, result.Name)
+			require.Equal(tt.expected.SpotifyPlaylistID, result.SpotifyPlaylistID)
+			require.Equal(tt.expected.IsActive, result.IsActive)
 		})
 	}
 }
@@ -387,7 +387,7 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			require := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -409,9 +409,9 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 			result, err := service.GetBasePlaylist(ctx, tt.id, tt.userId)
 
 			// Verify
-			assert.Error(err)
-			assert.Nil(result)
-			assert.Contains(err.Error(), tt.expectedErr)
+			require.Error(err)
+			require.Nil(result)
+			require.Contains(err.Error(), tt.expectedErr)
 		})
 	}
 }

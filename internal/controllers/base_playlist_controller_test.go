@@ -12,7 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBasePlaylistController_Create_Success(t *testing.T) {
@@ -56,7 +56,7 @@ func TestBasePlaylistController_Create_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -137,7 +137,7 @@ func TestBasePlaylistController_Create_ValidationErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -195,7 +195,7 @@ func TestBasePlaylistController_Create_RequestParsingErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -263,7 +263,7 @@ func TestBasePlaylistController_Create_ServiceErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -297,7 +297,7 @@ func TestBasePlaylistController_Create_ServiceErrors(t *testing.T) {
 }
 
 func TestBasePlaylistController_Create_ResponseEncodingError(t *testing.T) {
-	assert := assert.New(t)
+	assert := require.New(t)
 
 	// Setup
 	ctrl := gomock.NewController(t)
@@ -345,7 +345,7 @@ func TestBasePlaylistController_Create_ResponseEncodingError(t *testing.T) {
 }
 
 func TestNewBasePlaylistController(t *testing.T) {
-	assert := assert.New(t)
+	assert := require.New(t)
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -381,7 +381,7 @@ func TestBasePlaylistController_Delete_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -428,7 +428,7 @@ func TestBasePlaylistController_Delete_ValidationErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -487,7 +487,7 @@ func TestBasePlaylistController_Delete_ServiceErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -555,7 +555,7 @@ func TestBasePlaylistController_GetByID_Success(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -612,7 +612,7 @@ func TestBasePlaylistController_GetByID_ValidationErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
@@ -671,7 +671,7 @@ func TestBasePlaylistController_GetByID_ServiceErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
+			assert := require.New(t)
 
 			// Setup
 			ctrl := gomock.NewController(t)
