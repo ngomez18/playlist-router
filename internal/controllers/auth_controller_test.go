@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
 	"github.com/stretchr/testify/require"
@@ -79,7 +80,7 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 				"state": "state_123",
 			},
 			mockAuthResult: &services.AuthResult{
-				User: &services.AuthUser{
+				User: &models.AuthUser{
 					ID:        "user_123",
 					Email:     "test@example.com",
 					Name:      "Test User",
@@ -181,7 +182,7 @@ func TestAuthController_SpotifyCallback_JSONEncodingError(t *testing.T) {
 
 	// Create a mock auth result
 	mockAuthResult := &services.AuthResult{
-		User: &services.AuthUser{
+		User: &models.AuthUser{
 			ID:        "user_123",
 			Email:     "test@example.com",
 			Name:      "Test User",
@@ -293,7 +294,7 @@ func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	mockAuthResult := &services.AuthResult{
-		User: &services.AuthUser{
+		User: &models.AuthUser{
 			ID:        "user_123",
 			Email:     "test@example.com",
 			Name:      "Test User",

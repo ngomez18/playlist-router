@@ -18,16 +18,9 @@ type AuthServicer interface {
 }
 
 type AuthResult struct {
-	User         *AuthUser `json:"user"`
-	Token        string    `json:"token"`
-	RefreshToken string    `json:"refresh_token"`
-}
-
-type AuthUser struct {
-	ID        string `json:"id"`
-	Email     string `json:"email"`
-	Name      string `json:"name"`
-	SpotifyID string `json:"spotify_id"`
+	User         *models.AuthUser `json:"user"`
+	Token        string           `json:"token"`
+	RefreshToken string           `json:"refresh_token"`
 }
 
 type AuthService struct {
@@ -46,7 +39,7 @@ func NewAuthService(app *pocketbase.PocketBase, spotifyClient clients.SpotifyAPI
 
 func (s *AuthService) GenerateSpotifyAuthURL(state string) string {
 	authURL := s.spotifyClient.GenerateAuthURL(state)
-	s.logger.Info("generated spotify auth URL", "state", state)
+	s.logger.Info("generated spotify auth url", "state", state)
 	return authURL
 }
 
@@ -78,12 +71,12 @@ func (s *AuthService) HandleSpotifyCallback(ctx context.Context, code, state str
 	}, nil
 }
 
-func (s *AuthService) createOrUpdateUser(ctx context.Context, profile *models.SpotifyUserProfile, tokens *models.SpotifyTokenResponse) (*AuthUser, string, error) {
+func (s *AuthService) createOrUpdateUser(ctx context.Context, profile *models.SpotifyUserProfile, tokens *models.SpotifyTokenResponse) (*models.AuthUser, string, error) {
 	// TODO: Implement user creation/update in PocketBase
 	// TODO: Encrypt and store Spotify tokens
 	// TODO: Generate PocketBase auth token
 
-	user := &AuthUser{
+	user := &models.AuthUser{
 		ID:        "temp_id", // Will be PocketBase record ID
 		Email:     profile.Email,
 		Name:      profile.Name,

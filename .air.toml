@@ -1,11 +1,10 @@
 root = "."
-testdata_dir = "testdata"
 tmp_dir = "cmd/pb"
 
 [build]
+  cmd = "make build"
+  bin = "playlist-router"
   args_bin = ["serve", "--dev"]
-  bin = "./cmd/pb/main"
-  cmd = "go build -o ./cmd/pb/main ./cmd/pb"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "pb_data"]
   exclude_file = []

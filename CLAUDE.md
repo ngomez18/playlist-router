@@ -69,9 +69,20 @@ This is currently a planning-stage repository. When implementation begins, the a
 - Manual sync trigger option
 - Comprehensive error handling and retry logic
 
-## Development Commands (To Be Implemented)
+## Development Commands
 
-TBD
+**ALWAYS use the commands available in the Makefile instead of running Go commands directly:**
+
+```bash
+make help    # Show all available commands
+make build   # Build the application
+make test    # Run all tests  
+make mocks   # Generate all mocks using go generate
+make lint    # Run golangci-lint to check code quality
+make fix     # Format and fix code issues
+make deps    # Download and tidy dependencies
+make dev     # Run with hot reload (air)
+```
 
 ## Business Logic Considerations
 
@@ -100,12 +111,21 @@ TBD
 - Optimize for multiple base playlist scenarios (differentiator from competitors)
 
 ## Claude Instructions
+### Development Guidelines
+- Do what has been asked; nothing more, nothing less
 - Use documentation for Pocketbase v0.29
-- Maintain a clear separation of concerns:Repositories handle DB related operations. Services handle all business logic, and use repositories. Controllers handle request logic. Parsing, validation, responses, etc. They use the services
+- Maintain a clear separation of concerns: Repositories handle DB related operations. Services handle all business logic, and use repositories. Controllers handle request logic. Parsing, validation, responses, etc. They use the services
 - Logging and proper error handling should always be taken into account
 - Don't add unnecessary comments to the code. Only annotate important functions, types, or important pieces of code
 - Unit tests are important. Opt for table-driven tests when possible. Dependency injection is prefered so test code can be easily generated. Use testify by initializing an assert instance for every test and using that for assertions
 - When asked for your thoughts on something, try to be as critical as possible. Don't blindly accept suggestions, always weigh the pros and cons
 - When asked to plan large features or changes, generate a markdown file in the docs/ directory with the final result of the discussion
 - Be concise. Provide only the necessary information
-- When possible use the commands available in the Makefile. Use them for build, tests, formatting, etc
+
+### MANDATORY: Use Makefile Commands
+**ALWAYS use Makefile commands instead of direct Go commands:**
+- `make test` instead of `go test`
+- `make build` instead of `go build` 
+- `make mocks` instead of `go generate`
+- `make lint` instead of `golangci-lint run`
+- `make fix` instead of `gofmt` or `goimports`

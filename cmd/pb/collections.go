@@ -11,10 +11,9 @@ func initCollections(app *pocketbase.PocketBase) error {
 		return err
 	}
 
-	// Add other collection initialization functions here as needed
-	// if err := createChildPlaylistCollection(app); err != nil {
-	//     return err
-	// }
+	if err := createSpotifyIntegrationsCollection(app); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -62,6 +61,89 @@ func createBasePlaylistCollection(app *pocketbase.PocketBase) error {
 		OnCreate: true,
 		OnUpdate: true,
 	})
+
+	return app.Save(collection)
+}
+
+// createSpotifyIntegrationsCollection creates the spotify_integrations collection
+func createSpotifyIntegrationsCollection(app *pocketbase.PocketBase) error {
+	// Check if spotify_integrations collection exists
+	_, err := app.FindCollectionByNameOrId("spotify_integrations")
+	if err == nil {
+		// Collection already exists
+		return nil
+	}
+
+	// Create spotify_integrations collection
+	collection := core.NewBaseCollection("spotify_integrations")
+
+	// Foreign key to users collection (PocketBase relation field)
+	collection.Fields.Add(&core.RelationField{
+		Name:           "user",
+		Required:       true,
+		MaxSelect:      1,
+		CollectionId:   "_pb_users_auth_",
+		CascadeDelete:  true,
+	})
+
+	// Spotify user ID (unique identifier from Spotify)
+	collection.Fields.Add(&core.TextField{
+		Name:     "spotify_id",
+		Required: true,
+	})
+
+	// Access token (encrypted by PocketBase automatically for security)
+	collection.Fields.Add(&core.TextField{
+		Name:     "access_token",
+		Required: true,
+	})
+
+	// Refresh token
+	collection.Fields.Add(&core.TextField{
+		Name:     "refresh_token",
+		Required: true,
+	})
+
+	// Token type (usually "Bearer")
+	collection.Fields.Add(&core.TextField{
+		Name:     "token_type",
+		Required: false,
+	})
+
+	// Token expiration timestamp
+	collection.Fields.Add(&core.DateField{
+		Name:     "expires_at",
+		Required: true,
+	})
+
+	// Scopes granted by user
+	collection.Fields.Add(&core.TextField{
+		Name:     "scope",
+		Required: false,
+	})
+
+	// Spotify display name
+	collection.Fields.Add(&core.TextField{
+		Name:     "display_name",
+		Required: false,
+		Max:      200,
+	})
+
+	// Standard timestamp fields
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "created",
+		OnCreate: true,
+	})
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "updated",
+		OnCreate: true,
+		OnUpdate: true,
+	})
+
+	// Create unique index on user_id to ensure one integration per user
+	collection.Indexes = []string{
+		"CREATE UNIQUE INDEX idx_spotify_integrations_user ON spotify_integrations (user)",
+	}
 
 	return app.Save(collection)
 }

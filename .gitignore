@@ -9,7 +9,7 @@
 go.work
 
 # Build executables
-cmd/pb/main
+*playlist-router
 tmp/
 
 # React/Node.js

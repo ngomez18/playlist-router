@@ -381,7 +381,7 @@ func TestBasePlaylistRepositoryPocketbase_GetByID_DatabaseErrors(t *testing.T) {
 func findBasePlaylistInDB(t *testing.T, app *pocketbase.PocketBase, id string) (*models.BasePlaylist, error) {
 	t.Helper()
 
-	collection, err := app.FindCollectionByNameOrId("base_playlists")
+	collection, err := app.FindCollectionByNameOrId(string(CollectionBasePlaylist))
 	if err != nil {
 		return nil, err
 	}

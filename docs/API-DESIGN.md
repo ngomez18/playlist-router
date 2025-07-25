@@ -195,42 +195,35 @@ Authorization: Bearer <jwt_token>
 
 ## 2. Authentication & User Management (Phase 2 Priority)
 
-### Authentication Endpoints
+### Spotify OAuth Authentication
 
-#### User Registration
+#### Initiate Spotify Login
 ```http
-POST /api/collections/users/records
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "securepassword123",
-  "passwordConfirm": "securepassword123"
-}
+GET /auth/spotify/login
 ```
 
-#### User Login
-```http
-POST /api/collections/users/auth-with-password
-Content-Type: application/json
+**Response:** Redirects to Spotify OAuth authorization URL with required scopes:
+- `user-read-email`
+- `playlist-read-private` 
+- `playlist-modify-public`
+- `playlist-modify-private`
 
-{
-  "identity": "user@example.com",
-  "password": "securepassword123"
-}
+#### Spotify OAuth Callback
+```http
+GET /auth/spotify/callback?code=<auth_code>&state=<state>
 ```
 
 **Response:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "record": {
+  "user": {
     "id": "user_789",
-    "email": "user@example.com",
-    "verified": true,
-    "created": "2025-07-20T09:00:00Z",
-    "updated": "2025-07-22T10:00:00Z"
-  }
+    "email": "user@example.com", 
+    "name": "John Doe",
+    "spotify_id": "spotify_user_123"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": ""
 }
 ```
 
@@ -248,46 +241,55 @@ Authorization: Bearer <jwt_token>
 
 ---
 
-### OAuth Integration Management
+### Spotify Integration Management
 
-#### List User's OAuth Integrations
+#### Get User's Spotify Integration
 ```http
-GET /api/collections/oauth_integrations/records?filter=user="{user_id}"
+GET /api/collections/spotify_integrations/records?filter=user="{user_id}"
 Authorization: Bearer <jwt_token>
 ```
 
-#### Create Spotify Integration
-```http
-POST /api/collections/oauth_integrations/records
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
+**Response:**
+```json
 {
-  "provider": "spotify",
-  "provider_user_id": "spotify_user_123",
-  "access_token": "encrypted_access_token",
-  "refresh_token": "encrypted_refresh_token",
-  "token_expires_at": "2025-07-22T12:00:00Z",
-  "scopes": ["playlist-read-private", "playlist-modify-private", "playlist-modify-public"],
-  "is_active": true
+  "page": 1,
+  "perPage": 30,
+  "totalItems": 1,
+  "totalPages": 1,
+  "items": [
+    {
+      "id": "si_123456",
+      "user": "user_789",
+      "spotify_id": "spotify_user_123",
+      "display_name": "John Doe",
+      "token_type": "Bearer",
+      "expires_at": "2025-07-22T12:00:00Z",
+      "scope": "user-read-email playlist-read-private playlist-modify-public playlist-modify-private",
+      "is_active": true,
+      "created": "2025-07-20T09:00:00Z",
+      "updated": "2025-07-22T10:00:00Z"
+    }
+  ]
 }
 ```
 
-#### Update OAuth Integration
+**Note:** `access_token` and `refresh_token` are never exposed in API responses for security.
+
+#### Update Spotify Integration Tokens
 ```http
-PATCH /api/collections/oauth_integrations/records/{id}
+PATCH /api/collections/spotify_integrations/records/{id}
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
   "access_token": "new_encrypted_token",
-  "token_expires_at": "2025-07-22T13:00:00Z"
+  "expires_at": "2025-07-22T13:00:00Z"
 }
 ```
 
-#### Delete OAuth Integration
+#### Delete Spotify Integration
 ```http
-DELETE /api/collections/oauth_integrations/records/{id}
+DELETE /api/collections/spotify_integrations/records/{id}
 Authorization: Bearer <jwt_token>
 ```
 
@@ -601,25 +603,34 @@ Authorization: Bearer <jwt_token>
 
 ## Implementation Priority
 
-### Phase 1: Core CRUD (Weeks 1-2)
-- Base playlist CRUD operations
-- Child playlist CRUD operations
-- Basic authentication (email/password only)
+### Phase 1: Core CRUD ✅ COMPLETED
+- ✅ Base playlist CRUD operations (Create, Read, Delete)
+- ✅ Framework-agnostic HTTP abstraction
+- ✅ Comprehensive unit and integration tests
+- ✅ PocketBase collection setup and repository pattern
+- ⏳ Child playlist CRUD operations (TODO)
+
+### Phase 2: Authentication & Integration ⏳ IN PROGRESS  
+- ✅ Spotify OAuth flow (login/callback handlers)
+- ✅ User and SpotifyIntegration models
+- ✅ SpotifyClient with HTTP mocking
+- ⏳ JWT authentication middleware (TODO)
+- ⏳ Complete createOrUpdateUser implementation (TODO)
+- ⏳ Spotify API integration endpoints (TODO)
+
+### Phase 3: Sync Operations (TODO)
 - Manual sync triggers
-
-### Phase 2: Full Auth & Sync (Weeks 3-4)
-- OAuth integration management
-- Spotify API integration
-- Automated sync operations
+- Automated sync operations  
 - Sync status and history
+- Background processing
 
-### Phase 3: Business Logic (Weeks 5-6)
+### Phase 4: Business Logic (TODO)
 - Subscription management
 - Usage tracking and limits
 - Stripe webhook integration
 - Tier enforcement
 
-### Phase 4: Analytics & Polish (Weeks 7-8)
+### Phase 5: Analytics & Polish (TODO)
 - User analytics endpoints
 - Performance monitoring
 - Advanced error handling
@@ -631,14 +642,16 @@ Authorization: Bearer <jwt_token>
 
 ### PocketBase Integration
 - Leverage PocketBase's built-in CRUD operations for basic endpoints
-- Use PocketBase filters for relationship queries
-- Implement custom endpoints for complex business logic (sync, Spotify integration)
-- Use PocketBase hooks for data validation and business rule enforcement
+- Use PocketBase relations for foreign keys (users ↔ spotify_integrations, base_playlists)
+- Implement custom authentication handlers for Spotify OAuth flow
+- Use repository pattern with PocketBase as the data layer
+- PocketBase automatically handles field encryption for sensitive token data
 
 ### Security Considerations
-- All endpoints require JWT authentication except registration/login
-- Implement user isolation through PocketBase access rules
-- Encrypt OAuth tokens before storage
+- All endpoints require JWT authentication except Spotify OAuth flow
+- Implement user isolation through PocketBase access rules  
+- PocketBase automatically encrypts sensitive fields (tokens)
+- One-to-one user/Spotify account relationship prevents conflicts
 - Validate Spotify playlist ownership before operations
 - Rate limit per-user API calls
 

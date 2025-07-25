@@ -12,7 +12,7 @@ This document defines the complete database schema for PlaylistSync using Pocket
 └─────────┬───────┘
           │
           ├── subscriptions (1:many)
-          ├── oauth_integrations (1:many)
+          ├── spotify_integrations (1:1)
           ├── base_playlists (1:many)
           └── child_playlists (1:many)
                     │
@@ -107,26 +107,27 @@ deleteRule: ""    // Backend only
 
 ---
 
-## 3. OAuth Integrations Collection
+## 3. Spotify Integrations Collection
 
-**Collection Name:** `oauth_integrations`  
-**Purpose:** Store OAuth tokens and integration details for external services
+**Collection Name:** `spotify_integrations`  
+**Purpose:** Store Spotify OAuth tokens and user linking (one-to-one relationship with users)
 
 ### Schema
 ```typescript
-interface OAuthIntegration {
+interface SpotifyIntegration {
   id: string;                  // Auto-generated UUID
-  user: string;                // Relation to users.id (required)
+  user: string;                // Relation to users.id (required, unique)
   
-  // Provider Details
-  provider: 'spotify';         // Currently only Spotify, expandable
-  provider_user_id: string;    // Spotify user ID (required)
+  // Spotify Account Details
+  spotify_id: string;          // Spotify user ID (required, unique)
+  display_name?: string;       // Spotify display name
   
-  // OAuth Tokens (encrypted at application level)
+  // OAuth Tokens (secured/encrypted by PocketBase)
   access_token: string;        // Required
   refresh_token: string;       // Required
-  token_expires_at: Date;      // Required
-  scopes: string[];            // JSON array of granted permissions
+  token_type: string;          // Default: "Bearer"
+  expires_at: Date;            // Token expiration timestamp
+  scope?: string;              // Granted permissions (space-separated)
   
   // Status
   is_active: boolean;          // Default: true
@@ -138,9 +139,10 @@ interface OAuthIntegration {
 ```
 
 ### Field Validations
-- `provider_user_id`: Unique per provider
-- Only one active integration per user per provider
-- Tokens encrypted before storage
+- `user`: Unique (one Spotify integration per user)
+- `spotify_id`: Unique globally (one Spotify account per integration)
+- `access_token` and `refresh_token`: Required for active integrations
+- `expires_at`: Must be future date when creating/updating tokens
 
 ### Access Rules
 ```javascript
@@ -152,9 +154,10 @@ deleteRule: "user = @request.auth.id"
 ```
 
 ### Indexes
-- `user` (for user integration lookup)
-- `provider + provider_user_id` (unique combination)
+- `user` (unique, for user integration lookup)
+- `spotify_id` (unique, for Spotify account lookup)
 - `is_active` (for active integrations)
+- `expires_at` (for token refresh operations)
 
 ---
 
@@ -319,14 +322,17 @@ const TIER_LIMITS = {
 
 ### One-to-Many Relationships
 - `users` → `subscriptions` (user can have subscription history)
-- `users` → `oauth_integrations` (user can have multiple provider integrations)
 - `users` → `base_playlists` (user can have multiple base playlists)
 - `users` → `child_playlists` (user can have multiple child playlists)
 - `base_playlists` → `child_playlists` (base playlist can have multiple children)
 
+### One-to-One Relationships
+- `users` → `spotify_integrations` (user can have one Spotify integration)
+
 ### Constraints
 - User can have only one active subscription at a time
-- User can have only one active OAuth integration per provider
+- User can have only one Spotify integration (enforced by unique user field)
+- Each Spotify account can only be linked to one user (enforced by unique spotify_id)
 - User cannot add the same Spotify playlist twice (as base or child)
 - Child playlist must belong to same user as its base playlist
 
@@ -338,7 +344,7 @@ const TIER_LIMITS = {
 - **Playlist Templates**: Add `playlist_templates` collection for reusable filter configurations
 - **Usage Tracking**: Add `monthly_usage` collection if detailed analytics needed
 - **Sync Logs**: Add `sync_logs` collection for debugging and audit trails
-- **Multi-provider**: Extend oauth_integrations for Apple Music, YouTube Music
+- **Multi-provider**: Add additional integration collections for Apple Music, YouTube Music (e.g., `apple_music_integrations`)
 
 ### Performance Optimizations
 - Consider materialized views for complex playlist relationship queries
@@ -347,7 +353,8 @@ const TIER_LIMITS = {
 - Background sync processing to avoid blocking user operations
 
 ### Security Considerations
-- Encrypt OAuth tokens at application level before storage
+- OAuth tokens are automatically secured by PocketBase field encryption
 - Implement rate limiting per user for API operations
 - Audit trail for subscription changes and billing events
 - Secure webhook endpoints for Stripe integration
+- Unique constraints prevent account linking conflicts

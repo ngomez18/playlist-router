@@ -12,24 +12,23 @@ import (
 )
 
 type BasePlaylistRepositoryPocketbase struct {
-	collection string
+	collection Collection
 	app        *pocketbase.PocketBase
 	log        *slog.Logger
 }
 
 func NewBasePlaylistRepositoryPocketbase(pb *pocketbase.PocketBase) *BasePlaylistRepositoryPocketbase {
 	return &BasePlaylistRepositoryPocketbase{
-		collection: "base_playlists",
+		collection: CollectionBasePlaylist,
 		app:        pb,
 		log:        pb.Logger().With("component", "BasePlaylistRepositoryPocketbase"),
 	}
 }
 
 func (bpRepo *BasePlaylistRepositoryPocketbase) Create(ctx context.Context, userId, name, spotifyPlaylistId string) (*models.BasePlaylist, error) {
-	collection, err := bpRepo.app.FindCollectionByNameOrId(bpRepo.collection)
+	collection, err := bpRepo.getCollection(ctx)
 	if err != nil {
-		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
-		return nil, repositories.ErrCollectionNotFound
+		return nil, err
 	}
 
 	basePlaylist := core.NewRecord(collection)
@@ -37,7 +36,6 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Create(ctx context.Context, user
 	basePlaylist.Set("name", name)
 	basePlaylist.Set("spotify_playlist_id", spotifyPlaylistId)
 	basePlaylist.Set("is_active", true)
-	basePlaylist.Set("last_synced", nil)
 
 	err = bpRepo.app.Save(basePlaylist)
 	if err != nil {
@@ -51,11 +49,11 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Create(ctx context.Context, user
 }
 
 func (bpRepo *BasePlaylistRepositoryPocketbase) Delete(ctx context.Context, id, userId string) error {
-	collection, err := bpRepo.app.FindCollectionByNameOrId(bpRepo.collection)
+	collection, err := bpRepo.getCollection(ctx)
 	if err != nil {
-		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
-		return repositories.ErrCollectionNotFound
+		return err
 	}
+
 
 	record, err := bpRepo.app.FindRecordById(collection, id)
 	if err != nil {
@@ -83,11 +81,11 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Delete(ctx context.Context, id, 
 }
 
 func (bpRepo *BasePlaylistRepositoryPocketbase) GetByID(ctx context.Context, id, userId string) (*models.BasePlaylist, error) {
-	collection, err := bpRepo.app.FindCollectionByNameOrId(bpRepo.collection)
+	collection, err := bpRepo.getCollection(ctx)
 	if err != nil {
-		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
-		return nil, repositories.ErrCollectionNotFound
+		return nil, err
 	}
+
 
 	record, err := bpRepo.app.FindRecordById(collection, id)
 	if err != nil {
@@ -106,6 +104,16 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) GetByID(ctx context.Context, id,
 
 	bpRepo.log.InfoContext(ctx, "base_playlist retrieved successfully", "base_playlist", record)
 	return recordToBasePlaylist(record), nil
+}
+
+func (bpRepo *BasePlaylistRepositoryPocketbase) getCollection(ctx context.Context) (*core.Collection, error) {
+	collection, err := bpRepo.app.FindCollectionByNameOrId(string(bpRepo.collection))
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
+		return nil, repositories.ErrCollectionNotFound
+	}
+
+	return collection, nil
 }
 
 func recordToBasePlaylist(record *core.Record) *models.BasePlaylist {

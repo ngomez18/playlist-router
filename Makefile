@@ -1,11 +1,12 @@
 # PlaylistSync Makefile
-.PHONY: build run dev clean lint fix test deps mocks help
+.PHONY: build run run-dev dev clean lint fix test deps mocks help
 
 # Default target
 help:
 	@echo "Available commands:"
 	@echo "  build    - Build the application"
 	@echo "  run      - Run the application in production mode"
+	@echo "  run-dev  - Run the application in development mode"
 	@echo "  dev      - Run the application in development mode with hot reload (air)"
 	@echo "  clean    - Clean build artifacts"
 	@echo "  lint     - Run golangci-lint to check code quality"
@@ -18,12 +19,17 @@ help:
 # Build the application
 build:
 	@echo "Building application..."
-	go build -o cmd/pb/main ./cmd/pb
+	go build -o playlist-router ./cmd/pb
 
 # Run in production mode
 run: build
 	@echo "Starting server in production mode..."
-	./cmd/pb/main serve
+	./playlist-router serve
+
+# Run in production mode
+run-dev: build
+	@echo "Starting server in production mode..."
+	./playlist-router serve --dev
 
 # Run in development mode with hot reload
 dev:
@@ -33,7 +39,7 @@ dev:
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -f cmd/pb/main
+	rm -f pb/main
 	rm -rf tmp/
 
 # Run linter
