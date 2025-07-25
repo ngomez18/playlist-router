@@ -12,14 +12,12 @@ type Config struct {
 	PBDev  bool   `env:"PB_DEV" envDefault:"true"`
 	PBPort string `env:"PB_PORT" envDefault:"8090"`
 
-	// Spotify
-	SpotifyClientID     string `env:"SPOTIFY_CLIENT_ID"`
-	SpotifyClientSecret string `env:"SPOTIFY_CLIENT_SECRET"`
-	SpotifyRedirectURI  string `env:"SPOTIFY_REDIRECT_URI" envDefault:"http://localhost:8090/auth/spotify/callback"`
-
 	// Application
 	AppEnv   string `env:"APP_ENV" envDefault:"dev"`
 	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
+
+	// Authentication
+	Auth AuthConfig
 }
 
 // Load loads configuration from .env file and environment variables
@@ -41,6 +39,10 @@ func MustLoad() *Config {
 	cfg, err := Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	if err := cfg.Auth.Validate(); err != nil {
+		log.Fatalf("invalid auth configuration: %v", err)
 	}
 
 	return cfg

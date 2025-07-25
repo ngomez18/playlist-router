@@ -18,7 +18,7 @@ help:
 # Build the application
 build:
 	@echo "Building application..."
-	go build -o cmd/pb/main cmd/server/*.go
+	go build -o cmd/pb/main ./cmd/pb
 
 # Run in production mode
 run: build

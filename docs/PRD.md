@@ -39,7 +39,6 @@ Create a streamlined tool that automatically distributes songs from user's "base
 
 ### Authentication & Onboarding
 - **MUST:** Spotify OAuth integration for account linking
-- **MUST:** Alternative email/password registration with option to link Spotify later
 - **MUST:** Guided onboarding flow explaining base playlist concept
 - **SHOULD:** Option to import existing playlists as starting templates
 
@@ -52,11 +51,9 @@ Create a streamlined tool that automatically distributes songs from user's "base
   - **Technical Attributes:** Acousticness, Instrumentalness, Loudness, Key & Mode, Time Signature
   - **Context:** Liveness, Speechiness, Duration, Popularity
   - **Basic Metadata:** Genre, Release year
-- **MUST:** Artist and song exclusion filters (text input with validation)
 - **MUST:** Pre-defined playlist templates (e.g., "2000s Rock", "Chill Vibes", "Workout Music")
-- **MUST:** Playlist preview before creation
-- **SHOULD:** Bulk actions (enable/disable multiple playlists)
 - **COULD:** Child playlist templates for easy reuse across base playlists
+- **COULD:** Artist and song exclusion filters (text input with validation)
 
 ### User Interface
 - **MUST:** Dark theme, modern minimalistic design using Chakra UI
@@ -75,7 +72,6 @@ Create a streamlined tool that automatically distributes songs from user's "base
 - **MUST:** Manual sync trigger option
 - **SHOULD:** Sync history log (last 30 days)
 - **SHOULD:** Error handling for failed syncs with retry mechanism
-- **COULD:** Conflict resolution interface for songs that don't match any child playlist
 
 ### Pricing & Limits
 - **MUST:** Free tier: 10 song distributions per month
@@ -146,12 +142,11 @@ Create a streamlined tool that automatically distributes songs from user's "base
 ## Implementation Phases
 
 ### Phase 1: Core MVP (Weeks 1-4)
-- Authentication system (email/password + Spotify OAuth)
+- Authentication system (Spotify OAuth + PocketBase users)
 - Single base playlist with basic child playlist creation
 - Essential audio feature filters (energy, danceability, valence, genre, year)
 - Manual sync functionality
 - Basic dashboard with Chakra UI
-- Free tier limits and usage tracking
 
 ### Phase 2: Multiple Base Playlists (Weeks 5-6)
 - Support for multiple base playlists per user
@@ -159,6 +154,7 @@ Create a streamlined tool that automatically distributes songs from user's "base
 - All audio feature filters with collapsible UI organization
 - Mobile-responsive multi-step wizard
 - Sync history and detailed status tracking
+- Free tier limits and usage tracking
 
 ### Phase 3: Advanced Features (Weeks 7-8)
 - Artist and song exclusion filters

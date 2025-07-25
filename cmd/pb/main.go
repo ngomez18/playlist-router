@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ngomez18/playlist-router/internal/clients"
 	"github.com/ngomez18/playlist-router/internal/config"
 	"github.com/ngomez18/playlist-router/internal/controllers"
 	"github.com/ngomez18/playlist-router/internal/repositories"
@@ -15,6 +16,7 @@ import (
 )
 
 type AppDependencies struct {
+	config       *config.Config
 	repositories Repositories
 	services     Services
 	controllers  Controllers
@@ -26,16 +28,15 @@ type Repositories struct {
 
 type Services struct {
 	basePlaylistService services.BasePlaylistServicer
+	authService         services.AuthServicer
 }
 
 type Controllers struct {
 	basePlaylistController controllers.BasePlaylistController
+	authController         controllers.AuthController
 }
 
 func main() {
-	// Load configuration
-	_ = config.MustLoad()
-
 	var deps AppDependencies
 	app := pocketbase.New()
 
@@ -66,6 +67,9 @@ func main() {
 
 func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	logger := app.Logger()
+	cfg := config.MustLoad()
+
+	spotifyClient := clients.NewSpotifyClient(&cfg.Auth, logger)
 
 	repositories := Repositories{
 		basePlaylistRepository: pb.NewBasePlaylistRepositoryPocketbase(app),
@@ -73,13 +77,16 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 
 	services := Services{
 		basePlaylistService: services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
+		authService:         services.NewAuthService(app, spotifyClient, logger),
 	}
 
 	controllers := Controllers{
 		basePlaylistController: *controllers.NewBasePlaylistController(services.basePlaylistService),
+		authController:         *controllers.NewAuthController(services.authService),
 	}
 
 	return AppDependencies{
+		config:       cfg,
 		repositories: repositories,
 		services:     services,
 		controllers:  controllers,
@@ -87,6 +94,11 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 }
 
 func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
+	// Auth routes
+	auth := e.Router.Group("/auth")
+	auth.GET("/spotify/login", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyLogin)))
+	auth.GET("/spotify/callback", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyCallback)))
+
 	// Base Playlist routes
 	basePlaylist := e.Router.Group("/api/base_playlist")
 	basePlaylist.POST("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Create)))
