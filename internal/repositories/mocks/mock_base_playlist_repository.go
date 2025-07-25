@@ -49,3 +49,32 @@ func (mr *MockBasePlaylistRepositoryMockRecorder) Create(ctx, userId, name, spot
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockBasePlaylistRepository)(nil).Create), ctx, userId, name, spotifyPlaylistId)
 }
+
+// Delete mocks base method.
+func (m *MockBasePlaylistRepository) Delete(ctx context.Context, id, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockBasePlaylistRepositoryMockRecorder) Delete(ctx, id, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockBasePlaylistRepository)(nil).Delete), ctx, id, userId)
+}
+
+// GetByID mocks base method.
+func (m *MockBasePlaylistRepository) GetByID(ctx context.Context, id, userId string) (*models.BasePlaylist, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, id, userId)
+	ret0, _ := ret[0].(*models.BasePlaylist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockBasePlaylistRepositoryMockRecorder) GetByID(ctx, id, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockBasePlaylistRepository)(nil).GetByID), ctx, id, userId)
+}

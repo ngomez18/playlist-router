@@ -42,7 +42,7 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Create(ctx context.Context, user
 	err = bpRepo.app.Save(basePlaylist)
 	if err != nil {
 		bpRepo.log.ErrorContext(ctx, "unable to store base_playlist record", "record", basePlaylist, "error", err)
-		return nil, fmt.Errorf(`%w: %s`, repositories.ErrInvalidBasePlaylist, err.Error())
+		return nil, fmt.Errorf(`%w: %s`, repositories.ErrDatabaseOperation, err.Error())
 	}
 
 	bpRepo.log.InfoContext(ctx, "base_playlist stored successfully", "record", basePlaylist)
@@ -50,9 +50,63 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Create(ctx context.Context, user
 	return recordToBasePlaylist(basePlaylist), nil
 }
 
-//
-// GetBasePlaylist(id string) (*models.BasePlaylist, error)
-// DeleteBasePlaylist(id string) error
+func (bpRepo *BasePlaylistRepositoryPocketbase) Delete(ctx context.Context, id, userId string) error {
+	collection, err := bpRepo.app.FindCollectionByNameOrId(bpRepo.collection)
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
+		return repositories.ErrCollectionNotFound
+	}
+
+	record, err := bpRepo.app.FindRecordById(collection, id)
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to find base_playlist record", "id", id, "error", err)
+		return repositories.ErrBasePlaylistNotFound
+	}
+
+	// Check ownership
+	if record.GetString("user_id") != userId {
+		bpRepo.log.ErrorContext(ctx, "unauthorized delete attempt",
+			"id", id,
+			"requested_by", userId,
+		)
+		return repositories.ErrUnauthorized
+	}
+
+	err = bpRepo.app.Delete(record)
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to delete base_playlist record", "id", id, "error", err)
+		return fmt.Errorf(`%w: %s`, repositories.ErrDatabaseOperation, err.Error())
+	}
+
+	bpRepo.log.InfoContext(ctx, "base_playlist deleted successfully", "id", id, "user_id", userId)
+	return nil
+}
+
+func (bpRepo *BasePlaylistRepositoryPocketbase) GetByID(ctx context.Context, id, userId string) (*models.BasePlaylist, error) {
+	collection, err := bpRepo.app.FindCollectionByNameOrId(bpRepo.collection)
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to find collection", "collection", bpRepo.collection, "error", err)
+		return nil, repositories.ErrCollectionNotFound
+	}
+
+	record, err := bpRepo.app.FindRecordById(collection, id)
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to find base_playlist record", "id", id, "error", err)
+		return nil, repositories.ErrBasePlaylistNotFound
+	}
+
+	// Check ownership
+	if record.GetString("user_id") != userId {
+		bpRepo.log.ErrorContext(ctx, "unauthorized access attempt",
+			"id", id,
+			"requested_by", userId,
+		)
+		return nil, repositories.ErrUnauthorized
+	}
+
+	bpRepo.log.InfoContext(ctx, "base_playlist retrieved successfully", "base_playlist", record)
+	return recordToBasePlaylist(record), nil
+}
 
 func recordToBasePlaylist(record *core.Record) *models.BasePlaylist {
 	return &models.BasePlaylist{

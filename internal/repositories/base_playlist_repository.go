@@ -10,6 +10,6 @@ import (
 
 type BasePlaylistRepository interface {
 	Create(ctx context.Context, userId, name, spotifyPlaylistId string) (*models.BasePlaylist, error)
-	// GetByID(ctx context.Context, id string) (*models.BasePlaylist, error)
-	// Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id, userId string) error
+	GetByID(ctx context.Context, id, userId string) (*models.BasePlaylist, error)
 }

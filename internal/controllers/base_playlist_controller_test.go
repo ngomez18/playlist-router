@@ -75,7 +75,7 @@ func TestBasePlaylistController_Create_Success(t *testing.T) {
 
 			// Set expectations
 			mockService.EXPECT().
-				CreateBasePlaylist(gomock.Any(), tt.requestBody).
+				CreateBasePlaylist(gomock.Any(), "placeholder_user_id", tt.requestBody).
 				Return(tt.serviceResult, nil).
 				Times(1)
 
@@ -102,7 +102,7 @@ func TestBasePlaylistController_Create_Success(t *testing.T) {
 func TestBasePlaylistController_Create_ValidationErrors(t *testing.T) {
 	tests := []struct {
 		name           string
-		requestBody    interface{}
+		requestBody    any
 		expectedStatus int
 		expectedError  string
 	}{
@@ -223,11 +223,11 @@ func TestBasePlaylistController_Create_RequestParsingErrors(t *testing.T) {
 
 func TestBasePlaylistController_Create_ServiceErrors(t *testing.T) {
 	tests := []struct {
-		name          string
-		requestBody   *models.CreateBasePlaylistRequest
-		serviceError  error
+		name           string
+		requestBody    *models.CreateBasePlaylistRequest
+		serviceError   error
 		expectedStatus int
-		expectedError string
+		expectedError  string
 	}{
 		{
 			name: "service validation error",
@@ -282,7 +282,7 @@ func TestBasePlaylistController_Create_ServiceErrors(t *testing.T) {
 
 			// Set expectations
 			mockService.EXPECT().
-				CreateBasePlaylist(gomock.Any(), tt.requestBody).
+				CreateBasePlaylist(gomock.Any(), "placeholder_user_id", tt.requestBody).
 				Return(nil, tt.serviceError).
 				Times(1)
 
@@ -332,7 +332,7 @@ func TestBasePlaylistController_Create_ResponseEncodingError(t *testing.T) {
 
 	// Set expectations
 	mockService.EXPECT().
-		CreateBasePlaylist(gomock.Any(), requestBody).
+		CreateBasePlaylist(gomock.Any(), "placeholder_user_id", requestBody).
 		Return(serviceResult, nil).
 		Times(1)
 
@@ -356,4 +356,348 @@ func TestNewBasePlaylistController(t *testing.T) {
 	assert.NotNil(controller)
 	assert.Equal(mockService, controller.basePlaylistService)
 	assert.NotNil(controller.validator)
+}
+
+func TestBasePlaylistController_Delete_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistID     string
+		urlPath        string
+		expectedStatus int
+	}{
+		{
+			name:           "successful deletion with valid id",
+			playlistID:     "playlist123",
+			urlPath:        "/api/base_playlist/playlist123",
+			expectedStatus: http.StatusNoContent,
+		},
+		{
+			name:           "successful deletion with complex id",
+			playlistID:     "pl_abc123def456",
+			urlPath:        "/api/base_playlist/pl_abc123def456",
+			expectedStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request with path parameters
+			req := httptest.NewRequest(http.MethodDelete, tt.urlPath, nil)
+			req.SetPathValue("id", tt.playlistID)
+			w := httptest.NewRecorder()
+
+			// Set expectations - expecting placeholder_user_id as defined in controller
+			mockService.EXPECT().
+				DeleteBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				Return(nil).
+				Times(1)
+
+			// Execute
+			controller.Delete(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Empty(w.Body.String())
+		})
+	}
+}
+
+func TestBasePlaylistController_Delete_ValidationErrors(t *testing.T) {
+	tests := []struct {
+		name           string
+		pathID         string
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "empty id in path",
+			pathID:         "",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "playlist id is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request with empty path parameter
+			req := httptest.NewRequest(http.MethodDelete, "/api/base_playlist/", nil)
+			req.SetPathValue("id", tt.pathID)
+			w := httptest.NewRecorder()
+
+			// No service expectations since validation should fail before service call
+
+			// Execute
+			controller.Delete(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
+		})
+	}
+}
+
+func TestBasePlaylistController_Delete_ServiceErrors(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistID     string
+		serviceError   error
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "playlist not found error",
+			playlistID:     "nonexistent123",
+			serviceError:   errors.New("failed to delete playlist: base playlist not found"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to delete base playlist",
+		},
+		{
+			name:           "unauthorized access error",
+			playlistID:     "playlist123",
+			serviceError:   errors.New("failed to delete playlist: user can not access this resource"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to delete base playlist",
+		},
+		{
+			name:           "database error",
+			playlistID:     "playlist123",
+			serviceError:   errors.New("failed to delete playlist: unable to complete db operation"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to delete base playlist",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request with path parameters
+			urlPath := "/api/base_playlist/" + tt.playlistID
+			req := httptest.NewRequest(http.MethodDelete, urlPath, nil)
+			req.SetPathValue("id", tt.playlistID)
+			w := httptest.NewRecorder()
+
+			// Set expectations - expecting placeholder_user_id as defined in controller
+			mockService.EXPECT().
+				DeleteBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				Return(tt.serviceError).
+				Times(1)
+
+			// Execute
+			controller.Delete(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
+		})
+	}
+}
+func TestBasePlaylistController_GetByID_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistID     string
+		urlPath        string
+		serviceResult  *models.BasePlaylist
+		expectedStatus int
+	}{
+		{
+			name:       "successful retrieval with valid id",
+			playlistID: "playlist123",
+			urlPath:    "/api/base_playlist/playlist123",
+			serviceResult: &models.BasePlaylist{
+				ID:                "playlist123",
+				UserID:            "user123",
+				Name:              "My Test Playlist",
+				SpotifyPlaylistID: "spotify123",
+				IsActive:          true,
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:       "successful retrieval with complex id",
+			playlistID: "pl_abc123def456",
+			urlPath:    "/api/base_playlist/pl_abc123def456",
+			serviceResult: &models.BasePlaylist{
+				ID:                "pl_abc123def456",
+				UserID:            "user456",
+				Name:              "Another Playlist",
+				SpotifyPlaylistID: "spotify456",
+				IsActive:          false,
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request with path parameters
+			req := httptest.NewRequest(http.MethodGet, tt.urlPath, nil)
+			req.SetPathValue("id", tt.playlistID)
+			w := httptest.NewRecorder()
+
+			// Set expectations - expecting placeholder_user_id as defined in controller
+			mockService.EXPECT().
+				GetBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				Return(tt.serviceResult, nil).
+				Times(1)
+
+			// Execute
+			controller.GetByID(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Equal("application/json", w.Header().Get("Content-Type"))
+
+			// Verify response body
+			var responseBody models.BasePlaylist
+			err := json.Unmarshal(w.Body.Bytes(), &responseBody)
+			assert.NoError(err)
+			assert.Equal(tt.serviceResult.ID, responseBody.ID)
+			assert.Equal(tt.serviceResult.UserID, responseBody.UserID)
+			assert.Equal(tt.serviceResult.Name, responseBody.Name)
+			assert.Equal(tt.serviceResult.SpotifyPlaylistID, responseBody.SpotifyPlaylistID)
+			assert.Equal(tt.serviceResult.IsActive, responseBody.IsActive)
+		})
+	}
+}
+
+func TestBasePlaylistController_GetByID_ValidationErrors(t *testing.T) {
+	tests := []struct {
+		name           string
+		pathID         string
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "empty id in path",
+			pathID:         "",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "playlist id is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request with empty path parameter
+			req := httptest.NewRequest(http.MethodGet, "/api/base_playlist/", nil)
+			req.SetPathValue("id", tt.pathID)
+			w := httptest.NewRecorder()
+
+			// No service expectations since validation should fail before service call
+
+			// Execute
+			controller.GetByID(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
+		})
+	}
+}
+
+func TestBasePlaylistController_GetByID_ServiceErrors(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistID     string
+		serviceError   error
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "playlist not found error",
+			playlistID:     "nonexistent123",
+			serviceError:   errors.New("failed to retrieve playlist: base playlist not found"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to retrieve base playlist",
+		},
+		{
+			name:           "unauthorized access error",
+			playlistID:     "playlist123",
+			serviceError:   errors.New("failed to retrieve playlist: user can not access this resource"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to retrieve base playlist",
+		},
+		{
+			name:           "database error",
+			playlistID:     "playlist123",
+			serviceError:   errors.New("failed to retrieve playlist: unable to complete db operation"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to retrieve base playlist",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request with path parameters
+			urlPath := "/api/base_playlist/" + tt.playlistID
+			req := httptest.NewRequest(http.MethodGet, urlPath, nil)
+			req.SetPathValue("id", tt.playlistID)
+			w := httptest.NewRecorder()
+
+			// Set expectations - expecting placeholder_user_id as defined in controller
+			mockService.EXPECT().
+				GetBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				Return(nil, tt.serviceError).
+				Times(1)
+
+			// Execute
+			controller.GetByID(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
+		})
+	}
 }

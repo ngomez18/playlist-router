@@ -9,8 +9,8 @@ import (
 
 type Config struct {
 	// PocketBase
-	PBDev           bool   `env:"PB_DEV" envDefault:"true"`
-	PBPort          string `env:"PB_PORT" envDefault:"8090"`
+	PBDev  bool   `env:"PB_DEV" envDefault:"true"`
+	PBPort string `env:"PB_PORT" envDefault:"8090"`
 
 	// Spotify
 	SpotifyClientID     string `env:"SPOTIFY_CLIENT_ID"`

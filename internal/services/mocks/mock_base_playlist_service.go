@@ -36,16 +36,45 @@ func (m *MockBasePlaylistServicer) EXPECT() *MockBasePlaylistServicerMockRecorde
 }
 
 // CreateBasePlaylist mocks base method.
-func (m *MockBasePlaylistServicer) CreateBasePlaylist(ctx context.Context, input *models.CreateBasePlaylistRequest) (*models.BasePlaylist, error) {
+func (m *MockBasePlaylistServicer) CreateBasePlaylist(ctx context.Context, userId string, input *models.CreateBasePlaylistRequest) (*models.BasePlaylist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateBasePlaylist", ctx, input)
+	ret := m.ctrl.Call(m, "CreateBasePlaylist", ctx, userId, input)
 	ret0, _ := ret[0].(*models.BasePlaylist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateBasePlaylist indicates an expected call of CreateBasePlaylist.
-func (mr *MockBasePlaylistServicerMockRecorder) CreateBasePlaylist(ctx, input interface{}) *gomock.Call {
+func (mr *MockBasePlaylistServicerMockRecorder) CreateBasePlaylist(ctx, userId, input interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBasePlaylist", reflect.TypeOf((*MockBasePlaylistServicer)(nil).CreateBasePlaylist), ctx, input)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBasePlaylist", reflect.TypeOf((*MockBasePlaylistServicer)(nil).CreateBasePlaylist), ctx, userId, input)
+}
+
+// DeleteBasePlaylist mocks base method.
+func (m *MockBasePlaylistServicer) DeleteBasePlaylist(ctx context.Context, id, userId string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteBasePlaylist", ctx, id, userId)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteBasePlaylist indicates an expected call of DeleteBasePlaylist.
+func (mr *MockBasePlaylistServicerMockRecorder) DeleteBasePlaylist(ctx, id, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBasePlaylist", reflect.TypeOf((*MockBasePlaylistServicer)(nil).DeleteBasePlaylist), ctx, id, userId)
+}
+
+// GetBasePlaylist mocks base method.
+func (m *MockBasePlaylistServicer) GetBasePlaylist(ctx context.Context, id, userId string) (*models.BasePlaylist, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBasePlaylist", ctx, id, userId)
+	ret0, _ := ret[0].(*models.BasePlaylist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBasePlaylist indicates an expected call of GetBasePlaylist.
+func (mr *MockBasePlaylistServicerMockRecorder) GetBasePlaylist(ctx, id, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBasePlaylist", reflect.TypeOf((*MockBasePlaylistServicer)(nil).GetBasePlaylist), ctx, id, userId)
 }

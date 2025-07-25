@@ -12,7 +12,7 @@ func NewTestApp(t *testing.T) *pocketbase.PocketBase {
 	t.Helper()
 
 	tmpDir := t.TempDir()
-	
+
 	app := pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: tmpDir,
 	})

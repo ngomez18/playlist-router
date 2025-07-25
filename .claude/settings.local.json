@@ -12,7 +12,8 @@
       "Bash(go test:*)",
       "Bash(go get:*)",
       "Bash(go install:*)",
-      "Bash(mockgen:*)"
+      "Bash(mockgen:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

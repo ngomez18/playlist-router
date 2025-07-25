@@ -33,7 +33,11 @@ func (c *BasePlaylistController) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	newBasePlaylist, err := c.basePlaylistService.CreateBasePlaylist(r.Context(), &req)
+	// TODO: Extract user ID from context or authentication
+	// For now, using placeholder - this should come from JWT token or auth context
+	userID := "placeholder_user_id"
+
+	newBasePlaylist, err := c.basePlaylistService.CreateBasePlaylist(r.Context(), userID, &req)
 	if err != nil {
 		http.Error(w, "unable to create base playlist", http.StatusInternalServerError)
 		return
@@ -42,6 +46,55 @@ func (c *BasePlaylistController) Create(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(newBasePlaylist)
+	if err != nil {
+		http.Error(w, "unable to encode response", http.StatusInternalServerError)
+	}
+}
+
+func (c *BasePlaylistController) Delete(w http.ResponseWriter, r *http.Request) {
+	// Extract ID from URL path
+	basePlaylistId := r.PathValue("id")
+
+	if basePlaylistId == "" {
+		http.Error(w, "playlist id is required", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: Extract user ID from context or authentication
+	// For now, using placeholder - this should come from JWT token or auth context
+	userID := "placeholder_user_id"
+
+	err := c.basePlaylistService.DeleteBasePlaylist(r.Context(), basePlaylistId, userID)
+	if err != nil {
+		http.Error(w, "unable to delete base playlist", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (c *BasePlaylistController) GetByID(w http.ResponseWriter, r *http.Request) {
+	// Extract ID from URL path
+	basePlaylistId := r.PathValue("id")
+
+	if basePlaylistId == "" {
+		http.Error(w, "playlist id is required", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: Extract user ID from context or authentication
+	// For now, using placeholder - this should come from JWT token or auth context
+	userID := "placeholder_user_id"
+
+	basePlaylist, err := c.basePlaylistService.GetBasePlaylist(r.Context(), basePlaylistId, userID)
+	if err != nil {
+		http.Error(w, "unable to retrieve base playlist", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(basePlaylist)
 	if err != nil {
 		http.Error(w, "unable to encode response", http.StatusInternalServerError)
 	}

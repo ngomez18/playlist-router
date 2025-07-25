@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/ngomez18/playlist-router/internal/models"
+	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/pocketbase/pocketbase"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -146,6 +148,233 @@ func TestBasePlaylistRepositoryPocketbase_Create_DatabaseErrors(t *testing.T) {
 		// Verify error occurred
 		assert.Error(err)
 		assert.Nil(playlist)
+	})
+}
+
+func TestBasePlaylistRepositoryPocketbase_Delete_Success(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup test environment
+	app := NewTestApp(t)
+	SetupBasePlaylistCollection(t, app)
+	repo := NewBasePlaylistRepositoryPocketbase(app)
+
+	ctx := context.Background()
+
+	// First create a playlist to delete
+	playlist, err := repo.Create(ctx, "user123", "Test Playlist", "spotify123")
+	assert.NoError(err)
+	assert.NotNil(playlist)
+
+	// Verify playlist exists
+	foundPlaylist, err := findBasePlaylistInDB(t, app, playlist.ID)
+	assert.NoError(err)
+	assert.Equal(playlist.ID, foundPlaylist.ID)
+
+	// Execute delete with correct user ID
+	err = repo.Delete(ctx, playlist.ID, "user123")
+	assert.NoError(err)
+
+	// Verify playlist no longer exists
+	_, err = findBasePlaylistInDB(t, app, playlist.ID)
+	assert.Error(err)
+}
+
+func TestBasePlaylistRepositoryPocketbase_Delete_UnauthorizedError(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup test environment
+	app := NewTestApp(t)
+	SetupBasePlaylistCollection(t, app)
+	repo := NewBasePlaylistRepositoryPocketbase(app)
+
+	ctx := context.Background()
+
+	// First create a playlist owned by user123
+	playlist, err := repo.Create(ctx, "user123", "Test Playlist", "spotify123")
+	assert.NoError(err)
+	assert.NotNil(playlist)
+
+	// Try to delete with different user ID (should fail)
+	err = repo.Delete(ctx, playlist.ID, "user456")
+
+	// Verify unauthorized error
+	assert.Error(err)
+	assert.ErrorIs(err, repositories.ErrUnauthorized)
+
+	// Verify playlist still exists
+	foundPlaylist, err := findBasePlaylistInDB(t, app, playlist.ID)
+	assert.NoError(err)
+	assert.Equal(playlist.ID, foundPlaylist.ID)
+}
+
+func TestBasePlaylistRepositoryPocketbase_Delete_NotFoundErrors(t *testing.T) {
+	tests := []struct {
+		name        string
+		id          string
+		expectedErr error
+	}{
+		{
+			name:        "non-existent id",
+			id:          "nonexistent123",
+			expectedErr: repositories.ErrBasePlaylistNotFound,
+		},
+		{
+			name:        "invalid id format",
+			id:          "invalid-id-format",
+			expectedErr: repositories.ErrBasePlaylistNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup test environment
+			app := NewTestApp(t)
+			SetupBasePlaylistCollection(t, app)
+			repo := NewBasePlaylistRepositoryPocketbase(app)
+
+			ctx := context.Background()
+
+			// Execute delete
+			err := repo.Delete(ctx, tt.id, "user123")
+
+			// Verify error
+			assert.Error(err)
+			assert.ErrorIs(err, tt.expectedErr)
+		})
+	}
+}
+
+func TestBasePlaylistRepositoryPocketbase_Delete_DatabaseErrors(t *testing.T) {
+	t.Run("collection not found", func(t *testing.T) {
+		assert := assert.New(t)
+
+		// Setup test environment without creating the collection
+		app := NewTestApp(t)
+		repo := NewBasePlaylistRepositoryPocketbase(app)
+
+		ctx := context.Background()
+
+		// Execute delete
+		err := repo.Delete(ctx, "test123", "user123")
+
+		// Verify error
+		assert.Error(err)
+		assert.ErrorIs(err, repositories.ErrCollectionNotFound)
+	})
+}
+
+func TestBasePlaylistRepositoryPocketbase_GetByID_Success(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup test environment
+	app := NewTestApp(t)
+	SetupBasePlaylistCollection(t, app)
+	repo := NewBasePlaylistRepositoryPocketbase(app)
+
+	ctx := context.Background()
+
+	// First create a playlist to retrieve
+	playlist, err := repo.Create(ctx, "user123", "Test Playlist", "spotify123")
+	assert.NoError(err)
+	assert.NotNil(playlist)
+
+	// Execute GetByID with correct user ID
+	retrievedPlaylist, err := repo.GetByID(ctx, playlist.ID, "user123")
+	assert.NoError(err)
+	assert.NotNil(retrievedPlaylist)
+
+	// Verify the retrieved playlist matches the created one
+	assert.Equal(playlist.ID, retrievedPlaylist.ID)
+	assert.Equal(playlist.UserID, retrievedPlaylist.UserID)
+	assert.Equal(playlist.Name, retrievedPlaylist.Name)
+	assert.Equal(playlist.SpotifyPlaylistID, retrievedPlaylist.SpotifyPlaylistID)
+	assert.Equal(playlist.IsActive, retrievedPlaylist.IsActive)
+}
+
+func TestBasePlaylistRepositoryPocketbase_GetByID_UnauthorizedError(t *testing.T) {
+	assert := assert.New(t)
+
+	// Setup test environment
+	app := NewTestApp(t)
+	SetupBasePlaylistCollection(t, app)
+	repo := NewBasePlaylistRepositoryPocketbase(app)
+
+	ctx := context.Background()
+
+	// First create a playlist owned by user123
+	playlist, err := repo.Create(ctx, "user123", "Test Playlist", "spotify123")
+	assert.NoError(err)
+	assert.NotNil(playlist)
+
+	// Try to retrieve with different user ID (should fail)
+	retrievedPlaylist, err := repo.GetByID(ctx, playlist.ID, "user456")
+
+	// Verify unauthorized error
+	assert.Error(err)
+	assert.Nil(retrievedPlaylist)
+	assert.ErrorIs(err, repositories.ErrUnauthorized)
+}
+
+func TestBasePlaylistRepositoryPocketbase_GetByID_NotFoundErrors(t *testing.T) {
+	tests := []struct {
+		name        string
+		id          string
+		expectedErr error
+	}{
+		{
+			name:        "non-existent id",
+			id:          "nonexistent123",
+			expectedErr: repositories.ErrBasePlaylistNotFound,
+		},
+		{
+			name:        "invalid id format",
+			id:          "invalid-id-format",
+			expectedErr: repositories.ErrBasePlaylistNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup test environment
+			app := NewTestApp(t)
+			SetupBasePlaylistCollection(t, app)
+			repo := NewBasePlaylistRepositoryPocketbase(app)
+
+			ctx := context.Background()
+
+			// Execute GetByID
+			retrievedPlaylist, err := repo.GetByID(ctx, tt.id, "user123")
+
+			// Verify error
+			assert.Error(err)
+			assert.Nil(retrievedPlaylist)
+			assert.ErrorIs(err, tt.expectedErr)
+		})
+	}
+}
+
+func TestBasePlaylistRepositoryPocketbase_GetByID_DatabaseErrors(t *testing.T) {
+	t.Run("collection not found", func(t *testing.T) {
+		assert := assert.New(t)
+
+		// Setup test environment without creating the collection
+		app := NewTestApp(t)
+		repo := NewBasePlaylistRepositoryPocketbase(app)
+
+		ctx := context.Background()
+
+		// Execute GetByID
+		retrievedPlaylist, err := repo.GetByID(ctx, "test123", "user123")
+
+		// Verify error
+		assert.Error(err)
+		assert.Nil(retrievedPlaylist)
+		assert.ErrorIs(err, repositories.ErrCollectionNotFound)
 	})
 }
 

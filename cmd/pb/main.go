@@ -90,4 +90,6 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	// Base Playlist routes
 	basePlaylist := e.Router.Group("/api/base_playlist")
 	basePlaylist.POST("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Create)))
+	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
+	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
 }
