@@ -54,7 +54,6 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Delete(ctx context.Context, id, 
 		return err
 	}
 
-
 	record, err := bpRepo.app.FindRecordById(collection, id)
 	if err != nil {
 		bpRepo.log.ErrorContext(ctx, "unable to find base_playlist record", "id", id, "error", err)
@@ -85,7 +84,6 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) GetByID(ctx context.Context, id,
 	if err != nil {
 		return nil, err
 	}
-
 
 	record, err := bpRepo.app.FindRecordById(collection, id)
 	if err != nil {

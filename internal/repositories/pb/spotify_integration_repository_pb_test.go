@@ -63,7 +63,7 @@ func TestSpotifyIntegrationRepositoryPocketbase_CreateOrUpdate_Success(t *testin
 			// If testing update, create an existing integration first
 			if !tt.expectCreate {
 				existingIntegration := &models.SpotifyIntegration{
-					UserID: userID,
+					UserID:       userID,
 					SpotifyID:    "old_spotify_id",
 					AccessToken:  "old_access_token",
 					RefreshToken: "old_refresh_token",

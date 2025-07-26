@@ -8,6 +8,9 @@ var (
 	ErrCollectionNotFound = errors.New("collection not found")
 	ErrUnauthorized       = errors.New("user can not access this resource")
 
+	// User errors
+	ErrUseNotFound = errors.New("user not found")
+
 	// Base playlist errors
 	ErrBasePlaylistNotFound = errors.New("base playlist not found")
 
