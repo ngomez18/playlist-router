@@ -1,20 +1,36 @@
 # PlaylistSync Makefile
 .PHONY: build run run-dev dev clean lint fix test deps mocks help
+.PHONY: frontend-install frontend-dev frontend-build frontend-preview frontend-clean
+.PHONY: build-all run-production
 
 # Default target
 help:
 	@echo "Available commands:"
-	@echo "  build    - Build the application"
-	@echo "  run      - Run the application in production mode"
-	@echo "  run-dev  - Run the application in development mode"
-	@echo "  dev      - Run the application in development mode with hot reload (air)"
-	@echo "  clean    - Clean build artifacts"
-	@echo "  lint     - Run golangci-lint to check code quality"
-	@echo "  fix      - Format and fix code issues"
-	@echo "  test     - Run tests"
-	@echo "  deps     - Download and tidy dependencies"
-	@echo "  mocks    - Generate all mocks using go generate"
-	@echo "  help     - Show this help message"
+	@echo ""
+	@echo "Backend:"
+	@echo "  build      - Build the Go application"
+	@echo "  run        - Run the application in production mode"
+	@echo "  run-dev    - Run the application in development mode"
+	@echo "  dev        - Run the application in development mode with hot reload (air)"
+	@echo "  clean      - Clean build artifacts"
+	@echo "  lint       - Run golangci-lint to check code quality"
+	@echo "  fix        - Format and fix code issues"
+	@echo "  test       - Run tests"
+	@echo "  deps       - Download and tidy dependencies"
+	@echo "  mocks      - Generate all mocks using go generate"
+	@echo ""
+	@echo "Frontend:"
+	@echo "  frontend-install  - Install frontend dependencies"
+	@echo "  frontend-dev      - Start frontend development server"
+	@echo "  frontend-build    - Build frontend for production"
+	@echo "  frontend-preview  - Preview production build"
+	@echo "  frontend-clean    - Clean frontend build artifacts"
+	@echo ""
+	@echo "Full Stack:"
+	@echo "  build-all     - Build both frontend and backend for production"
+	@echo "  run-production - Build everything and run in production mode" 
+	@echo "  dev-full      - Start both backend and frontend in development mode"
+	@echo "  help          - Show this help message"
 
 # Build the application
 build:
@@ -70,3 +86,44 @@ deps:
 mocks:
 	@echo "Generating mocks..."
 	go generate ./...
+
+# Frontend commands
+frontend-install:
+	@echo "Installing frontend dependencies..."
+	cd web && npm install
+
+frontend-dev:
+	@echo "Starting frontend development server..."
+	cd web && npm run dev
+
+frontend-build:
+	@echo "Building frontend for production..."
+	cd web && npm run build
+
+frontend-preview:
+	@echo "Starting frontend preview server..."
+	cd web && npm run preview
+
+frontend-clean:
+	@echo "Cleaning frontend build artifacts..."
+	cd web && rm -rf dist node_modules/.vite
+
+# Build both frontend and backend for production
+build-all: frontend-build build
+	@echo "Full stack build completed!"
+	@echo "Frontend built in web/dist/"
+	@echo "Backend binary: playlist-router"
+
+# Build everything and run in production mode
+run-production: build-all
+	@echo "Starting production server with integrated frontend..."
+	@echo "Server will be available at http://localhost:8090"
+	./playlist-router serve
+
+# Full stack development
+dev-full:
+	@echo "Starting full stack development..."
+	@echo "Backend will be available at http://localhost:8090"
+	@echo "Frontend will be available at http://localhost:5173"
+	@echo "Press Ctrl+C to stop both servers"
+	@make -j2 dev frontend-dev

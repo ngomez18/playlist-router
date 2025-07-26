@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/ngomez18/playlist-router/internal/clients"
 	"github.com/ngomez18/playlist-router/internal/config"
@@ -104,4 +105,14 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	basePlaylist.POST("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Create)))
 	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
 	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
+
+	// Serve static files last (catch-all)
+	setupStaticFileServer(e)
+}
+
+func setupStaticFileServer(e *core.ServeEvent) {
+	distPath := "web/dist"
+
+	// Use PocketBase's static file serving for the entire frontend
+	e.Router.GET("/*", apis.Static(os.DirFS(distPath), true))
 }

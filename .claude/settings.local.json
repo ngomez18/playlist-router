@@ -13,7 +13,9 @@
       "Bash(go get:*)",
       "Bash(go install:*)",
       "Bash(mockgen:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": []
   }
