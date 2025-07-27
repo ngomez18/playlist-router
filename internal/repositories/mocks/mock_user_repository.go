@@ -64,6 +64,21 @@ func (mr *MockUserRepositoryMockRecorder) Delete(ctx, userID interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockUserRepository)(nil).Delete), ctx, userID)
 }
 
+// GenerateAuthToken mocks base method.
+func (m *MockUserRepository) GenerateAuthToken(ctx context.Context, userID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GenerateAuthToken", ctx, userID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GenerateAuthToken indicates an expected call of GenerateAuthToken.
+func (mr *MockUserRepositoryMockRecorder) GenerateAuthToken(ctx, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateAuthToken", reflect.TypeOf((*MockUserRepository)(nil).GenerateAuthToken), ctx, userID)
+}
+
 // GetByID mocks base method.
 func (m *MockUserRepository) GetByID(ctx context.Context, userID string) (*models.User, error) {
 	m.ctrl.T.Helper()

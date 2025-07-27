@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 	"testing"
@@ -661,4 +662,410 @@ func TestAuthService_UpdateExistingUser_IntegrationUpdateError(t *testing.T) {
 	assert.Error(err)
 	assert.Nil(result)
 	assert.Contains(err.Error(), "unable to complete db operation")
+}
+
+// HandleSpotifyCallback Tests
+
+func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
+	tests := []struct {
+		name        string
+		description string
+		setupMocks  func(*repoMocks.MockUserRepository, *repoMocks.MockSpotifyIntegrationRepository, *clientMocks.MockSpotifyAPI)
+		expectUser  func(*models.AuthUser)
+	}{
+		{
+			name:        "new_user_creation",
+			description: "Successfully handles callback for new user",
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+				tokens := &models.SpotifyTokenResponse{
+					AccessToken:  "access_token_123",
+					RefreshToken: "refresh_token_123",
+					TokenType:    "Bearer",
+					ExpiresIn:    3600,
+					Scope:        "user-read-private user-read-email",
+				}
+
+				profile := &models.SpotifyUserProfile{
+					ID:    "spotify_user_123",
+					Email: "test@example.com",
+					Name:  "Test User",
+				}
+
+				createdUser := &models.User{
+					ID:      "user123",
+					Email:   profile.Email,
+					Name:    profile.Name,
+					Created: time.Now(),
+					Updated: time.Now(),
+				}
+
+				createdIntegration := &models.SpotifyIntegration{
+					ID:           "integration123",
+					UserID:       createdUser.ID,
+					SpotifyID:    profile.ID,
+					AccessToken:  tokens.AccessToken,
+					RefreshToken: tokens.RefreshToken,
+					TokenType:    tokens.TokenType,
+					ExpiresAt:    time.Now().Add(time.Hour),
+					Scope:        tokens.Scope,
+					DisplayName:  profile.Name,
+					Created:      time.Now(),
+					Updated:      time.Now(),
+				}
+
+				mockSpotifyClient.EXPECT().
+					ExchangeCodeForTokens(gomock.Any(), "auth_code_123").
+					Return(tokens, nil).
+					Times(1)
+
+				mockSpotifyClient.EXPECT().
+					GetUserProfile(gomock.Any(), tokens.AccessToken).
+					Return(profile, nil).
+					Times(1)
+
+				// User doesn't exist - new user flow
+				mockSpotifyIntegrationRepo.EXPECT().
+					GetBySpotifyID(gomock.Any(), profile.ID).
+					Return(nil, repositories.ErrSpotifyIntegrationNotFound).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(createdUser, nil).
+					Times(1)
+
+				mockSpotifyIntegrationRepo.EXPECT().
+					CreateOrUpdate(gomock.Any(), createdUser.ID, gomock.Any()).
+					Return(createdIntegration, nil).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					GenerateAuthToken(gomock.Any(), createdUser.ID).
+					Return("jwt_auth_token_123", nil).
+					Times(1)
+			},
+			expectUser: func(authUser *models.AuthUser) {
+				assert.Equal(t, "user123", authUser.ID)
+				assert.Equal(t, "test@example.com", authUser.Email)
+				assert.Equal(t, "Test User", authUser.Name)
+				assert.Equal(t, "spotify_user_123", authUser.SpotifyID)
+			},
+		},
+		{
+			name:        "existing_user_update",
+			description: "Successfully handles callback for existing user with profile changes",
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+				tokens := &models.SpotifyTokenResponse{
+					AccessToken:  "new_access_token_123",
+					RefreshToken: "new_refresh_token_123",
+					TokenType:    "Bearer",
+					ExpiresIn:    3600,
+					Scope:        "user-read-private user-read-email",
+				}
+
+				profile := &models.SpotifyUserProfile{
+					ID:    "spotify_user_123",
+					Email: "updated@example.com", // Email changed
+					Name:  "Updated User",        // Name changed
+				}
+
+				existingUser := &models.User{
+					ID:    "user123",
+					Email: "old@example.com",
+					Name:  "Old User",
+				}
+
+				existingIntegration := &models.SpotifyIntegration{
+					ID:        "integration123",
+					UserID:    existingUser.ID,
+					SpotifyID: profile.ID,
+				}
+
+				updatedUser := &models.User{
+					ID:      existingUser.ID,
+					Email:   profile.Email,
+					Name:    profile.Name,
+					Created: time.Now().Add(-24 * time.Hour),
+					Updated: time.Now(),
+				}
+
+				updatedIntegration := &models.SpotifyIntegration{
+					ID:           existingIntegration.ID,
+					UserID:       updatedUser.ID,
+					SpotifyID:    profile.ID,
+					AccessToken:  tokens.AccessToken,
+					RefreshToken: tokens.RefreshToken,
+					TokenType:    tokens.TokenType,
+					ExpiresAt:    time.Now().Add(time.Hour),
+					Scope:        tokens.Scope,
+					DisplayName:  profile.Name,
+					Created:      time.Now().Add(-24 * time.Hour),
+					Updated:      time.Now(),
+				}
+
+				mockSpotifyClient.EXPECT().
+					ExchangeCodeForTokens(gomock.Any(), "auth_code_123").
+					Return(tokens, nil).
+					Times(1)
+
+				mockSpotifyClient.EXPECT().
+					GetUserProfile(gomock.Any(), tokens.AccessToken).
+					Return(profile, nil).
+					Times(1)
+
+				// User exists - update user flow
+				mockSpotifyIntegrationRepo.EXPECT().
+					GetBySpotifyID(gomock.Any(), profile.ID).
+					Return(existingIntegration, nil).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					GetByID(gomock.Any(), existingUser.ID).
+					Return(existingUser, nil).
+					Times(1)
+
+				// User profile changed, so update user
+				mockUserRepo.EXPECT().
+					Update(gomock.Any(), gomock.Any()).
+					Return(updatedUser, nil).
+					Times(1)
+
+				mockSpotifyIntegrationRepo.EXPECT().
+					CreateOrUpdate(gomock.Any(), updatedUser.ID, gomock.Any()).
+					Return(updatedIntegration, nil).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					GenerateAuthToken(gomock.Any(), updatedUser.ID).
+					Return("jwt_auth_token_123", nil).
+					Times(1)
+			},
+			expectUser: func(authUser *models.AuthUser) {
+				assert.Equal(t, "user123", authUser.ID)
+				assert.Equal(t, "updated@example.com", authUser.Email)
+				assert.Equal(t, "Updated User", authUser.Name)
+				assert.Equal(t, "spotify_user_123", authUser.SpotifyID)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
+			mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
+			mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			userService := NewUserService(mockUserRepo, logger)
+			spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
+			authService := NewAuthService(userService, spotifyIntegrationService, mockSpotifyClient, logger)
+
+			// Setup mocks for this test case
+			tt.setupMocks(mockUserRepo, mockSpotifyIntegrationRepo, mockSpotifyClient)
+
+			// Execute
+			result, err := authService.HandleSpotifyCallback(context.Background(), "auth_code_123", "state_123")
+
+			// Assert
+			assert.NoError(err)
+			assert.NotNil(result)
+			assert.Equal("jwt_auth_token_123", result.Token)
+			assert.Empty(result.RefreshToken) // PocketBase handles its own refresh
+			tt.expectUser(result.User)
+		})
+	}
+}
+
+func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
+	tests := []struct {
+		name          string
+		description   string
+		authCode      string
+		setupMocks    func(*repoMocks.MockUserRepository, *repoMocks.MockSpotifyIntegrationRepository, *clientMocks.MockSpotifyAPI)
+		expectedError string
+	}{
+		{
+			name:        "token_exchange_error",
+			description: "Fails when Spotify token exchange fails",
+			authCode:    "invalid_auth_code",
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+				mockSpotifyClient.EXPECT().
+					ExchangeCodeForTokens(gomock.Any(), "invalid_auth_code").
+					Return(nil, errors.New("token exchange failed")).
+					Times(1)
+			},
+			expectedError: "failed to exchange code for tokens",
+		},
+		{
+			name:        "profile_fetch_error",
+			description: "Fails when Spotify profile fetch fails",
+			authCode:    "auth_code_123",
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+				tokens := &models.SpotifyTokenResponse{
+					AccessToken:  "access_token_123",
+					RefreshToken: "refresh_token_123",
+					TokenType:    "Bearer",
+					ExpiresIn:    3600,
+					Scope:        "user-read-private user-read-email",
+				}
+
+				mockSpotifyClient.EXPECT().
+					ExchangeCodeForTokens(gomock.Any(), "auth_code_123").
+					Return(tokens, nil).
+					Times(1)
+
+				mockSpotifyClient.EXPECT().
+					GetUserProfile(gomock.Any(), tokens.AccessToken).
+					Return(nil, errors.New("profile fetch failed")).
+					Times(1)
+			},
+			expectedError: "failed to get user profile",
+		},
+		{
+			name:        "user_creation_error",
+			description: "Fails when user creation fails",
+			authCode:    "auth_code_123",
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+				tokens := &models.SpotifyTokenResponse{
+					AccessToken:  "access_token_123",
+					RefreshToken: "refresh_token_123",
+					TokenType:    "Bearer",
+					ExpiresIn:    3600,
+					Scope:        "user-read-private user-read-email",
+				}
+
+				profile := &models.SpotifyUserProfile{
+					ID:    "spotify_user_123",
+					Email: "test@example.com",
+					Name:  "Test User",
+				}
+
+				mockSpotifyClient.EXPECT().
+					ExchangeCodeForTokens(gomock.Any(), "auth_code_123").
+					Return(tokens, nil).
+					Times(1)
+
+				mockSpotifyClient.EXPECT().
+					GetUserProfile(gomock.Any(), tokens.AccessToken).
+					Return(profile, nil).
+					Times(1)
+
+				mockSpotifyIntegrationRepo.EXPECT().
+					GetBySpotifyID(gomock.Any(), profile.ID).
+					Return(nil, repositories.ErrSpotifyIntegrationNotFound).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(nil, repositories.ErrDatabaseOperation).
+					Times(1)
+			},
+			expectedError: "failed to create/update user",
+		},
+		{
+			name:        "auth_token_generation_error",
+			description: "Fails when auth token generation fails",
+			authCode:    "auth_code_123",
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+				tokens := &models.SpotifyTokenResponse{
+					AccessToken:  "access_token_123",
+					RefreshToken: "refresh_token_123",
+					TokenType:    "Bearer",
+					ExpiresIn:    3600,
+					Scope:        "user-read-private user-read-email",
+				}
+
+				profile := &models.SpotifyUserProfile{
+					ID:    "spotify_user_123",
+					Email: "test@example.com",
+					Name:  "Test User",
+				}
+
+				createdUser := &models.User{
+					ID:      "user123",
+					Email:   profile.Email,
+					Name:    profile.Name,
+					Created: time.Now(),
+					Updated: time.Now(),
+				}
+
+				createdIntegration := &models.SpotifyIntegration{
+					ID:           "integration123",
+					UserID:       createdUser.ID,
+					SpotifyID:    profile.ID,
+					AccessToken:  tokens.AccessToken,
+					RefreshToken: tokens.RefreshToken,
+					TokenType:    tokens.TokenType,
+					ExpiresAt:    time.Now().Add(time.Hour),
+					Scope:        tokens.Scope,
+					DisplayName:  profile.Name,
+					Created:      time.Now(),
+					Updated:      time.Now(),
+				}
+
+				mockSpotifyClient.EXPECT().
+					ExchangeCodeForTokens(gomock.Any(), "auth_code_123").
+					Return(tokens, nil).
+					Times(1)
+
+				mockSpotifyClient.EXPECT().
+					GetUserProfile(gomock.Any(), tokens.AccessToken).
+					Return(profile, nil).
+					Times(1)
+
+				mockSpotifyIntegrationRepo.EXPECT().
+					GetBySpotifyID(gomock.Any(), profile.ID).
+					Return(nil, repositories.ErrSpotifyIntegrationNotFound).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					Create(gomock.Any(), gomock.Any()).
+					Return(createdUser, nil).
+					Times(1)
+
+				mockSpotifyIntegrationRepo.EXPECT().
+					CreateOrUpdate(gomock.Any(), createdUser.ID, gomock.Any()).
+					Return(createdIntegration, nil).
+					Times(1)
+
+				mockUserRepo.EXPECT().
+					GenerateAuthToken(gomock.Any(), createdUser.ID).
+					Return("", repositories.ErrDatabaseOperation).
+					Times(1)
+			},
+			expectedError: "failed to generate auth token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
+			mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
+			mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			userService := NewUserService(mockUserRepo, logger)
+			spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
+			authService := NewAuthService(userService, spotifyIntegrationService, mockSpotifyClient, logger)
+
+			// Setup mocks for this test case
+			tt.setupMocks(mockUserRepo, mockSpotifyIntegrationRepo, mockSpotifyClient)
+
+			// Execute
+			result, err := authService.HandleSpotifyCallback(context.Background(), tt.authCode, "state_123")
+
+			// Assert
+			assert.Error(err)
+			assert.Nil(result)
+			assert.Contains(err.Error(), tt.expectedError)
+		})
+	}
 }

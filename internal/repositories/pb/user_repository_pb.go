@@ -99,6 +99,26 @@ func (uRepo *UserRepositoryPocketbase) Delete(ctx context.Context, userID string
 	return nil
 }
 
+func (uRepo *UserRepositoryPocketbase) GenerateAuthToken(ctx context.Context, userID string) (string, error) {
+	// Find the user record
+	record, err := uRepo.app.FindRecordById(string(uRepo.collection), userID)
+	if err != nil {
+		uRepo.log.ErrorContext(ctx, "unable to fetch user for token generation", "user", userID, "error", err)
+		return "", repositories.ErrUseNotFound
+	}
+
+	// Generate JWT token for this user using PocketBase's auth system
+	// In PocketBase v0.29, use record.NewAuthToken() method
+	token, err := record.NewAuthToken()
+	if err != nil {
+		uRepo.log.ErrorContext(ctx, "unable to generate auth token", "user", userID, "error", err)
+		return "", repositories.ErrDatabaseOperation
+	}
+
+	uRepo.log.InfoContext(ctx, "auth token generated successfully", "user", userID)
+	return token, nil
+}
+
 // recordToUser converts a PocketBase record to a User model
 // Note: PocketBase's default auth collection may use email as the username field
 // if the username field is not properly configured or populated

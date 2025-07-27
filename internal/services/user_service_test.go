@@ -372,3 +372,45 @@ func TestUserService_DeleteUser_Error(t *testing.T) {
 		})
 	}
 }
+
+
+func TestUserService_GenerateAuthToken_Success(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	service := NewUserService(mockRepo, logger)
+
+	userID := "user123"
+
+	mockRepo.EXPECT().
+		GenerateAuthToken(gomock.Any(), userID).
+		Return("token", nil).
+		Times(1)
+
+	token, err := service.GenerateAuthToken(context.Background(), userID)
+	assert.NoError(err)
+	assert.Equal("token", token)
+}
+
+func TestUserService_GenerateAuthToken_DatabaseError(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	service := NewUserService(mockRepo, logger)
+
+	userID := "user123"
+
+	mockRepo.EXPECT().
+		GenerateAuthToken(gomock.Any(), userID).
+		Return("", repositories.ErrDatabaseOperation).
+		Times(1)
+
+	_, err := service.GenerateAuthToken(context.Background(), userID)
+	assert.ErrorIs(err, repositories.ErrDatabaseOperation)
+}

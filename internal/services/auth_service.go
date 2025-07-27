@@ -72,9 +72,15 @@ func (s *AuthService) HandleSpotifyCallback(ctx context.Context, code, state str
 		return nil, fmt.Errorf("failed to create/update user: %w", err)
 	}
 
+	// Generate PocketBase JWT token for this user
+	token, err := s.userService.GenerateAuthToken(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate auth token: %w", err)
+	}
+
 	return &AuthResult{
 		User:         user,
-		Token:        s.generateAuthToken(user.ID),
+		Token:        token,
 		RefreshToken: "", // PocketBase handles its own refresh
 	}, nil
 }
@@ -221,13 +227,4 @@ func (s *AuthService) updateExistingUser(
 	s.logger.InfoContext(ctx, "existing user updated successfully", "user_id", updatedUser.ID, "spotify_id", profile.ID)
 
 	return authUser, nil
-}
-
-func (s *AuthService) generateAuthToken(userID string) string {
-	// Generate auth token for the user
-	// Note: Using a simple approach - in production should use proper JWT with expiration
-	token := userID + "_auth_token"
-
-	s.logger.Info("generated auth token", "user_id", userID)
-	return token
 }
