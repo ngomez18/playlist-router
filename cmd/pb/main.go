@@ -24,12 +24,16 @@ type AppDependencies struct {
 }
 
 type Repositories struct {
-	basePlaylistRepository repositories.BasePlaylistRepository
+	basePlaylistRepository       repositories.BasePlaylistRepository
+	userRepository               repositories.UserRepository
+	spotifyIntegrationRepository repositories.SpotifyIntegrationRepository
 }
 
 type Services struct {
-	basePlaylistService services.BasePlaylistServicer
-	authService         services.AuthServicer
+	basePlaylistService       services.BasePlaylistServicer
+	userService               services.UserServicer
+	spotifyIntegrationService services.SpotifyIntegrationServicer
+	authService               services.AuthServicer
 }
 
 type Controllers struct {
@@ -73,23 +77,30 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	spotifyClient := clients.NewSpotifyClient(&cfg.Auth, logger)
 
 	repositories := Repositories{
-		basePlaylistRepository: pb.NewBasePlaylistRepositoryPocketbase(app),
+		basePlaylistRepository:       pb.NewBasePlaylistRepositoryPocketbase(app),
+		userRepository:               pb.NewUserRepositoryPocketbase(app),
+		spotifyIntegrationRepository: pb.NewSpotifyIntegrationRepositoryPocketbase(app),
 	}
 
-	services := Services{
-		basePlaylistService: services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
-		authService:         services.NewAuthService(app, spotifyClient, logger),
+	userService := services.NewUserService(repositories.userRepository, logger)
+	spotifyIntegrationService := services.NewSpotifyIntegrationService(repositories.spotifyIntegrationRepository, logger)
+
+	serviceInstances := Services{
+		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
+		userService:               userService,
+		spotifyIntegrationService: spotifyIntegrationService,
+		authService:               services.NewAuthService(userService, spotifyIntegrationService, spotifyClient, logger),
 	}
 
 	controllers := Controllers{
-		basePlaylistController: *controllers.NewBasePlaylistController(services.basePlaylistService),
-		authController:         *controllers.NewAuthController(services.authService),
+		basePlaylistController: *controllers.NewBasePlaylistController(serviceInstances.basePlaylistService),
+		authController:         *controllers.NewAuthController(serviceInstances.authService),
 	}
 
 	return AppDependencies{
 		config:       cfg,
 		repositories: repositories,
-		services:     services,
+		services:     serviceInstances,
 		controllers:  controllers,
 	}
 }

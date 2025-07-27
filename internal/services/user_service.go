@@ -16,6 +16,7 @@ type UserServicer interface {
 	UpdateUser(ctx context.Context, user *models.User) (*models.User, error)
 	GetUserByID(ctx context.Context, userID string) (*models.User, error)
 	DeleteUser(ctx context.Context, userID string) error
+	GenerateAuthToken(ctx context.Context, userID string) (string, error)
 }
 
 type UserService struct {
@@ -84,4 +85,18 @@ func (us *UserService) DeleteUser(ctx context.Context, userID string) error {
 	us.logger.InfoContext(ctx, "user deleted successfully", "user_id", userID)
 
 	return nil
+}
+
+func (us *UserService) GenerateAuthToken(ctx context.Context, userID string) (string, error) {
+	us.logger.InfoContext(ctx, "generating auth token", "user_id", userID)
+
+	token, err := us.userRepo.GenerateAuthToken(ctx, userID)
+	if err != nil {
+		us.logger.ErrorContext(ctx, "failed to generate auth token", "user_id", userID, "error", err.Error())
+		return "", fmt.Errorf("failed to generate auth token: %w", err)
+	}
+
+	us.logger.InfoContext(ctx, "auth token generated successfully", "user_id", userID)
+
+	return token, nil
 }

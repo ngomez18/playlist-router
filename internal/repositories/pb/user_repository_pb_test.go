@@ -2,6 +2,7 @@ package pb
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/ngomez18/playlist-router/internal/models"
@@ -58,7 +59,7 @@ func TestUserRepositoryPocketbase_Create_Error(t *testing.T) {
 
 func TestUserRepositoryPocketbase_GetByID_Success(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	app := NewTestApp(t)
 
 	repo := NewUserRepositoryPocketbase(app)
@@ -88,7 +89,7 @@ func TestUserRepositoryPocketbase_GetByID_Success(t *testing.T) {
 
 func TestUserRepositoryPocketbase_GetByID_Error(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	app := NewTestApp(t)
 
 	repo := NewUserRepositoryPocketbase(app)
@@ -104,7 +105,7 @@ func TestUserRepositoryPocketbase_GetByID_Error(t *testing.T) {
 
 func TestUserRepositoryPocketbase_Delete_Success(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	app := NewTestApp(t)
 
 	repo := NewUserRepositoryPocketbase(app)
@@ -143,7 +144,6 @@ func TestUserRepositoryPocketbase_Delete_Error(t *testing.T) {
 	assert.Equal(repositories.ErrUseNotFound, err)
 }
 
-
 func TestUserRepositoryPocketbase_Update_Success(t *testing.T) {
 	assert := assert.New(t)
 	app := NewTestApp(t)
@@ -179,12 +179,52 @@ func TestUserRepositoryPocketbase_Update_Error(t *testing.T) {
 	ctx := context.Background()
 
 	// Try to update a non-existent user
-	_, err := repo.Update(ctx, &models.User{ID:"nonexistent-id"})
+	_, err := repo.Update(ctx, &models.User{ID: "nonexistent-id"})
 
 	assert.Error(err)
 	assert.Equal(repositories.ErrUseNotFound, err)
 }
 
+func TestUserRepositoryPocketbase_GenerateAuthToken_Success(t *testing.T) {
+	assert := assert.New(t)
+	app := NewTestApp(t)
+	repo := NewUserRepositoryPocketbase(app)
+	ctx := context.Background()
+
+	// Create a test user first
+	testUser := &models.User{
+		Email:    "test@example.com",
+		Username: "testuser",
+		Name:     "Test User",
+	}
+	createdUser, err := createUserInDB(t, app, testUser)
+	assert.NoError(err)
+
+	// Now test GenerateAuthToken
+	token, err := repo.GenerateAuthToken(ctx, createdUser.ID)
+
+	assert.NoError(err)
+	assert.NotEmpty(token)
+	assert.IsType("string", token)
+	
+	// Verify the token is a valid JWT (should have 3 parts separated by dots)
+	tokenParts := len(strings.Split(token, "."))
+	assert.Equal(3, tokenParts, "JWT token should have 3 parts separated by dots")
+}
+
+func TestUserRepositoryPocketbase_GenerateAuthToken_UserNotFound(t *testing.T) {
+	assert := assert.New(t)
+	app := NewTestApp(t)
+	repo := NewUserRepositoryPocketbase(app)
+	ctx := context.Background()
+
+	// Try to generate token for a non-existent user
+	token, err := repo.GenerateAuthToken(ctx, "nonexistent-id")
+
+	assert.Error(err)
+	assert.Empty(token)
+	assert.Equal(repositories.ErrUseNotFound, err)
+}
 
 func createUserInDB(t *testing.T, app *pocketbase.PocketBase, user *models.User) (*models.User, error) {
 	t.Helper()

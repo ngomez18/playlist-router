@@ -13,4 +13,5 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) (*models.User, error)
 	GetByID(ctx context.Context, userID string) (*models.User, error)
 	Delete(ctx context.Context, userID string) error
+	GenerateAuthToken(ctx context.Context, userID string) (string, error)
 }
