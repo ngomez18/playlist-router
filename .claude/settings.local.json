@@ -15,7 +15,8 @@
       "Bash(mockgen:*)",
       "Bash(grep:*)",
       "Bash(npm run build:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

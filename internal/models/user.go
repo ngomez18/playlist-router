@@ -8,7 +8,6 @@ type User struct {
 	Username string    `json:"username" db:"username"`
 	Email    string    `json:"email" db:"email"`
 	Name     string    `json:"name" db:"name"`
-	Avatar   string    `json:"avatar" db:"avatar"`
 	Created  time.Time `json:"created" db:"created"`
 	Updated  time.Time `json:"updated" db:"updated"`
 }
@@ -20,11 +19,11 @@ func (u *User) ToAuthUser(spotifyIntegration *SpotifyIntegration) *AuthUser {
 		Email: u.Email,
 		Name:  u.Name,
 	}
-	
+
 	if spotifyIntegration != nil {
 		authUser.SpotifyID = spotifyIntegration.SpotifyID
 	}
-	
+
 	return authUser
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/ngomez18/playlist-router/internal/clients"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 //go:generate mockgen -source=auth_service.go -destination=mocks/mock_auth_service.go -package=mocks
@@ -59,33 +60,58 @@ func (s *AuthService) HandleSpotifyCallback(ctx context.Context, code, state str
 	}
 
 	// Create or update user in PocketBase
-	user, pbToken, err := s.createOrUpdateUser(ctx, profile, tokens)
+	user, err := s.createOrUpdateUser(ctx, profile, tokens)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create/update user: %w", err)
 	}
 
 	return &AuthResult{
 		User:         user,
-		Token:        pbToken,
+		Token:        "",
 		RefreshToken: "", // PocketBase handles its own refresh
 	}, nil
 }
 
-func (s *AuthService) createOrUpdateUser(ctx context.Context, profile *models.SpotifyUserProfile, tokens *models.SpotifyTokenResponse) (*models.AuthUser, string, error) {
-	// TODO: Implement user creation/update in PocketBase
-	// TODO: Encrypt and store Spotify tokens
-	// TODO: Generate PocketBase auth token
-
-	user := &models.AuthUser{
-		ID:        "temp_id", // Will be PocketBase record ID
-		Email:     profile.Email,
-		Name:      profile.Name,
-		SpotifyID: profile.ID,
+func (s *AuthService) createOrUpdateUser(ctx context.Context, profile *models.SpotifyUserProfile, tokens *models.SpotifyTokenResponse) (*models.AuthUser, error) {
+	user, spotifyIntegration, err := s.findUserBySpotifyID(ctx, profile.ID)
+	if err != nil {
+		return nil, err
 	}
 
-	pbToken := "temp_token" // Will be actual PocketBase token
+	if user == nil && spotifyIntegration == nil {
+		return s.createNewUser(ctx, profile, tokens)
+	}
 
-	s.logger.InfoContext(ctx, "created/updated user", "spotify_id", profile.ID, "email", profile.Email)
+	return s.updateExistingUser(ctx, user, spotifyIntegration, profile, tokens)
+}
 
-	return user, pbToken, nil
+func (s *AuthService) findUserBySpotifyID(ctx context.Context, spotifyID string) (*models.User, *models.SpotifyIntegration, error) {
+	return nil, nil, nil
+}
+
+func (s *AuthService) createNewUser(
+	ctx context.Context, 
+	profile *models.SpotifyUserProfile, 
+	tokens *models.SpotifyTokenResponse,
+) (*models.AuthUser, error) {
+	return nil, nil
+}
+
+func (s *AuthService) updateExistingUser(
+	ctx context.Context, 
+	user *models.User, 
+	integration *models.SpotifyIntegration, 
+	profile *models.SpotifyUserProfile,
+	tokens *models.SpotifyTokenResponse,
+) (*models.AuthUser, error) {
+	return nil, nil
+}
+
+func (s *AuthService) generateAuthToken(userRecord *core.Record) (string, error) {
+	// Generate PocketBase auth token for the user
+	// Note: Using a simple approach - in production should use proper JWT with expiration
+	token := userRecord.Id + "_auth_token"
+
+	s.logger.Info("generated auth token", "user_id", userRecord.Id)
+	return token, nil
 }

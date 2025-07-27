@@ -22,7 +22,7 @@ import (
 
 func TestNewSpotifyClient(t *testing.T) {
 	assert := require.New(t)
-	
+
 	cfg := &config.AuthConfig{
 		SpotifyClientID:     "test_client_id",
 		SpotifyClientSecret: "test_client_secret",
@@ -40,7 +40,7 @@ func TestNewSpotifyClient(t *testing.T) {
 
 func TestSpotifyClient_GenerateAuthURL(t *testing.T) {
 	assert := require.New(t)
-	
+
 	clientID := "test_client_id"
 	redirectURI := "http://localhost:8080/callback"
 	cfg := &config.AuthConfig{
@@ -113,7 +113,7 @@ func TestSpotifyClient_ExchangeCodeForTokens(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
-			
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
@@ -234,7 +234,7 @@ func TestSpotifyClient_GetUserProfile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
-			
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 

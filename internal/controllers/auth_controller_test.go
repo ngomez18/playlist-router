@@ -32,7 +32,7 @@ func TestAuthController_SpotifyLogin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
-			
+
 			// Setup
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -119,7 +119,7 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
-			
+
 			// Setup
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
@@ -219,7 +219,7 @@ func TestAuthController_SpotifyCallback_JSONEncodingError(t *testing.T) {
 
 func TestGenerateState(t *testing.T) {
 	assert := require.New(t)
-	
+
 	// Test that generateState returns a non-empty hex string
 	state1 := generateState()
 	state2 := generateState()
@@ -245,7 +245,7 @@ func TestGenerateState(t *testing.T) {
 
 func TestNewAuthController(t *testing.T) {
 	assert := require.New(t)
-	
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -280,7 +280,7 @@ func (f *failingResponseWriter) WriteHeader(statusCode int) {
 // Test that the controller properly handles context in requests
 func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
 	assert := require.New(t)
-	
+
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 

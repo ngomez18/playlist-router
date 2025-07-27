@@ -79,11 +79,11 @@ func createSpotifyIntegrationsCollection(app *pocketbase.PocketBase) error {
 
 	// Foreign key to users collection (PocketBase relation field)
 	collection.Fields.Add(&core.RelationField{
-		Name:           "user",
-		Required:       true,
-		MaxSelect:      1,
-		CollectionId:   "_pb_users_auth_",
-		CascadeDelete:  true,
+		Name:          "user",
+		Required:      true,
+		MaxSelect:     1,
+		CollectionId:  "_pb_users_auth_",
+		CascadeDelete: true,
 	})
 
 	// Spotify user ID (unique identifier from Spotify)

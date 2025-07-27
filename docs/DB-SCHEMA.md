@@ -35,7 +35,6 @@ interface User {
   emailVisibility: boolean; // PocketBase built-in
   verified: boolean;       // Email verification status
   username?: string;       // Optional, unique if provided
-  avatar?: string;         // File upload, optional
   created: Date;           // Auto-generated
   updated: Date;           // Auto-updated
 }
