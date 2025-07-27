@@ -48,7 +48,6 @@ func (uRepo *UserRepositoryPocketbase) Create(ctx context.Context, user *models.
 	return createdUser, nil
 }
 
-
 func (uRepo *UserRepositoryPocketbase) Update(ctx context.Context, user *models.User) (*models.User, error) {
 	userRecord, err := uRepo.app.FindRecordById(string(uRepo.collection), user.ID)
 	if err != nil {
@@ -70,8 +69,6 @@ func (uRepo *UserRepositoryPocketbase) Update(ctx context.Context, user *models.
 
 	return createdUser, nil
 }
-
-
 
 func (uRepo *UserRepositoryPocketbase) GetByID(ctx context.Context, userID string) (*models.User, error) {
 	record, err := uRepo.app.FindRecordById(string(uRepo.collection), userID)
@@ -111,7 +108,7 @@ func recordToUser(record *core.Record) *models.User {
 	if username == "" {
 		username = record.GetString("email") // Fallback to email if username is empty
 	}
-	
+
 	return &models.User{
 		ID:       record.Id,
 		Created:  record.GetDateTime("created").Time(),

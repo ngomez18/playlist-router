@@ -24,16 +24,16 @@ type AppDependencies struct {
 }
 
 type Repositories struct {
-	basePlaylistRepository         repositories.BasePlaylistRepository
-	userRepository                repositories.UserRepository
-	spotifyIntegrationRepository  repositories.SpotifyIntegrationRepository
+	basePlaylistRepository       repositories.BasePlaylistRepository
+	userRepository               repositories.UserRepository
+	spotifyIntegrationRepository repositories.SpotifyIntegrationRepository
 }
 
 type Services struct {
-	basePlaylistService         services.BasePlaylistServicer
-	userService                services.UserServicer
-	spotifyIntegrationService  services.SpotifyIntegrationServicer
-	authService                services.AuthServicer
+	basePlaylistService       services.BasePlaylistServicer
+	userService               services.UserServicer
+	spotifyIntegrationService services.SpotifyIntegrationServicer
+	authService               services.AuthServicer
 }
 
 type Controllers struct {
@@ -77,7 +77,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	spotifyClient := clients.NewSpotifyClient(&cfg.Auth, logger)
 
 	repositories := Repositories{
-		basePlaylistRepository:        pb.NewBasePlaylistRepositoryPocketbase(app),
+		basePlaylistRepository:       pb.NewBasePlaylistRepositoryPocketbase(app),
 		userRepository:               pb.NewUserRepositoryPocketbase(app),
 		spotifyIntegrationRepository: pb.NewSpotifyIntegrationRepositoryPocketbase(app),
 	}
@@ -86,7 +86,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	spotifyIntegrationService := services.NewSpotifyIntegrationService(repositories.spotifyIntegrationRepository, logger)
 
 	serviceInstances := Services{
-		basePlaylistService:        services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
+		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
 		userService:               userService,
 		spotifyIntegrationService: spotifyIntegrationService,
 		authService:               services.NewAuthService(userService, spotifyIntegrationService, spotifyClient, logger),

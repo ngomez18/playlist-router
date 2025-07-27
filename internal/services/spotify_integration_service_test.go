@@ -34,10 +34,10 @@ func TestNewSpotifyIntegrationService(t *testing.T) {
 
 func TestSpotifyIntegrationService_CreateOrUpdateIntegration_Success(t *testing.T) {
 	tests := []struct {
-		name        string
-		userID      string
-		input       *models.SpotifyIntegration
-		expected    *models.SpotifyIntegration
+		name     string
+		userID   string
+		input    *models.SpotifyIntegration
+		expected *models.SpotifyIntegration
 	}{
 		{
 			name:   "successful creation with complete data",

@@ -58,7 +58,7 @@ func TestUserRepositoryPocketbase_Create_Error(t *testing.T) {
 
 func TestUserRepositoryPocketbase_GetByID_Success(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	app := NewTestApp(t)
 
 	repo := NewUserRepositoryPocketbase(app)
@@ -88,7 +88,7 @@ func TestUserRepositoryPocketbase_GetByID_Success(t *testing.T) {
 
 func TestUserRepositoryPocketbase_GetByID_Error(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	app := NewTestApp(t)
 
 	repo := NewUserRepositoryPocketbase(app)
@@ -104,7 +104,7 @@ func TestUserRepositoryPocketbase_GetByID_Error(t *testing.T) {
 
 func TestUserRepositoryPocketbase_Delete_Success(t *testing.T) {
 	assert := assert.New(t)
-	
+
 	app := NewTestApp(t)
 
 	repo := NewUserRepositoryPocketbase(app)
@@ -143,7 +143,6 @@ func TestUserRepositoryPocketbase_Delete_Error(t *testing.T) {
 	assert.Equal(repositories.ErrUseNotFound, err)
 }
 
-
 func TestUserRepositoryPocketbase_Update_Success(t *testing.T) {
 	assert := assert.New(t)
 	app := NewTestApp(t)
@@ -179,12 +178,11 @@ func TestUserRepositoryPocketbase_Update_Error(t *testing.T) {
 	ctx := context.Background()
 
 	// Try to update a non-existent user
-	_, err := repo.Update(ctx, &models.User{ID:"nonexistent-id"})
+	_, err := repo.Update(ctx, &models.User{ID: "nonexistent-id"})
 
 	assert.Error(err)
 	assert.Equal(repositories.ErrUseNotFound, err)
 }
-
 
 func createUserInDB(t *testing.T, app *pocketbase.PocketBase, user *models.User) (*models.User, error) {
 	t.Helper()
