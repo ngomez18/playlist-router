@@ -1,7 +1,7 @@
 # PlaylistSync Makefile
-.PHONY: build run run-dev dev clean lint fix test deps mocks help
-.PHONY: frontend-install frontend-dev frontend-build frontend-preview frontend-clean
-.PHONY: build-all run-production
+.PHONY: build build-em run run-dev dev clean lint fix test deps mocks help
+.PHONY: frontend-install frontend-dev frontend-build
+.PHONY: build-all run-prod
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo ""
 	@echo "Backend:"
 	@echo "  build      - Build the Go application"
+	@echo "  build-em 	- Build the Go application with the frontend embedded"
 	@echo "  run        - Run the application in production mode"
 	@echo "  run-dev    - Run the application in development mode"
 	@echo "  dev        - Run the application in development mode with hot reload (air)"
@@ -23,18 +24,23 @@ help:
 	@echo "  frontend-install  - Install frontend dependencies"
 	@echo "  frontend-dev      - Start frontend development server"
 	@echo "  frontend-build    - Build frontend for production"
-	@echo "  frontend-preview  - Preview production build"
-	@echo "  frontend-clean    - Clean frontend build artifacts"
 	@echo ""
 	@echo "Full Stack:"
 	@echo "  build-all     - Build both frontend and backend for production"
-	@echo "  run-production - Build everything and run in production mode" 
+	@echo "  run-prod 	   - Build everything and run in production mode" 
 	@echo "  dev-full      - Start both backend and frontend in development mode"
 	@echo "  help          - Show this help message"
 
 # Build the application
 build:
 	@echo "Building application..."
+	go build -o playlist-router ./cmd/pb
+
+# Build the application with the frontend embedded
+build-em: frontend-build
+	@echo "Building application with embedded frontend..."
+	@mkdir -p internal/static/dist
+	@cp -r web/dist/* internal/static/dist/
 	go build -o playlist-router ./cmd/pb
 
 # Run in production mode
@@ -100,22 +106,14 @@ frontend-build:
 	@echo "Building frontend for production..."
 	cd web && npm run build
 
-frontend-preview:
-	@echo "Starting frontend preview server..."
-	cd web && npm run preview
-
-frontend-clean:
-	@echo "Cleaning frontend build artifacts..."
-	cd web && rm -rf dist node_modules/.vite
-
 # Build both frontend and backend for production
-build-all: frontend-build build
+build-all: build-embed
 	@echo "Full stack build completed!"
 	@echo "Frontend built in web/dist/"
 	@echo "Backend binary: playlist-router"
 
 # Build everything and run in production mode
-run-production: build-all
+run-prod: build-all
 	@echo "Starting production server with integrated frontend..."
 	@echo "Server will be available at http://localhost:8090"
 	./playlist-router serve

@@ -1,26 +1,19 @@
 root = "."
-tmp_dir = "cmd/pb"
+tmp_dir = "tmp"
 
 [build]
-  cmd = "make build"
+  cmd = "make build-em"
   bin = "playlist-router"
   args_bin = ["serve", "--dev"]
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata", "pb_data"]
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "pb_data", "internal/static/dist", "web/dist"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
   follow_symlink = false
-  full_bin = ""
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "html"]
   include_file = []
-  kill_delay = "0s"
-  log = "build-errors.log"
-  poll = false
-  poll_interval = 0
-  post_cmd = []
-  pre_cmd = []
   rerun = false
   rerun_delay = 500
   send_interrupt = false
@@ -38,7 +31,7 @@ tmp_dir = "cmd/pb"
   time = false
 
 [misc]
-  clean_on_exit = false
+  clean_on_exit = true
 
 [screen]
   clear_on_rebuild = false

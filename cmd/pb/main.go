@@ -3,14 +3,15 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/ngomez18/playlist-router/internal/clients"
 	"github.com/ngomez18/playlist-router/internal/config"
 	"github.com/ngomez18/playlist-router/internal/controllers"
+	"github.com/ngomez18/playlist-router/internal/middleware"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/ngomez18/playlist-router/internal/repositories/pb"
 	"github.com/ngomez18/playlist-router/internal/services"
+	"github.com/ngomez18/playlist-router/internal/static"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -21,6 +22,7 @@ type AppDependencies struct {
 	repositories Repositories
 	services     Services
 	controllers  Controllers
+	middleware   Middleware
 }
 
 type Repositories struct {
@@ -39,6 +41,10 @@ type Services struct {
 type Controllers struct {
 	basePlaylistController controllers.BasePlaylistController
 	authController         controllers.AuthController
+}
+
+type Middleware struct {
+	auth *middleware.AuthMiddleware
 }
 
 func main() {
@@ -97,33 +103,43 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		authController:         *controllers.NewAuthController(serviceInstances.authService),
 	}
 
+	middleware := Middleware{
+		auth: middleware.NewAuthMiddleware(userService),
+	}
+
 	return AppDependencies{
 		config:       cfg,
 		repositories: repositories,
 		services:     serviceInstances,
 		controllers:  controllers,
+		middleware:   middleware,
 	}
 }
 
 func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
-	// Auth routes
+	// Auth routes (public - no middleware)
 	auth := e.Router.Group("/auth")
 	auth.GET("/spotify/login", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyLogin)))
 	auth.GET("/spotify/callback", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyCallback)))
 
-	// Base Playlist routes
-	basePlaylist := e.Router.Group("/api/base_playlist")
-	basePlaylist.POST("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Create)))
-	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
-	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
+	// Protected API routes (require authentication)
+	api := e.Router.Group("/api")
+	
+	// Base Playlist routes (protected)
+	basePlaylist := api.Group("/base_playlist")
+	basePlaylist.POST("", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Create))))
+	basePlaylist.GET("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID))))
+	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Delete))))
 
-	// Serve static files last (catch-all)
+	// Serve static files (must be after API routes)
 	setupStaticFileServer(e)
 }
 
 func setupStaticFileServer(e *core.ServeEvent) {
-	distPath := "web/dist"
+	fsys, err := static.GetFrontendFS()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Use PocketBase's static file serving for the entire frontend
-	e.Router.GET("/*", apis.Static(os.DirFS(distPath), true))
+	e.Router.GET("/", apis.Static(fsys, false))
 }
