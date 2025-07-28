@@ -332,12 +332,10 @@ func TestSpotifyIntegrationService_UpdateTokens_Success(t *testing.T) {
 	service := NewSpotifyIntegrationService(mockRepo, logger)
 
 	integrationID := "integration123"
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &models.SpotifyIntegrationTokenRefresh{
 		AccessToken:  "new_access_token",
 		RefreshToken: "new_refresh_token",
-		TokenType:    "Bearer",
 		ExpiresIn:    3600,
-		Scope:        "user-read-private user-read-email",
 	}
 
 	mockRepo.EXPECT().
@@ -354,14 +352,14 @@ func TestSpotifyIntegrationService_UpdateTokens_Error(t *testing.T) {
 	tests := []struct {
 		name          string
 		integrationID string
-		tokens        *models.SpotifyTokenResponse
+		tokens        *models.SpotifyIntegrationTokenRefresh
 		repoError     error
 		expectedErr   string
 	}{
 		{
 			name:          "integration not found error",
 			integrationID: "nonexistent",
-			tokens: &models.SpotifyTokenResponse{
+			tokens: &models.SpotifyIntegrationTokenRefresh{
 				AccessToken: "access_token",
 			},
 			repoError:   repositories.ErrSpotifyIntegrationNotFound,
@@ -370,7 +368,7 @@ func TestSpotifyIntegrationService_UpdateTokens_Error(t *testing.T) {
 		{
 			name:          "database operation error",
 			integrationID: "integration123",
-			tokens: &models.SpotifyTokenResponse{
+			tokens: &models.SpotifyIntegrationTokenRefresh{
 				AccessToken: "access_token",
 			},
 			repoError:   repositories.ErrDatabaseOperation,

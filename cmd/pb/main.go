@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ngomez18/playlist-router/internal/clients"
+	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
 	"github.com/ngomez18/playlist-router/internal/config"
 	"github.com/ngomez18/playlist-router/internal/controllers"
 	"github.com/ngomez18/playlist-router/internal/middleware"
@@ -80,7 +80,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	logger := app.Logger()
 	cfg := config.MustLoad()
 
-	spotifyClient := clients.NewSpotifyClient(&cfg.Auth, logger)
+	spotifyClient := spotifyclient.NewSpotifyClient(&cfg.Auth, logger)
 
 	repositories := Repositories{
 		basePlaylistRepository:       pb.NewBasePlaylistRepositoryPocketbase(app),

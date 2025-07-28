@@ -12,6 +12,6 @@ type SpotifyIntegrationRepository interface {
 	CreateOrUpdate(ctx context.Context, userID string, integration *models.SpotifyIntegration) (*models.SpotifyIntegration, error)
 	GetByUserID(ctx context.Context, userID string) (*models.SpotifyIntegration, error)
 	GetBySpotifyID(ctx context.Context, spotifyID string) (*models.SpotifyIntegration, error)
-	UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyTokenResponse) error
+	UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyIntegrationTokenRefresh) error
 	Delete(ctx context.Context, userID string) error
 }

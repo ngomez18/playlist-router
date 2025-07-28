@@ -14,7 +14,7 @@ type SpotifyIntegrationServicer interface {
 	CreateOrUpdateIntegration(ctx context.Context, userID string, integration *models.SpotifyIntegration) (*models.SpotifyIntegration, error)
 	GetIntegrationByUserID(ctx context.Context, userID string) (*models.SpotifyIntegration, error)
 	GetIntegrationBySpotifyID(ctx context.Context, spotifyID string) (*models.SpotifyIntegration, error)
-	UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyTokenResponse) error
+	UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyIntegrationTokenRefresh) error
 	DeleteIntegration(ctx context.Context, userID string) error
 }
 
@@ -69,7 +69,7 @@ func (sis *SpotifyIntegrationService) GetIntegrationBySpotifyID(ctx context.Cont
 	return integration, nil
 }
 
-func (sis *SpotifyIntegrationService) UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyTokenResponse) error {
+func (sis *SpotifyIntegrationService) UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyIntegrationTokenRefresh) error {
 	sis.logger.InfoContext(ctx, "updating spotify integration tokens", "integration_id", integrationID)
 
 	err := sis.integrationRepo.UpdateTokens(ctx, integrationID, tokens)

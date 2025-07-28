@@ -32,6 +32,10 @@ func NewBasePlaylistService(basePlaylistRepo repositories.BasePlaylistRepository
 func (bpService *BasePlaylistService) CreateBasePlaylist(ctx context.Context, userId string, input *models.CreateBasePlaylistRequest) (*models.BasePlaylist, error) {
 	bpService.logger.InfoContext(ctx, "creating base playlist", "user_id", userId, "input", input)
 
+	 // TODO: Check SpotifyPlaylistID
+	 // If empty, should create playlist in Spotify and get the ID
+	 // If not empty, should validate Spotify playlist exists and is accessible
+
 	playlist, err := bpService.basePlaylistRepo.Create(ctx, userId, input.Name, input.SpotifyPlaylistID)
 	if err != nil {
 		bpService.logger.ErrorContext(ctx, "failed to create base playlist", "error", err.Error())

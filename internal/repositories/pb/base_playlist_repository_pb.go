@@ -57,7 +57,7 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) Delete(ctx context.Context, id, 
 	record, err := bpRepo.app.FindRecordById(collection, id)
 	if err != nil {
 		bpRepo.log.ErrorContext(ctx, "unable to find base_playlist record", "id", id, "error", err)
-		return repositories.ErrBasePlaylistNotFound
+		return fmt.Errorf(`%w: %s`, repositories.ErrBasePlaylistNotFound, err.Error())
 	}
 
 	// Check ownership

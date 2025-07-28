@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/ngomez18/playlist-router/internal/clients"
+	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 )
@@ -27,14 +27,14 @@ type AuthResult struct {
 type AuthService struct {
 	userService               UserServicer
 	spotifyIntegrationService SpotifyIntegrationServicer
-	spotifyClient             clients.SpotifyAPI
+	spotifyClient             spotifyclient.SpotifyAPI
 	logger                    *slog.Logger
 }
 
 func NewAuthService(
 	userService UserServicer,
 	spotifyIntegrationService SpotifyIntegrationServicer,
-	spotifyClient clients.SpotifyAPI,
+	spotifyClient spotifyclient.SpotifyAPI,
 	logger *slog.Logger,
 ) *AuthService {
 	return &AuthService{
@@ -85,7 +85,11 @@ func (s *AuthService) HandleSpotifyCallback(ctx context.Context, code, state str
 	}, nil
 }
 
-func (s *AuthService) createOrUpdateUser(ctx context.Context, profile *models.SpotifyUserProfile, tokens *models.SpotifyTokenResponse) (*models.AuthUser, error) {
+func (s *AuthService) createOrUpdateUser(
+	ctx context.Context,
+	profile *spotifyclient.SpotifyUserProfile,
+	tokens *spotifyclient.SpotifyTokenResponse,
+) (*models.AuthUser, error) {
 	user, err := s.findUserBySpotifyID(ctx, profile.ID)
 	if err != nil {
 		return nil, err
@@ -126,8 +130,8 @@ func (s *AuthService) findUserBySpotifyID(ctx context.Context, spotifyID string)
 
 func (s *AuthService) createNewUser(
 	ctx context.Context,
-	profile *models.SpotifyUserProfile,
-	tokens *models.SpotifyTokenResponse,
+	profile *spotifyclient.SpotifyUserProfile,
+	tokens *spotifyclient.SpotifyTokenResponse,
 ) (*models.AuthUser, error) {
 	s.logger.InfoContext(ctx, "creating new user from spotify profile", "spotify_id", profile.ID, "email", profile.Email)
 
@@ -174,8 +178,8 @@ func (s *AuthService) createNewUser(
 func (s *AuthService) updateExistingUser(
 	ctx context.Context,
 	user *models.User,
-	profile *models.SpotifyUserProfile,
-	tokens *models.SpotifyTokenResponse,
+	profile *spotifyclient.SpotifyUserProfile,
+	tokens *spotifyclient.SpotifyTokenResponse,
 ) (*models.AuthUser, error) {
 	s.logger.InfoContext(ctx, "updating existing user from spotify profile", "user_id", user.ID, "spotify_id", profile.ID, "email", profile.Email)
 

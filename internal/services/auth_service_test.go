@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	clientMocks "github.com/ngomez18/playlist-router/internal/clients/mocks"
+	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
+	spotifyMocks "github.com/ngomez18/playlist-router/internal/clients/spotify/mocks"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	repoMocks "github.com/ngomez18/playlist-router/internal/repositories/mocks"
@@ -27,7 +28,7 @@ func TestNewAuthService(t *testing.T) {
 	// Create real services with mock repositories for testing
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -53,7 +54,7 @@ func TestAuthService_GenerateSpotifyAuthURL(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -83,7 +84,7 @@ func TestAuthService_FindUserBySpotifyID_Success(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -135,7 +136,7 @@ func TestAuthService_FindUserBySpotifyID_IntegrationNotFound(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -165,7 +166,7 @@ func TestAuthService_FindUserBySpotifyID_IntegrationError(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -196,7 +197,7 @@ func TestAuthService_FindUserBySpotifyID_UserError(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -237,7 +238,7 @@ func TestAuthService_CreateNewUser_Success(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -245,12 +246,12 @@ func TestAuthService_CreateNewUser_Success(t *testing.T) {
 	authService := NewAuthService(userService, spotifyIntegrationService, mockSpotifyClient, logger)
 
 	// Test data
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "test@example.com",
 		Name:  "Test User",
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken:  "access_token_123",
 		RefreshToken: "refresh_token_123",
 		TokenType:    "Bearer",
@@ -327,19 +328,19 @@ func TestAuthService_CreateNewUser_UserCreationError(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
 	authService := NewAuthService(userService, spotifyIntegrationService, mockSpotifyClient, logger)
 
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "test@example.com",
 		Name:  "Test User",
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken: "access_token_123",
 		ExpiresIn:   3600,
 	}
@@ -366,19 +367,19 @@ func TestAuthService_CreateNewUser_IntegrationCreationError(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
 	authService := NewAuthService(userService, spotifyIntegrationService, mockSpotifyClient, logger)
 
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "test@example.com",
 		Name:  "Test User",
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken:  "access_token_123",
 		RefreshToken: "refresh_token_123",
 		TokenType:    "Bearer",
@@ -419,7 +420,7 @@ func TestAuthService_UpdateExistingUser_Success_NoUserChanges(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -432,12 +433,12 @@ func TestAuthService_UpdateExistingUser_Success_NoUserChanges(t *testing.T) {
 		Email: "test@example.com",
 		Name:  "Test User",
 	}
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "test@example.com", // Same as existing
 		Name:  "Test User",        // Same as existing
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken:  "new_access_token",
 		RefreshToken: "new_refresh_token",
 		TokenType:    "Bearer",
@@ -496,7 +497,7 @@ func TestAuthService_UpdateExistingUser_Success_WithUserChanges(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -509,12 +510,12 @@ func TestAuthService_UpdateExistingUser_Success_WithUserChanges(t *testing.T) {
 		Email: "old@example.com",
 		Name:  "Old Name",
 	}
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "new@example.com", // Changed
 		Name:  "New Name",        // Changed
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken:  "new_access_token",
 		RefreshToken: "new_refresh_token",
 		TokenType:    "Bearer",
@@ -580,7 +581,7 @@ func TestAuthService_UpdateExistingUser_UserUpdateError(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -592,12 +593,12 @@ func TestAuthService_UpdateExistingUser_UserUpdateError(t *testing.T) {
 		Email: "old@example.com",
 		Name:  "Old Name",
 	}
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "new@example.com", // Changed
 		Name:  "New Name",        // Changed
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken: "new_access_token",
 		ExpiresIn:   3600,
 	}
@@ -624,7 +625,7 @@ func TestAuthService_UpdateExistingUser_IntegrationUpdateError(t *testing.T) {
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-	mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	userService := NewUserService(mockUserRepo, logger)
@@ -636,12 +637,12 @@ func TestAuthService_UpdateExistingUser_IntegrationUpdateError(t *testing.T) {
 		Email: "test@example.com",
 		Name:  "Test User",
 	}
-	profile := &models.SpotifyUserProfile{
+	profile := &spotifyclient.SpotifyUserProfile{
 		ID:    "spotify_user_123",
 		Email: "test@example.com", // No change
 		Name:  "Test User",        // No change
 	}
-	tokens := &models.SpotifyTokenResponse{
+	tokens := &spotifyclient.SpotifyTokenResponse{
 		AccessToken:  "new_access_token",
 		RefreshToken: "new_refresh_token",
 		TokenType:    "Bearer",
@@ -670,14 +671,14 @@ func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
 	tests := []struct {
 		name        string
 		description string
-		setupMocks  func(*repoMocks.MockUserRepository, *repoMocks.MockSpotifyIntegrationRepository, *clientMocks.MockSpotifyAPI)
+		setupMocks  func(*repoMocks.MockUserRepository, *repoMocks.MockSpotifyIntegrationRepository, *spotifyMocks.MockSpotifyAPI)
 		expectUser  func(*models.AuthUser)
 	}{
 		{
 			name:        "new_user_creation",
 			description: "Successfully handles callback for new user",
-			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
-				tokens := &models.SpotifyTokenResponse{
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *spotifyMocks.MockSpotifyAPI) {
+				tokens := &spotifyclient.SpotifyTokenResponse{
 					AccessToken:  "access_token_123",
 					RefreshToken: "refresh_token_123",
 					TokenType:    "Bearer",
@@ -685,7 +686,7 @@ func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
 					Scope:        "user-read-private user-read-email",
 				}
 
-				profile := &models.SpotifyUserProfile{
+				profile := &spotifyclient.SpotifyUserProfile{
 					ID:    "spotify_user_123",
 					Email: "test@example.com",
 					Name:  "Test User",
@@ -754,8 +755,8 @@ func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
 		{
 			name:        "existing_user_update",
 			description: "Successfully handles callback for existing user with profile changes",
-			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
-				tokens := &models.SpotifyTokenResponse{
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *spotifyMocks.MockSpotifyAPI) {
+				tokens := &spotifyclient.SpotifyTokenResponse{
 					AccessToken:  "new_access_token_123",
 					RefreshToken: "new_refresh_token_123",
 					TokenType:    "Bearer",
@@ -763,7 +764,7 @@ func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
 					Scope:        "user-read-private user-read-email",
 				}
 
-				profile := &models.SpotifyUserProfile{
+				profile := &spotifyclient.SpotifyUserProfile{
 					ID:    "spotify_user_123",
 					Email: "updated@example.com", // Email changed
 					Name:  "Updated User",        // Name changed
@@ -857,7 +858,7 @@ func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
 
 			mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 			mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-			mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 			userService := NewUserService(mockUserRepo, logger)
@@ -885,14 +886,14 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 		name          string
 		description   string
 		authCode      string
-		setupMocks    func(*repoMocks.MockUserRepository, *repoMocks.MockSpotifyIntegrationRepository, *clientMocks.MockSpotifyAPI)
+		setupMocks    func(*repoMocks.MockUserRepository, *repoMocks.MockSpotifyIntegrationRepository, *spotifyMocks.MockSpotifyAPI)
 		expectedError string
 	}{
 		{
 			name:        "token_exchange_error",
 			description: "Fails when Spotify token exchange fails",
 			authCode:    "invalid_auth_code",
-			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *spotifyMocks.MockSpotifyAPI) {
 				mockSpotifyClient.EXPECT().
 					ExchangeCodeForTokens(gomock.Any(), "invalid_auth_code").
 					Return(nil, errors.New("token exchange failed")).
@@ -904,8 +905,8 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 			name:        "profile_fetch_error",
 			description: "Fails when Spotify profile fetch fails",
 			authCode:    "auth_code_123",
-			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
-				tokens := &models.SpotifyTokenResponse{
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *spotifyMocks.MockSpotifyAPI) {
+				tokens := &spotifyclient.SpotifyTokenResponse{
 					AccessToken:  "access_token_123",
 					RefreshToken: "refresh_token_123",
 					TokenType:    "Bearer",
@@ -929,8 +930,8 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 			name:        "user_creation_error",
 			description: "Fails when user creation fails",
 			authCode:    "auth_code_123",
-			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
-				tokens := &models.SpotifyTokenResponse{
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *spotifyMocks.MockSpotifyAPI) {
+				tokens := &spotifyclient.SpotifyTokenResponse{
 					AccessToken:  "access_token_123",
 					RefreshToken: "refresh_token_123",
 					TokenType:    "Bearer",
@@ -938,7 +939,7 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 					Scope:        "user-read-private user-read-email",
 				}
 
-				profile := &models.SpotifyUserProfile{
+				profile := &spotifyclient.SpotifyUserProfile{
 					ID:    "spotify_user_123",
 					Email: "test@example.com",
 					Name:  "Test User",
@@ -970,8 +971,8 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 			name:        "auth_token_generation_error",
 			description: "Fails when auth token generation fails",
 			authCode:    "auth_code_123",
-			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *clientMocks.MockSpotifyAPI) {
-				tokens := &models.SpotifyTokenResponse{
+			setupMocks: func(mockUserRepo *repoMocks.MockUserRepository, mockSpotifyIntegrationRepo *repoMocks.MockSpotifyIntegrationRepository, mockSpotifyClient *spotifyMocks.MockSpotifyAPI) {
+				tokens := &spotifyclient.SpotifyTokenResponse{
 					AccessToken:  "access_token_123",
 					RefreshToken: "refresh_token_123",
 					TokenType:    "Bearer",
@@ -979,7 +980,7 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 					Scope:        "user-read-private user-read-email",
 				}
 
-				profile := &models.SpotifyUserProfile{
+				profile := &spotifyclient.SpotifyUserProfile{
 					ID:    "spotify_user_123",
 					Email: "test@example.com",
 					Name:  "Test User",
@@ -1049,7 +1050,7 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 
 			mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 			mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
-			mockSpotifyClient := clientMocks.NewMockSpotifyAPI(ctrl)
+			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 			userService := NewUserService(mockUserRepo, logger)

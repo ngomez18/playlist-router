@@ -20,7 +20,8 @@
       "Bash(go list:*)",
       "WebFetch(domain:pocketbase.io)",
       "Bash(cp:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

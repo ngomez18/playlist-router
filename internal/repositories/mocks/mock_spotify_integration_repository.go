@@ -95,7 +95,7 @@ func (mr *MockSpotifyIntegrationRepositoryMockRecorder) GetByUserID(ctx, userID 
 }
 
 // UpdateTokens mocks base method.
-func (m *MockSpotifyIntegrationRepository) UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyTokenResponse) error {
+func (m *MockSpotifyIntegrationRepository) UpdateTokens(ctx context.Context, integrationID string, tokens *models.SpotifyIntegrationTokenRefresh) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateTokens", ctx, integrationID, tokens)
 	ret0, _ := ret[0].(error)

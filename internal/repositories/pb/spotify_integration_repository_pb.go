@@ -108,7 +108,11 @@ func (siRepo *SpotifyIntegrationRepositoryPocketbase) GetBySpotifyID(ctx context
 	return recordToSpotifyIntegration(record), nil
 }
 
-func (siRepo *SpotifyIntegrationRepositoryPocketbase) UpdateTokens(ctx context.Context, integrationId string, tokens *models.SpotifyTokenResponse) error {
+func (siRepo *SpotifyIntegrationRepositoryPocketbase) UpdateTokens(
+	ctx context.Context,
+	integrationId string,
+	tokens *models.SpotifyIntegrationTokenRefresh,
+) error {
 	collection, err := siRepo.getCollection(ctx)
 	if err != nil {
 		return err
@@ -121,9 +125,7 @@ func (siRepo *SpotifyIntegrationRepositoryPocketbase) UpdateTokens(ctx context.C
 	}
 
 	record.Set("access_token", tokens.AccessToken)
-	record.Set("token_type", tokens.TokenType)
-	record.Set("scope", tokens.Scope)
-
+	
 	if tokens.RefreshToken != "" {
 		record.Set("refresh_token", tokens.RefreshToken)
 	}

@@ -270,10 +270,8 @@ func TestSpotifyIntegrationRepositoryPocketbase_UpdateTokens_Success(t *testing.
 	assert.NoError(err)
 
 	// Prepare new tokens
-	newTokens := &models.SpotifyTokenResponse{
+	newTokens := &models.SpotifyIntegrationTokenRefresh{
 		AccessToken:  "new_access_token",
-		TokenType:    "Bearer",
-		Scope:        "user-read-email playlist-modify-private",
 		ExpiresIn:    7200, // 2 hours
 		RefreshToken: "new_refresh_token",
 	}
@@ -289,8 +287,9 @@ func TestSpotifyIntegrationRepositoryPocketbase_UpdateTokens_Success(t *testing.
 	assert.NoError(err)
 	assert.Equal("new_access_token", updatedIntegration.AccessToken)
 	assert.Equal("new_refresh_token", updatedIntegration.RefreshToken)
+	// TokenType and Scope should remain unchanged
 	assert.Equal("Bearer", updatedIntegration.TokenType)
-	assert.Equal("user-read-email playlist-modify-private", updatedIntegration.Scope)
+	assert.Equal("user-read-email", updatedIntegration.Scope)
 
 	// Verify expiration time was updated (should be ~2 hours from now)
 	expectedExpiration := time.Now().Add(2 * time.Hour)
@@ -325,10 +324,8 @@ func TestSpotifyIntegrationRepositoryPocketbase_UpdateTokens_WithoutRefreshToken
 	assert.NoError(err)
 
 	// Prepare new tokens without refresh token
-	newTokens := &models.SpotifyTokenResponse{
+	newTokens := &models.SpotifyIntegrationTokenRefresh{
 		AccessToken: "new_access_token",
-		TokenType:   "Bearer",
-		Scope:       "user-read-email playlist-modify-private",
 		ExpiresIn:   3600,
 		// RefreshToken is empty - should preserve existing one
 	}
@@ -344,8 +341,9 @@ func TestSpotifyIntegrationRepositoryPocketbase_UpdateTokens_WithoutRefreshToken
 	assert.NoError(err)
 	assert.Equal("new_access_token", updatedIntegration.AccessToken)
 	assert.Equal(originalRefreshToken, updatedIntegration.RefreshToken) // Should be preserved
+	// TokenType and Scope should remain unchanged
 	assert.Equal("Bearer", updatedIntegration.TokenType)
-	assert.Equal("user-read-email playlist-modify-private", updatedIntegration.Scope)
+	assert.Equal("user-read-email", updatedIntegration.Scope)
 }
 
 func TestSpotifyIntegrationRepositoryPocketbase_UpdateTokens_NotFound(t *testing.T) {
@@ -356,9 +354,8 @@ func TestSpotifyIntegrationRepositoryPocketbase_UpdateTokens_NotFound(t *testing
 	SetupSpotifyIntegrationsCollection(t, app)
 	repo := NewSpotifyIntegrationRepositoryPocketbase(app)
 
-	newTokens := &models.SpotifyTokenResponse{
+	newTokens := &models.SpotifyIntegrationTokenRefresh{
 		AccessToken: "new_access_token",
-		TokenType:   "Bearer",
 		ExpiresIn:   3600,
 	}
 
