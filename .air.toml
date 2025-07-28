@@ -2,7 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "make build-em"
+  cmd = "make build"
   bin = "playlist-router"
   args_bin = ["serve", "--dev"]
   delay = 1000

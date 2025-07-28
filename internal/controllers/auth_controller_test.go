@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -10,11 +9,20 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/ngomez18/playlist-router/internal/config"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
 	"github.com/stretchr/testify/require"
 )
+
+func createTestConfig() *config.Config {
+	return &config.Config{
+		Auth: config.AuthConfig{
+			FrontendURL: "http://localhost:3000",
+		},
+	}
+}
 
 func TestAuthController_SpotifyLogin(t *testing.T) {
 	tests := []struct {
@@ -38,7 +46,8 @@ func TestAuthController_SpotifyLogin(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockAuthService := mocks.NewMockAuthServicer(ctrl)
-			controller := NewAuthController(mockAuthService)
+			cfg := createTestConfig()
+			controller := NewAuthController(mockAuthService, cfg)
 
 			// Setup mock expectations - we can't predict the exact state, so use Any()
 			mockAuthService.EXPECT().
@@ -70,8 +79,8 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 		mockAuthResult       *services.AuthResult
 		mockError            error
 		expectedStatusCode   int
-		expectedResponseBody interface{}
-		expectJSONResponse   bool
+		expectedRedirectURL  string
+		expectRedirect       bool
 	}{
 		{
 			name: "successful callback",
@@ -89,9 +98,10 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 				Token:        "pb_token_123",
 				RefreshToken: "",
 			},
-			mockError:          nil,
-			expectedStatusCode: http.StatusOK,
-			expectJSONResponse: true,
+			mockError:           nil,
+			expectedStatusCode:  http.StatusTemporaryRedirect,
+			expectedRedirectURL: "http://localhost:3000/?token=pb_token_123",
+			expectRedirect:      true,
 		},
 		{
 			name: "missing authorization code",
@@ -101,7 +111,7 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 			mockAuthResult:     nil,
 			mockError:          nil,
 			expectedStatusCode: http.StatusBadRequest,
-			expectJSONResponse: false,
+			expectRedirect:     false,
 		},
 		{
 			name: "auth service error",
@@ -112,7 +122,7 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 			mockAuthResult:     nil,
 			mockError:          errors.New("spotify API error"),
 			expectedStatusCode: http.StatusInternalServerError,
-			expectJSONResponse: false,
+			expectRedirect:     false,
 		},
 	}
 
@@ -125,7 +135,8 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockAuthService := mocks.NewMockAuthServicer(ctrl)
-			controller := NewAuthController(mockAuthService)
+			cfg := createTestConfig()
+			controller := NewAuthController(mockAuthService, cfg)
 
 			// Setup mock expectations (only if we have a code parameter)
 			if code := tt.queryParams["code"]; code != "" {
@@ -153,32 +164,23 @@ func TestAuthController_SpotifyCallback(t *testing.T) {
 			// Assert
 			assert.Equal(tt.expectedStatusCode, w.Code)
 
-			if tt.expectJSONResponse {
-				// Check content type
-				assert.Equal("application/json", w.Header().Get("Content-Type"))
-
-				// Parse and validate JSON response
-				var response services.AuthResult
-				err := json.NewDecoder(w.Body).Decode(&response)
-				assert.NoError(err)
-
-				assert.Equal(tt.mockAuthResult.User.ID, response.User.ID)
-				assert.Equal(tt.mockAuthResult.User.Email, response.User.Email)
-				assert.Equal(tt.mockAuthResult.User.Name, response.User.Name)
-				assert.Equal(tt.mockAuthResult.User.SpotifyID, response.User.SpotifyID)
-				assert.Equal(tt.mockAuthResult.Token, response.Token)
-				assert.Equal(tt.mockAuthResult.RefreshToken, response.RefreshToken)
+			if tt.expectRedirect {
+				// Check redirect location
+				location := w.Header().Get("Location")
+				assert.Equal(tt.expectedRedirectURL, location)
 			}
 		})
 	}
 }
 
-func TestAuthController_SpotifyCallback_JSONEncodingError(t *testing.T) {
+func TestAuthController_SpotifyCallback_RedirectWithToken(t *testing.T) {
+	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockAuthService := mocks.NewMockAuthServicer(ctrl)
-	controller := NewAuthController(mockAuthService)
+	cfg := createTestConfig()
+	controller := NewAuthController(mockAuthService, cfg)
 
 	// Create a mock auth result
 	mockAuthResult := &services.AuthResult{
@@ -200,21 +202,15 @@ func TestAuthController_SpotifyCallback_JSONEncodingError(t *testing.T) {
 
 	// Create request
 	req := httptest.NewRequest("GET", "/auth/spotify/callback?code=auth_code_123&state=state_123", nil)
-
-	// Use a custom ResponseWriter that will cause JSON encoding to fail
-	w := &failingResponseWriter{
-		ResponseRecorder: httptest.NewRecorder(),
-		failOnWrite:      true,
-	}
+	w := httptest.NewRecorder()
 
 	// Execute
 	controller.SpotifyCallback(w, req)
 
-	// The response should indicate encoding failure
-	// Note: In the current implementation, the error handling for JSON encoding
-	// calls http.Error which would panic on a failing writer, so we'll just
-	// verify our mock was called correctly
-	// The gomock controller automatically verifies expectations on defer ctrl.Finish()
+	// Assert redirect
+	assert.Equal(http.StatusTemporaryRedirect, w.Code)
+	expectedURL := "http://localhost:3000/?token=pb_token_123"
+	assert.Equal(expectedURL, w.Header().Get("Location"))
 }
 
 func TestGenerateState(t *testing.T) {
@@ -250,32 +246,14 @@ func TestNewAuthController(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockAuthService := mocks.NewMockAuthServicer(ctrl)
-	controller := NewAuthController(mockAuthService)
+	cfg := createTestConfig()
+	controller := NewAuthController(mockAuthService, cfg)
 
 	assert.NotNil(controller)
 	assert.Equal(mockAuthService, controller.authService)
+	assert.Equal(cfg, controller.config)
 }
 
-// Custom ResponseWriter that can simulate write failures for testing
-type failingResponseWriter struct {
-	*httptest.ResponseRecorder
-	failOnWrite bool
-}
-
-func (f *failingResponseWriter) Write(b []byte) (int, error) {
-	if f.failOnWrite {
-		return 0, errors.New("simulated write failure")
-	}
-	return f.ResponseRecorder.Write(b)
-}
-
-func (f *failingResponseWriter) Header() http.Header {
-	return f.ResponseRecorder.Header()
-}
-
-func (f *failingResponseWriter) WriteHeader(statusCode int) {
-	f.ResponseRecorder.WriteHeader(statusCode)
-}
 
 // Test that the controller properly handles context in requests
 func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
@@ -285,7 +263,8 @@ func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockAuthService := mocks.NewMockAuthServicer(ctrl)
-	controller := NewAuthController(mockAuthService)
+	cfg := createTestConfig()
+	controller := NewAuthController(mockAuthService, cfg)
 
 	// Create a request with a custom context value
 	type ctxKey string
@@ -319,6 +298,8 @@ func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
 	// Execute
 	controller.SpotifyCallback(w, req)
 
-	// Assert
-	assert.Equal(http.StatusOK, w.Code)
+	// Assert redirect
+	assert.Equal(http.StatusTemporaryRedirect, w.Code)
+	expectedURL := "http://localhost:3000/?token=pb_token_123"
+	assert.Equal(expectedURL, w.Header().Get("Location"))
 }

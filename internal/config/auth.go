@@ -5,6 +5,7 @@ type AuthConfig struct {
 	SpotifyClientSecret string `env:"SPOTIFY_CLIENT_SECRET"`
 	SpotifyRedirectURI  string `env:"SPOTIFY_REDIRECT_URI"`
 	EncryptionKey       string `env:"ENCRYPTION_KEY"`
+	FrontendURL         string `env:"FRONTEND_URL" envDefault:"http://localhost:5173"`
 }
 
 func (c *AuthConfig) Validate() error {

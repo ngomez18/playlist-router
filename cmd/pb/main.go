@@ -100,7 +100,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 
 	controllers := Controllers{
 		basePlaylistController: *controllers.NewBasePlaylistController(serviceInstances.basePlaylistService),
-		authController:         *controllers.NewAuthController(serviceInstances.authService),
+		authController:         *controllers.NewAuthController(serviceInstances.authService, cfg),
 	}
 
 	middleware := Middleware{
@@ -124,6 +124,10 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 
 	// Protected API routes (require authentication)
 	api := e.Router.Group("/api")
+	
+	// Auth validation endpoint (protected - uses middleware for validation)
+	apiAuth := api.Group("/auth")
+	apiAuth.GET("/validate", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.authController.ValidateToken))))
 	
 	// Base Playlist routes (protected)
 	basePlaylist := api.Group("/base_playlist")
