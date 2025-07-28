@@ -121,17 +121,15 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	auth := e.Router.Group("/auth")
 	auth.GET("/spotify/login", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyLogin)))
 	auth.GET("/spotify/callback", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyCallback)))
+	auth.GET("/validate", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.authController.ValidateToken))))
 
 	// Protected API routes (require authentication)
 	api := e.Router.Group("/api")
 	
-	// Auth validation endpoint (protected - uses middleware for validation)
-	apiAuth := api.Group("/auth")
-	apiAuth.GET("/validate", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.authController.ValidateToken))))
-	
 	// Base Playlist routes (protected)
 	basePlaylist := api.Group("/base_playlist")
 	basePlaylist.POST("", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Create))))
+	basePlaylist.GET("", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID))))
 	basePlaylist.GET("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID))))
 	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Delete))))
 

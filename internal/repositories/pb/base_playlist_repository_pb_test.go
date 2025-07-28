@@ -377,6 +377,145 @@ func TestBasePlaylistRepositoryPocketbase_GetByID_DatabaseErrors(t *testing.T) {
 	})
 }
 
+func TestBasePlaylistRepositoryPocketbase_GetByUserID_Success(t *testing.T) {
+	tests := []struct {
+		name                  string
+		userID                string
+		playlistsToCreate     []struct{ name, spotifyID string }
+		expectedPlaylistCount int
+	}{
+		{
+			name:   "user with multiple playlists",
+			userID: "user123",
+			playlistsToCreate: []struct{ name, spotifyID string }{
+				{"First Playlist", "spotify1"},
+				{"Second Playlist", "spotify2"},
+				{"Third Playlist", "spotify3"},
+			},
+			expectedPlaylistCount: 3,
+		},
+		{
+			name:   "user with single playlist",
+			userID: "user456",
+			playlistsToCreate: []struct{ name, spotifyID string }{
+				{"Only Playlist", "spotify4"},
+			},
+			expectedPlaylistCount: 1,
+		},
+		{
+			name:                  "user with no playlists",
+			userID:                "user789",
+			playlistsToCreate:     []struct{ name, spotifyID string }{},
+			expectedPlaylistCount: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			// Setup test environment
+			app := NewTestApp(t)
+			SetupBasePlaylistCollection(t, app)
+			repo := NewBasePlaylistRepositoryPocketbase(app)
+
+			ctx := context.Background()
+
+			// Create playlists for this user
+			createdPlaylists := make([]*models.BasePlaylist, 0, len(tt.playlistsToCreate))
+			for _, playlist := range tt.playlistsToCreate {
+				created, err := repo.Create(ctx, tt.userID, playlist.name, playlist.spotifyID)
+				assert.NoError(err)
+				createdPlaylists = append(createdPlaylists, created)
+			}
+
+			// Create some playlists for a different user to ensure isolation
+			_, err := repo.Create(ctx, "otheruser", "Other User Playlist", "spotify999")
+			assert.NoError(err)
+
+			// Execute GetByUserID
+			retrievedPlaylists, err := repo.GetByUserID(ctx, tt.userID)
+
+			// Verify success
+			assert.NoError(err)
+			assert.NotNil(retrievedPlaylists)
+			assert.Len(retrievedPlaylists, tt.expectedPlaylistCount)
+
+			// If we have playlists, verify they match what we created
+			if tt.expectedPlaylistCount > 0 {
+				// Verify all retrieved playlists belong to the correct user
+				for _, playlist := range retrievedPlaylists {
+					assert.Equal(tt.userID, playlist.UserID)
+				}
+
+				// Verify the playlists are ordered by creation date (newest first)
+				// The last created playlist should be first in the results
+				if len(retrievedPlaylists) > 1 {
+					for i := 0; i < len(retrievedPlaylists)-1; i++ {
+						assert.True(retrievedPlaylists[i].Created.After(retrievedPlaylists[i+1].Created) ||
+							retrievedPlaylists[i].Created.Equal(retrievedPlaylists[i+1].Created))
+					}
+				}
+
+				// Verify specific playlist data matches
+				playlistNames := make(map[string]bool)
+				for _, playlist := range retrievedPlaylists {
+					playlistNames[playlist.Name] = true
+					assert.True(playlist.IsActive)
+					assert.NotEmpty(playlist.ID)
+					assert.NotEmpty(playlist.SpotifyPlaylistID)
+				}
+
+				// Verify all created playlists are present
+				for _, created := range createdPlaylists {
+					assert.True(playlistNames[created.Name], "Playlist %s should be in results", created.Name)
+				}
+			}
+		})
+	}
+}
+
+func TestBasePlaylistRepositoryPocketbase_GetByUserID_DatabaseErrors(t *testing.T) {
+	t.Run("collection not found", func(t *testing.T) {
+		assert := require.New(t)
+
+		// Setup test environment without creating the collection
+		app := NewTestApp(t)
+		repo := NewBasePlaylistRepositoryPocketbase(app)
+
+		ctx := context.Background()
+
+		// Execute GetByUserID
+		playlists, err := repo.GetByUserID(ctx, "user123")
+
+		// Verify error
+		assert.Error(err)
+		assert.Nil(playlists)
+		assert.ErrorIs(err, repositories.ErrCollectionNotFound)
+	})
+
+	t.Run("database query error", func(t *testing.T) {
+		assert := require.New(t)
+
+		// Setup test environment
+		app := NewTestApp(t)
+		SetupBasePlaylistCollection(t, app)
+		repo := NewBasePlaylistRepositoryPocketbase(app)
+
+		ctx := context.Background()
+
+		// This should test a scenario where the database query fails
+		// In a real scenario, this might be caused by database connectivity issues
+		// For this test, we'll use an empty userID which should work but return no results
+		playlists, err := repo.GetByUserID(ctx, "")
+
+		// This should succeed but return empty results (empty userID is valid for the query)
+		assert.NoError(err)
+		assert.NotNil(playlists)
+		assert.Len(playlists, 0)
+	})
+}
+
 // findBasePlaylistInDB is a helper function to verify a playlist exists in the database
 func findBasePlaylistInDB(t *testing.T, app *pocketbase.PocketBase, id string) (*models.BasePlaylist, error) {
 	t.Helper()

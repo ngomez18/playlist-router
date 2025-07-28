@@ -7,6 +7,7 @@ import (
 
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
@@ -102,6 +103,36 @@ func (bpRepo *BasePlaylistRepositoryPocketbase) GetByID(ctx context.Context, id,
 
 	bpRepo.log.InfoContext(ctx, "base_playlist retrieved successfully", "base_playlist", record)
 	return recordToBasePlaylist(record), nil
+}
+
+func (bpRepo *BasePlaylistRepositoryPocketbase) GetByUserID(ctx context.Context, userId string) ([]*models.BasePlaylist, error) {
+	collection, err := bpRepo.getCollection(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	records, err := bpRepo.app.FindRecordsByFilter(
+		collection,
+		"user_id = {:userId}",
+		"-created", // Order by created date descending (newest first)
+		0,          // limit (0 = no limit)
+		0,          // offset
+		dbx.Params{
+			"userId": userId,
+		},
+	)
+	if err != nil {
+		bpRepo.log.ErrorContext(ctx, "unable to find base_playlist records for user", "user_id", userId, "error", err)
+		return nil, fmt.Errorf(`%w: %s`, repositories.ErrDatabaseOperation, err.Error())
+	}
+
+	basePlaylists := make([]*models.BasePlaylist, len(records))
+	for i, record := range records {
+		basePlaylists[i] = recordToBasePlaylist(record)
+	}
+
+	bpRepo.log.InfoContext(ctx, "base_playlists retrieved successfully", "user_id", userId, "count", len(basePlaylists))
+	return basePlaylists, nil
 }
 
 func (bpRepo *BasePlaylistRepositoryPocketbase) getCollection(ctx context.Context) (*core.Collection, error) {

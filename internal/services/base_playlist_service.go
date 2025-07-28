@@ -16,6 +16,7 @@ type BasePlaylistServicer interface {
 	CreateBasePlaylist(ctx context.Context, userId string, input *models.CreateBasePlaylistRequest) (*models.BasePlaylist, error)
 	DeleteBasePlaylist(ctx context.Context, id, userId string) error
 	GetBasePlaylist(ctx context.Context, id, userId string) (*models.BasePlaylist, error)
+	GetBasePlaylistsByUserID(ctx context.Context, userId string) ([]*models.BasePlaylist, error)
 }
 
 type BasePlaylistService struct {
@@ -111,4 +112,17 @@ func (bpService *BasePlaylistService) GetBasePlaylist(ctx context.Context, id, u
 
 	bpService.logger.InfoContext(ctx, "base playlist retrieved successfully", "base_playlist", playlist)
 	return playlist, nil
+}
+
+func (bpService *BasePlaylistService) GetBasePlaylistsByUserID(ctx context.Context, userId string) ([]*models.BasePlaylist, error) {
+	bpService.logger.InfoContext(ctx, "retrieving base playlists for user", "user_id", userId)
+
+	playlists, err := bpService.basePlaylistRepo.GetByUserID(ctx, userId)
+	if err != nil {
+		bpService.logger.ErrorContext(ctx, "failed to retrieve base playlists for user", "user_id", userId, "error", err.Error())
+		return nil, fmt.Errorf("failed to retrieve playlists: %w", err)
+	}
+
+	bpService.logger.InfoContext(ctx, "base playlists retrieved successfully", "user_id", userId, "count", len(playlists))
+	return playlists, nil
 }

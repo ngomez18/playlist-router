@@ -77,7 +77,7 @@ func (c *BasePlaylistController) Delete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (c *BasePlaylistController) GetByID(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +105,28 @@ func (c *BasePlaylistController) GetByID(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(basePlaylist)
+	if err != nil {
+		http.Error(w, "unable to encode response", http.StatusInternalServerError)
+	}
+}
+
+func (c *BasePlaylistController) GetByUserID(w http.ResponseWriter, r *http.Request) {
+	// Extract user ID from auth context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "user not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	basePlaylists, err := c.basePlaylistService.GetBasePlaylistsByUserID(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, "unable to retrieve base playlists", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(basePlaylists)
 	if err != nil {
 		http.Error(w, "unable to encode response", http.StatusInternalServerError)
 	}

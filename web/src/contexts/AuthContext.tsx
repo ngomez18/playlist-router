@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import type { User } from '../types/auth'
 import { getAuthToken, setAuthToken, removeAuthToken } from '../lib/auth'
 import { AuthContext, type AuthContextType } from './auth-context'
+import { apiClient } from '../lib/api'
 
 interface AuthProviderProps {
   children: ReactNode
@@ -12,9 +13,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  const validateToken = useCallback(async () => {
+    try {
+      const userData = await apiClient.validateToken()
+      setUser(userData)
+      setIsLoading(false)
+    } catch {
+      // Token is invalid, remove it
+      removeAuthToken()
+      setUser(null)
+      setIsLoading(false)
+    }
+  }, [])
+
   const login = (token: string) => {
     setAuthToken(token)
-    // User will be set when the token is validated
+    // Validate token and set user
+    validateToken()
   }
 
   const logout = () => {
@@ -24,15 +39,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   useEffect(() => {
-    // Check for existing token on mount
+    // Check for existing token on mount and validate it
     const token = getAuthToken()
     if (token) {
-      // Token validation will be handled by the API client
-      setIsLoading(false)
+      validateToken()
     } else {
       setIsLoading(false)
     }
-  }, [])
+  }, [validateToken])
 
   const value: AuthContextType = {
     user,

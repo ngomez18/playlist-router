@@ -78,3 +78,18 @@ func (mr *MockBasePlaylistServicerMockRecorder) GetBasePlaylist(ctx, id, userId 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBasePlaylist", reflect.TypeOf((*MockBasePlaylistServicer)(nil).GetBasePlaylist), ctx, id, userId)
 }
+
+// GetBasePlaylistsByUserID mocks base method.
+func (m *MockBasePlaylistServicer) GetBasePlaylistsByUserID(ctx context.Context, userId string) ([]*models.BasePlaylist, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBasePlaylistsByUserID", ctx, userId)
+	ret0, _ := ret[0].([]*models.BasePlaylist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBasePlaylistsByUserID indicates an expected call of GetBasePlaylistsByUserID.
+func (mr *MockBasePlaylistServicerMockRecorder) GetBasePlaylistsByUserID(ctx, userId interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBasePlaylistsByUserID", reflect.TypeOf((*MockBasePlaylistServicer)(nil).GetBasePlaylistsByUserID), ctx, userId)
+}

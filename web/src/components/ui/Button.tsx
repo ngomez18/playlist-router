@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 interface ButtonProps {
   children: ReactNode
   onClick?: () => void
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
   size?: 'sm' | 'md' | 'lg'
   className?: string
   type?: 'button' | 'submit' | 'reset'
@@ -23,7 +23,8 @@ export function Button({
   const variantClasses = {
     primary: 'btn-primary',
     secondary: 'btn-secondary', 
-    ghost: 'btn-ghost'
+    ghost: 'btn-ghost',
+    outline: 'btn-outline'
   }
   const sizeClasses = {
     sm: 'btn-sm',

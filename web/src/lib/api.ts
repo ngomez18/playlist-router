@@ -46,17 +46,33 @@ class ApiClient {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    return response.json()
+    // Handle empty responses (like DELETE operations)
+    const text = await response.text()
+    
+    if (!text) {
+      return {} as T
+    }
+
+    try {
+      return JSON.parse(text)
+    } catch {
+      // If it's not valid JSON, return empty object
+      return {} as T
+    }
   }
 
   // Auth endpoints
   async validateToken(): Promise<User> {
-    return this.request<User>('/api/auth/validate')
+    return this.request<User>('/auth/validate')
   }
 
   // Base playlist endpoints
   async getBasePlaylist(id: string): Promise<BasePlaylist> {
     return this.request<BasePlaylist>(`/api/base_playlist/${id}`)
+  }
+
+  async getUserBasePlaylists(): Promise<BasePlaylist[]> {
+    return this.request<BasePlaylist[]>('/api/base_playlist')
   }
 
   async createBasePlaylist(data: CreateBasePlaylistRequest): Promise<BasePlaylist> {

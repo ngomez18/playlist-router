@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { CreateBasePlaylistForm } from '../playlists/CreateBasePlaylistForm'
-import { Card, CardBody, CardTitle, CardActions, Button } from '../../components/ui'
+import { Card, CardBody, CardTitle, CardActions, Button, Alert } from '../../components/ui'
 
-export function DashboardCards() {
+interface DashboardCardsProps {
+  onNavigateToBasePlaylists: () => void
+}
+
+export function DashboardCards({ onNavigateToBasePlaylists }: DashboardCardsProps) {
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const handleCreateSuccess = () => {
     setShowCreateForm(false)
-    // TODO: Add success notification
-    alert('Base playlist created successfully!')
+    setSuccessMessage('Base playlist created successfully!')
+    // Auto-hide success message after 5 seconds
+    setTimeout(() => setSuccessMessage(null), 5000)
   }
 
   if (showCreateForm) {
@@ -23,29 +29,26 @@ export function DashboardCards() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-4">
+      {successMessage && (
+        <Alert type="success">
+          {successMessage}
+        </Alert>
+      )}
+      
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       <Card>
         <CardBody>
           <CardTitle>Base Playlists</CardTitle>
-          <p>Create and manage your source playlists</p>
+          <p>Set up source playlists to automatically route songs into your themed playlists</p>
           <CardActions>
-            <Button onClick={() => setShowCreateForm(true)}>
-              Create Base Playlist
+            <Button onClick={onNavigateToBasePlaylists}>
+              Manage
             </Button>
           </CardActions>
         </CardBody>
       </Card>
-      
-      <Card>
-        <CardBody>
-          <CardTitle>Child Playlists</CardTitle>
-          <p>Configure filtered playlists (coming soon)</p>
-          <CardActions>
-            <Button disabled>View</Button>
-          </CardActions>
-        </CardBody>
-      </Card>
-      
+
       <Card>
         <CardBody>
           <CardTitle>Sync History</CardTitle>
@@ -55,6 +58,7 @@ export function DashboardCards() {
           </CardActions>
         </CardBody>
       </Card>
+      </div>
     </div>
   )
 }

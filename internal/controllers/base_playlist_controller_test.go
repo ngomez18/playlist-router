@@ -716,6 +716,216 @@ func TestBasePlaylistController_GetByID_ServiceErrors(t *testing.T) {
 	}
 }
 
+func TestBasePlaylistController_GetByUserID_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceResult  []*models.BasePlaylist
+		expectedStatus int
+	}{
+		{
+			name: "successful retrieval with multiple playlists",
+			serviceResult: []*models.BasePlaylist{
+				{
+					ID:                "playlist123",
+					UserID:            "user123",
+					Name:              "My Test Playlist",
+					SpotifyPlaylistID: "spotify123",
+					IsActive:          true,
+				},
+				{
+					ID:                "playlist456",
+					UserID:            "user123",
+					Name:              "Another Playlist",
+					SpotifyPlaylistID: "spotify456",
+					IsActive:          false,
+				},
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "successful retrieval with single playlist",
+			serviceResult: []*models.BasePlaylist{
+				{
+					ID:                "playlist123",
+					UserID:            "user123",
+					Name:              "My Only Playlist",
+					SpotifyPlaylistID: "spotify123",
+					IsActive:          true,
+				},
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "successful retrieval with no playlists",
+			serviceResult:  []*models.BasePlaylist{},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request
+			req := httptest.NewRequest(http.MethodGet, "/api/base_playlist", nil)
+			req = addUserToContext(req)
+			w := httptest.NewRecorder()
+
+			// Set expectations
+			mockService.EXPECT().
+				GetBasePlaylistsByUserID(gomock.Any(), "test_user_123").
+				Return(tt.serviceResult, nil).
+				Times(1)
+
+			// Execute
+			controller.GetByUserID(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Equal("application/json", w.Header().Get("Content-Type"))
+
+			// Verify response body
+			var responseBody []*models.BasePlaylist
+			err := json.Unmarshal(w.Body.Bytes(), &responseBody)
+			assert.NoError(err)
+			assert.Equal(len(tt.serviceResult), len(responseBody))
+			
+			for i, expectedPlaylist := range tt.serviceResult {
+				if i < len(responseBody) {
+					assert.Equal(expectedPlaylist.ID, responseBody[i].ID)
+					assert.Equal(expectedPlaylist.UserID, responseBody[i].UserID)
+					assert.Equal(expectedPlaylist.Name, responseBody[i].Name)
+					assert.Equal(expectedPlaylist.SpotifyPlaylistID, responseBody[i].SpotifyPlaylistID)
+					assert.Equal(expectedPlaylist.IsActive, responseBody[i].IsActive)
+				}
+			}
+		})
+	}
+}
+
+func TestBasePlaylistController_GetByUserID_Unauthorized(t *testing.T) {
+	assert := require.New(t)
+
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+	controller := NewBasePlaylistController(mockService)
+
+	// Prepare request without user context
+	req := httptest.NewRequest(http.MethodGet, "/api/base_playlist", nil)
+	w := httptest.NewRecorder()
+
+	// No service expectations since auth should fail before service call
+
+	// Execute
+	controller.GetByUserID(w, req)
+
+	// Verify response
+	assert.Equal(http.StatusUnauthorized, w.Code)
+	assert.Contains(w.Body.String(), "user not found in context")
+}
+
+func TestBasePlaylistController_GetByUserID_ServiceErrors(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceError   error
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "service database error",
+			serviceError:   errors.New("failed to retrieve playlists: database connection failed"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to retrieve base playlists",
+		},
+		{
+			name:           "service repository error",
+			serviceError:   errors.New("failed to retrieve playlists: unable to complete db operation"),
+			expectedStatus: http.StatusInternalServerError,
+			expectedError:  "unable to retrieve base playlists",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request
+			req := httptest.NewRequest(http.MethodGet, "/api/base_playlist", nil)
+			req = addUserToContext(req)
+			w := httptest.NewRecorder()
+
+			// Set expectations
+			mockService.EXPECT().
+				GetBasePlaylistsByUserID(gomock.Any(), "test_user_123").
+				Return(nil, tt.serviceError).
+				Times(1)
+
+			// Execute
+			controller.GetByUserID(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
+		})
+	}
+}
+
+func TestBasePlaylistController_GetByUserID_ResponseEncodingError(t *testing.T) {
+	assert := require.New(t)
+
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+	controller := NewBasePlaylistController(mockService)
+
+	serviceResult := []*models.BasePlaylist{
+		{
+			ID:                "playlist123",
+			UserID:            "user123",
+			Name:              "Test Playlist",
+			SpotifyPlaylistID: "spotify123",
+			IsActive:          true,
+		},
+	}
+
+	// Prepare request
+	req := httptest.NewRequest(http.MethodGet, "/api/base_playlist", nil)
+	req = addUserToContext(req)
+	w := httptest.NewRecorder()
+
+	// Set expectations
+	mockService.EXPECT().
+		GetBasePlaylistsByUserID(gomock.Any(), "test_user_123").
+		Return(serviceResult, nil).
+		Times(1)
+
+	// Execute
+	controller.GetByUserID(w, req)
+
+	// Verify successful response (since our test data is actually valid)
+	assert.Equal(http.StatusOK, w.Code)
+	assert.Equal("application/json", w.Header().Get("Content-Type"))
+}
+
 // Helper function to add user to request context
 func addUserToContext(req *http.Request) *http.Request {
 	user := &models.User{ID: "test_user_123", Email: "test@example.com", Name: "Test User"}

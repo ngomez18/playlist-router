@@ -433,3 +433,162 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestBasePlaylistService_GetBasePlaylistsByUserID_Success(t *testing.T) {
+	tests := []struct {
+		name              string
+		userId            string
+		mockPlaylists     []*models.BasePlaylist
+		expectedCount     int
+	}{
+		{
+			name:   "user with multiple playlists",
+			userId: "user123",
+			mockPlaylists: []*models.BasePlaylist{
+				{
+					ID:                "playlist1",
+					UserID:            "user123",
+					Name:              "First Playlist",
+					SpotifyPlaylistID: "spotify1",
+					IsActive:          true,
+				},
+				{
+					ID:                "playlist2",
+					UserID:            "user123",
+					Name:              "Second Playlist", 
+					SpotifyPlaylistID: "spotify2",
+					IsActive:          true,
+				},
+				{
+					ID:                "playlist3",
+					UserID:            "user123",
+					Name:              "Third Playlist",
+					SpotifyPlaylistID: "spotify3",
+					IsActive:          true,
+				},
+			},
+			expectedCount: 3,
+		},
+		{
+			name:   "user with single playlist",
+			userId: "user456",
+			mockPlaylists: []*models.BasePlaylist{
+				{
+					ID:                "playlist4",
+					UserID:            "user456",
+					Name:              "Only Playlist",
+					SpotifyPlaylistID: "spotify4",
+					IsActive:          true,
+				},
+			},
+			expectedCount: 1,
+		},
+		{
+			name:          "user with no playlists",
+			userId:        "user789",
+			mockPlaylists: []*models.BasePlaylist{},
+			expectedCount: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
+			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+
+			ctx := context.Background()
+
+			// Set expectations
+			mockRepo.EXPECT().
+				GetByUserID(ctx, tt.userId).
+				Return(tt.mockPlaylists, nil).
+				Times(1)
+
+			// Execute
+			result, err := service.GetBasePlaylistsByUserID(ctx, tt.userId)
+
+			// Verify
+			require.NoError(err)
+			require.NotNil(result)
+			require.Len(result, tt.expectedCount)
+
+			// Verify each playlist matches expected data
+			for i, playlist := range result {
+				require.Equal(tt.mockPlaylists[i].ID, playlist.ID)
+				require.Equal(tt.mockPlaylists[i].UserID, playlist.UserID)
+				require.Equal(tt.mockPlaylists[i].Name, playlist.Name)
+				require.Equal(tt.mockPlaylists[i].SpotifyPlaylistID, playlist.SpotifyPlaylistID)
+				require.Equal(tt.mockPlaylists[i].IsActive, playlist.IsActive)
+			}
+		})
+	}
+}
+
+func TestBasePlaylistService_GetBasePlaylistsByUserID_RepositoryErrors(t *testing.T) {
+	tests := []struct {
+		name          string
+		userId        string
+		repositoryErr error
+		expectedErr   string
+	}{
+		{
+			name:          "database operation error",
+			userId:        "user123",
+			repositoryErr: repositories.ErrDatabaseOperation,
+			expectedErr:   "failed to retrieve playlists: unable to complete db operation",
+		},
+		{
+			name:          "collection not found error",
+			userId:        "user456",
+			repositoryErr: repositories.ErrCollectionNotFound,
+			expectedErr:   "failed to retrieve playlists: collection not found",
+		},
+		{
+			name:          "generic repository error",
+			userId:        "user789",
+			repositoryErr: errors.New("connection timeout"),
+			expectedErr:   "failed to retrieve playlists: connection timeout",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
+			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+
+			ctx := context.Background()
+
+			// Set expectations
+			mockRepo.EXPECT().
+				GetByUserID(ctx, tt.userId).
+				Return(nil, tt.repositoryErr).
+				Times(1)
+
+			// Execute
+			result, err := service.GetBasePlaylistsByUserID(ctx, tt.userId)
+
+			// Verify
+			require.Error(err)
+			require.Nil(result)
+			require.Contains(err.Error(), tt.expectedErr)
+		})
+	}
+}
