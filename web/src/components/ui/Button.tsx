@@ -6,6 +6,8 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
   className?: string
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
 }
 
 export function Button({ 
@@ -13,7 +15,9 @@ export function Button({
   onClick, 
   variant = 'primary', 
   size = 'md',
-  className = ''
+  className = '',
+  type = 'button',
+  disabled = false
 }: ButtonProps) {
   const baseClasses = 'btn'
   const variantClasses = {
@@ -27,10 +31,15 @@ export function Button({
     lg: 'btn-lg'
   }
 
-  const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`
+  const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}${disabled ? ' btn-disabled' : ''}`
 
   return (
-    <button className={classes} onClick={onClick}>
+    <button 
+      className={classes} 
+      onClick={onClick} 
+      type={type}
+      disabled={disabled}
+    >
       {children}
     </button>
   )

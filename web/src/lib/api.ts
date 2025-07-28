@@ -1,5 +1,6 @@
 import { getAuthToken, removeAuthToken } from './auth'
 import type { User } from '../types/auth'
+import type { BasePlaylist, CreateBasePlaylistRequest } from '../types/playlist'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -54,19 +55,19 @@ class ApiClient {
   }
 
   // Base playlist endpoints
-  async getBasePlaylist(id: string) {
-    return this.request(`/api/base_playlist/${id}`)
+  async getBasePlaylist(id: string): Promise<BasePlaylist> {
+    return this.request<BasePlaylist>(`/api/base_playlist/${id}`)
   }
 
-  async createBasePlaylist(data: any) {
-    return this.request('/api/base_playlist', {
+  async createBasePlaylist(data: CreateBasePlaylistRequest): Promise<BasePlaylist> {
+    return this.request<BasePlaylist>('/api/base_playlist', {
       method: 'POST',
       body: JSON.stringify(data),
     })
   }
 
-  async deleteBasePlaylist(id: string) {
-    return this.request(`/api/base_playlist/${id}`, {
+  async deleteBasePlaylist(id: string): Promise<void> {
+    return this.request<void>(`/api/base_playlist/${id}`, {
       method: 'DELETE',
     })
   }
