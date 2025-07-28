@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/ngomez18/playlist-router/internal/middleware"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
 )
@@ -33,11 +34,14 @@ func (c *BasePlaylistController) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// TODO: Extract user ID from context or authentication
-	// For now, using placeholder - this should come from JWT token or auth context
-	userID := "placeholder_user_id"
+	// Extract user ID from auth context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "user not found in context", http.StatusUnauthorized)
+		return
+	}
 
-	newBasePlaylist, err := c.basePlaylistService.CreateBasePlaylist(r.Context(), userID, &req)
+	newBasePlaylist, err := c.basePlaylistService.CreateBasePlaylist(r.Context(), user.ID, &req)
 	if err != nil {
 		http.Error(w, "unable to create base playlist", http.StatusInternalServerError)
 		return
@@ -60,11 +64,14 @@ func (c *BasePlaylistController) Delete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// TODO: Extract user ID from context or authentication
-	// For now, using placeholder - this should come from JWT token or auth context
-	userID := "placeholder_user_id"
+	// Extract user ID from auth context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "user not found in context", http.StatusUnauthorized)
+		return
+	}
 
-	err := c.basePlaylistService.DeleteBasePlaylist(r.Context(), basePlaylistId, userID)
+	err := c.basePlaylistService.DeleteBasePlaylist(r.Context(), basePlaylistId, user.ID)
 	if err != nil {
 		http.Error(w, "unable to delete base playlist", http.StatusInternalServerError)
 		return
@@ -82,11 +89,14 @@ func (c *BasePlaylistController) GetByID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// TODO: Extract user ID from context or authentication
-	// For now, using placeholder - this should come from JWT token or auth context
-	userID := "placeholder_user_id"
+	// Extract user ID from auth context
+	user, ok := middleware.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "user not found in context", http.StatusUnauthorized)
+		return
+	}
 
-	basePlaylist, err := c.basePlaylistService.GetBasePlaylist(r.Context(), basePlaylistId, userID)
+	basePlaylist, err := c.basePlaylistService.GetBasePlaylist(r.Context(), basePlaylistId, user.ID)
 	if err != nil {
 		http.Error(w, "unable to retrieve base playlist", http.StatusInternalServerError)
 		return

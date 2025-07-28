@@ -92,7 +92,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	spotifyIntegrationService := services.NewSpotifyIntegrationService(repositories.spotifyIntegrationRepository, logger)
 
 	serviceInstances := Services{
-		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, logger),
+		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
 		userService:               userService,
 		spotifyIntegrationService: spotifyIntegrationService,
 		authService:               services.NewAuthService(userService, spotifyIntegrationService, spotifyClient, logger),

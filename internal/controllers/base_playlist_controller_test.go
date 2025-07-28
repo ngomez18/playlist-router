@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/ngomez18/playlist-router/internal/middleware"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
 	"github.com/stretchr/testify/require"
@@ -71,11 +73,13 @@ func TestBasePlaylistController_Create_Success(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/api/base_playlist", bytes.NewBuffer(requestBody))
 			req.Header.Set("Content-Type", "application/json")
+			req = addUserToContext(req)
+			
 			w := httptest.NewRecorder()
 
 			// Set expectations
 			mockService.EXPECT().
-				CreateBasePlaylist(gomock.Any(), "placeholder_user_id", tt.requestBody).
+				CreateBasePlaylist(gomock.Any(), "test_user_123", tt.requestBody).
 				Return(tt.serviceResult, nil).
 				Times(1)
 
@@ -152,6 +156,7 @@ func TestBasePlaylistController_Create_ValidationErrors(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/api/base_playlist", bytes.NewBuffer(requestBody))
 			req.Header.Set("Content-Type", "application/json")
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// No service expectations since validation should fail before service call
@@ -207,6 +212,7 @@ func TestBasePlaylistController_Create_RequestParsingErrors(t *testing.T) {
 			// Prepare request
 			req := httptest.NewRequest(http.MethodPost, "/api/base_playlist", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// No service expectations since parsing should fail before service call
@@ -278,11 +284,12 @@ func TestBasePlaylistController_Create_ServiceErrors(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodPost, "/api/base_playlist", bytes.NewBuffer(requestBody))
 			req.Header.Set("Content-Type", "application/json")
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// Set expectations
 			mockService.EXPECT().
-				CreateBasePlaylist(gomock.Any(), "placeholder_user_id", tt.requestBody).
+				CreateBasePlaylist(gomock.Any(), "test_user_123", tt.requestBody).
 				Return(nil, tt.serviceError).
 				Times(1)
 
@@ -328,11 +335,12 @@ func TestBasePlaylistController_Create_ResponseEncodingError(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/api/base_playlist", bytes.NewBuffer(reqBody))
 	req.Header.Set("Content-Type", "application/json")
+	req = addUserToContext(req)
 	w := httptest.NewRecorder()
 
 	// Set expectations
 	mockService.EXPECT().
-		CreateBasePlaylist(gomock.Any(), "placeholder_user_id", requestBody).
+		CreateBasePlaylist(gomock.Any(), "test_user_123", requestBody).
 		Return(serviceResult, nil).
 		Times(1)
 
@@ -393,11 +401,12 @@ func TestBasePlaylistController_Delete_Success(t *testing.T) {
 			// Prepare request with path parameters
 			req := httptest.NewRequest(http.MethodDelete, tt.urlPath, nil)
 			req.SetPathValue("id", tt.playlistID)
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// Set expectations - expecting placeholder_user_id as defined in controller
 			mockService.EXPECT().
-				DeleteBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				DeleteBasePlaylist(gomock.Any(), tt.playlistID, "test_user_123").
 				Return(nil).
 				Times(1)
 
@@ -440,6 +449,7 @@ func TestBasePlaylistController_Delete_ValidationErrors(t *testing.T) {
 			// Prepare request with empty path parameter
 			req := httptest.NewRequest(http.MethodDelete, "/api/base_playlist/", nil)
 			req.SetPathValue("id", tt.pathID)
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// No service expectations since validation should fail before service call
@@ -500,11 +510,12 @@ func TestBasePlaylistController_Delete_ServiceErrors(t *testing.T) {
 			urlPath := "/api/base_playlist/" + tt.playlistID
 			req := httptest.NewRequest(http.MethodDelete, urlPath, nil)
 			req.SetPathValue("id", tt.playlistID)
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// Set expectations - expecting placeholder_user_id as defined in controller
 			mockService.EXPECT().
-				DeleteBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				DeleteBasePlaylist(gomock.Any(), tt.playlistID, "test_user_123").
 				Return(tt.serviceError).
 				Times(1)
 
@@ -567,11 +578,12 @@ func TestBasePlaylistController_GetByID_Success(t *testing.T) {
 			// Prepare request with path parameters
 			req := httptest.NewRequest(http.MethodGet, tt.urlPath, nil)
 			req.SetPathValue("id", tt.playlistID)
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// Set expectations - expecting placeholder_user_id as defined in controller
 			mockService.EXPECT().
-				GetBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				GetBasePlaylist(gomock.Any(), tt.playlistID, "test_user_123").
 				Return(tt.serviceResult, nil).
 				Times(1)
 
@@ -624,6 +636,7 @@ func TestBasePlaylistController_GetByID_ValidationErrors(t *testing.T) {
 			// Prepare request with empty path parameter
 			req := httptest.NewRequest(http.MethodGet, "/api/base_playlist/", nil)
 			req.SetPathValue("id", tt.pathID)
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// No service expectations since validation should fail before service call
@@ -684,11 +697,12 @@ func TestBasePlaylistController_GetByID_ServiceErrors(t *testing.T) {
 			urlPath := "/api/base_playlist/" + tt.playlistID
 			req := httptest.NewRequest(http.MethodGet, urlPath, nil)
 			req.SetPathValue("id", tt.playlistID)
+			req = addUserToContext(req)
 			w := httptest.NewRecorder()
 
 			// Set expectations - expecting placeholder_user_id as defined in controller
 			mockService.EXPECT().
-				GetBasePlaylist(gomock.Any(), tt.playlistID, "placeholder_user_id").
+				GetBasePlaylist(gomock.Any(), tt.playlistID, "test_user_123").
 				Return(nil, tt.serviceError).
 				Times(1)
 
@@ -700,4 +714,11 @@ func TestBasePlaylistController_GetByID_ServiceErrors(t *testing.T) {
 			assert.Contains(w.Body.String(), tt.expectedError)
 		})
 	}
+}
+
+// Helper function to add user to request context
+func addUserToContext(req *http.Request) *http.Request {
+	user := &models.User{ID: "test_user_123", Email: "test@example.com", Name: "Test User"}
+	ctx := context.WithValue(req.Context(), middleware.UserContextKey, user)
+	return req.WithContext(ctx)
 }
