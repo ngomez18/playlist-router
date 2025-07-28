@@ -108,3 +108,18 @@ func (mr *MockUserServicerMockRecorder) UpdateUser(ctx, user interface{}) *gomoc
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUser", reflect.TypeOf((*MockUserServicer)(nil).UpdateUser), ctx, user)
 }
+
+// ValidateAuthToken mocks base method.
+func (m *MockUserServicer) ValidateAuthToken(ctx context.Context, token string) (*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateAuthToken", ctx, token)
+	ret0, _ := ret[0].(*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValidateAuthToken indicates an expected call of ValidateAuthToken.
+func (mr *MockUserServicerMockRecorder) ValidateAuthToken(ctx, token interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateAuthToken", reflect.TypeOf((*MockUserServicer)(nil).ValidateAuthToken), ctx, token)
+}

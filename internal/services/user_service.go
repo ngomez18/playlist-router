@@ -17,6 +17,7 @@ type UserServicer interface {
 	GetUserByID(ctx context.Context, userID string) (*models.User, error)
 	DeleteUser(ctx context.Context, userID string) error
 	GenerateAuthToken(ctx context.Context, userID string) (string, error)
+	ValidateAuthToken(ctx context.Context, token string) (*models.User, error)
 }
 
 type UserService struct {
@@ -99,4 +100,18 @@ func (us *UserService) GenerateAuthToken(ctx context.Context, userID string) (st
 	us.logger.InfoContext(ctx, "auth token generated successfully", "user_id", userID)
 
 	return token, nil
+}
+
+func (us *UserService) ValidateAuthToken(ctx context.Context, token string) (*models.User, error) {
+	us.logger.InfoContext(ctx, "validating auth token")
+
+	user, err := us.userRepo.ValidateAuthToken(ctx, token)
+	if err != nil {
+		us.logger.ErrorContext(ctx, "failed to validate auth token", "error", err.Error())
+		return nil, fmt.Errorf("failed to validate auth token: %w", err)
+	}
+
+	us.logger.InfoContext(ctx, "auth token validated successfully", "user_id", user.ID)
+
+	return user, nil
 }

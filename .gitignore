@@ -15,6 +15,7 @@ tmp/
 # React/Node.js
 web/node_modules/
 web/dist/
+internal/static/dist
 web/.env.local
 web/.env.development.local
 web/.env.test.local

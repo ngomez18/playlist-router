@@ -8,6 +8,7 @@ import (
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/tools/security"
 )
 
 type UserRepositoryPocketbase struct {
@@ -117,6 +118,34 @@ func (uRepo *UserRepositoryPocketbase) GenerateAuthToken(ctx context.Context, us
 
 	uRepo.log.InfoContext(ctx, "auth token generated successfully", "user", userID)
 	return token, nil
+}
+
+func (uRepo *UserRepositoryPocketbase) ValidateAuthToken(ctx context.Context, token string) (*models.User, error) {
+	// Parse and validate the token using PocketBase security package
+	claims, err := security.ParseUnverifiedJWT(token)
+	if err != nil {
+		uRepo.log.ErrorContext(ctx, "invalid token format", "error", err)
+		return nil, repositories.ErrUseNotFound
+	}
+
+	// Get user ID from claims
+	userID, ok := claims["id"].(string)
+	if !ok || userID == "" {
+		uRepo.log.ErrorContext(ctx, "invalid token claims")
+		return nil, repositories.ErrUseNotFound
+	}
+
+	// Get user record from PocketBase to verify user still exists
+	record, err := uRepo.app.FindRecordById(string(uRepo.collection), userID)
+	if err != nil {
+		uRepo.log.ErrorContext(ctx, "unable to fetch user from token", "user", userID, "error", err)
+		return nil, repositories.ErrUseNotFound
+	}
+
+	user := recordToUser(record)
+	uRepo.log.InfoContext(ctx, "auth token validated successfully", "user", userID)
+
+	return user, nil
 }
 
 // recordToUser converts a PocketBase record to a User model
