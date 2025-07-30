@@ -94,6 +94,69 @@ func CreateTestUser(t *testing.T, app *pocketbase.PocketBase, email, name string
 	return user.Id
 }
 
+// SetupChildPlaylistCollection creates the child_playlists collection for testing
+func SetupChildPlaylistCollection(t *testing.T, app *pocketbase.PocketBase) {
+	t.Helper()
+
+	_, err := app.FindCollectionByNameOrId(string(CollectionChildPlaylist))
+	if err == nil {
+		return // Collection already exists
+	}
+
+	collection := core.NewBaseCollection(string(CollectionChildPlaylist))
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "user_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "base_playlist_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "name",
+		Required: true,
+		Max:      100,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "description",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "spotify_playlist_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "filter_rules",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.BoolField{
+		Name:     "is_active",
+		Required: false,
+	})
+
+	// Standard timestamp fields
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "created",
+		OnCreate: true,
+	})
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "updated",
+		OnCreate: true,
+		OnUpdate: true,
+	})
+
+	if err := app.Save(collection); err != nil {
+		t.Fatalf("failed to create child_playlists collection: %v", err)
+	}
+}
+
 // SetupSpotifyIntegrationsCollection creates the spotify_integrations collection for testing
 func SetupSpotifyIntegrationsCollection(t *testing.T, app *pocketbase.PocketBase) {
 	t.Helper()
@@ -179,18 +242,10 @@ func SetupSpotifyIntegrationsCollection(t *testing.T, app *pocketbase.PocketBase
 	}
 }
 
-// SetupChildPlaylistCollection creates the child_playlists collection for testing
-// TODO: Implement when child playlist repository is created
-func SetupChildPlaylistCollection(t *testing.T, app *pocketbase.PocketBase) {
-	t.Helper()
-	// Implementation will go here when needed
-}
-
 // SetupAllCollections sets up all collections needed for testing
 func SetupAllCollections(t *testing.T, app *pocketbase.PocketBase) {
 	t.Helper()
 	SetupBasePlaylistCollection(t, app)
 	SetupSpotifyIntegrationsCollection(t, app)
-	// Add other collections as needed:
-	// SetupChildPlaylistCollection(t, app)
+	SetupChildPlaylistCollection(t, app)
 }

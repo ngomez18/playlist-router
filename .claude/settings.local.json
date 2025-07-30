@@ -21,7 +21,9 @@
       "WebFetch(domain:pocketbase.io)",
       "Bash(cp:*)",
       "Bash(mv:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(go run:*)",
+      "WebFetch(domain:developer.spotify.com)"
     ],
     "deny": []
   }

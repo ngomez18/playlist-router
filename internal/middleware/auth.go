@@ -1,19 +1,11 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
-	"github.com/ngomez18/playlist-router/internal/models"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/services"
-	"github.com/pocketbase/pocketbase/apis"
-)
-
-type contextKey string
-
-const (
-	UserContextKey contextKey = "user"
 )
 
 type AuthMiddleware struct {
@@ -54,7 +46,7 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 		}
 
 		// Add user to request context
-		ctx := context.WithValue(r.Context(), UserContextKey, user)
+		ctx := requestcontext.ContextWithUser(r.Context(), user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -75,9 +67,9 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 				// Try to validate token using user service
 				user, err := m.userService.ValidateAuthToken(r.Context(), token)
 				if err == nil {
-					ctx := context.WithValue(r.Context(), UserContextKey, user)
+					ctx := requestcontext.ContextWithUser(r.Context(), user)
 					next.ServeHTTP(w, r.WithContext(ctx))
-					
+
 					return
 				}
 			}
@@ -86,17 +78,4 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 		// Invalid token format or validation failed, continue without auth
 		next.ServeHTTP(w, r)
 	})
-}
-
-func (m *AuthMiddleware) ExtractUserID(r *http.Request) (string, error) {
-	user, ok := GetUserFromContext(r.Context())
-	if !ok {
-		return "", apis.NewUnauthorizedError("user not found in context", nil)
-	}
-	return user.ID, nil
-}
-
-func GetUserFromContext(ctx context.Context) (*models.User, bool) {
-	user, ok := ctx.Value(UserContextKey).(*models.User)
-	return user, ok
 }

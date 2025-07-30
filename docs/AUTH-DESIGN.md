@@ -242,12 +242,148 @@ All phases successfully implemented:
 4. ✅ **Phase 4**: Secure token storage and validation
 5. ✅ **Phase 5**: Full React frontend with auth context and hooks
 
+## Spotify Token Management - 🚧 PLANNED
+
+### Problem Statement
+When users are inactive for more than one hour, their Spotify access tokens expire. This causes API failures when they return and try to perform Spotify operations, resulting in poor user experience.
+
+### Solution: Spotify Token Middleware
+
+A dedicated middleware that runs **after** the auth middleware on Spotify-dependent endpoints to:
+1. Validate the user's Spotify access token
+2. Proactively refresh tokens when they're close to expiring
+3. Inject fresh tokens into request context for handlers
+
+### Architecture Design
+
+```
+Request → Auth Middleware → Spotify Token Middleware → Handler
+            ↓                        ↓                    ↓
+         Extract User    →    Validate/Refresh Token  →  Use Token
+         Add to Context  →    Add Integration to Context → Make Spotify API calls
+```
+
+### Implementation Plan
+
+#### 1. Middleware Chain Structure
+```go
+// Applied selectively to Spotify-dependent endpoints
+router.Use(authMiddleware.RequireAuth)           // Extract user, add to context
+router.Use(spotifyTokenMiddleware.EnsureTokens)  // Validate/refresh Spotify tokens
+```
+
+#### 2. Token Validation Logic
+```go
+type SpotifyTokenMiddleware struct {
+    spotifyIntegrationRepo repositories.SpotifyIntegrationRepository
+    spotifyClient          spotifyclient.SpotifyAPI
+    logger                 *slog.Logger
+}
+
+func (m *SpotifyTokenMiddleware) EnsureTokens(next http.Handler) http.Handler {
+    // 1. Extract user from context (added by auth middleware)
+    // 2. Get user's Spotify integration from database
+    // 3. Check if access token expires within 15 minutes
+    // 4. If close to expiry: refresh tokens and update database
+    // 5. Add SpotifyIntegration to request context
+    // 6. Continue to handler
+}
+```
+
+#### 3. Token Refresh Strategy
+- **Buffer Time**: 15 minutes before expiration
+- **Refresh Process**: Use refresh token to get new access/refresh tokens
+- **Database Update**: Atomic update of both tokens with new expiry
+- **Error Handling**: Graceful degradation if refresh fails
+
+#### 4. Context Integration
+```go
+// Context keys for handlers
+const SpotifyIntegrationContextKey = "spotify_integration"
+
+// Helper function for handlers
+func GetSpotifyIntegrationFromContext(ctx context.Context) (*models.SpotifyIntegration, bool)
+```
+
+### Security Considerations
+
+#### ✅ Strengths
+- **Proactive UX**: No user-facing token expiration errors
+- **Selective Application**: Only runs on endpoints that need it
+- **Clean Separation**: Spotify logic isolated from general auth
+- **Context Injection**: Tokens readily available without repeated DB calls
+
+#### ⚠️ Potential Issues & Mitigations
+- **Race Conditions**: Multiple simultaneous requests refreshing same token
+  - *Future*: Implement distributed locking for production scale
+- **Refresh Token Expiry**: User revoked app access or refresh token expired
+  - *Mitigation*: Clear integration, redirect to re-auth flow  
+- **Database Load**: Every Spotify request hits DB for token validation
+  - *Future*: Add token caching layer
+- **API Rate Limits**: Frequent refreshes could hit Spotify limits
+  - *Mitigation*: 15-minute buffer reduces refresh frequency
+
+### Endpoint Application Strategy
+
+#### Spotify-Dependent Endpoints (Apply Both Middlewares)
+```go
+// Child playlist management
+POST   /api/child_playlist          // Create + Spotify playlist creation
+PUT    /api/child_playlist/{id}     // Update + Spotify playlist updates  
+DELETE /api/child_playlist/{id}     // Delete + Spotify playlist deletion
+
+// Base playlist operations (if Spotify integration added)
+POST   /api/base_playlist/{id}/sync // Trigger Spotify sync operations
+```
+
+#### Auth-Only Endpoints (Auth Middleware Only)
+```go
+GET    /api/auth/validate           // User validation only
+GET    /api/base_playlist           // Read operations without Spotify
+GET    /api/child_playlist          // Read operations without Spotify
+```
+
+### Error Handling Strategy
+
+#### Token Refresh Success
+```go
+// Continue normal request flow with fresh tokens
+next.ServeHTTP(w, r.WithContext(ctxWithIntegration))
+```
+
+#### Token Refresh Failure
+```go
+// Log error, return 401 with specific error code
+return api.ErrorResponse(w, http.StatusUnauthorized, "spotify_token_expired", 
+    "Please reconnect your Spotify account")
+```
+
+#### Network/Database Errors
+```go  
+// Log error, return 503 for temporary issues
+return api.ErrorResponse(w, http.StatusServiceUnavailable, "service_unavailable",
+    "Unable to verify Spotify connection")
+```
+
+### Implementation Phases
+
+#### Phase 1: Basic Implementation
+- ✅ Simple token validation and refresh
+- ✅ 15-minute expiry buffer
+- ✅ Database integration updates
+- ✅ Context injection for handlers
+
+#### Phase 2: Production Enhancements (Future)
+- 🔄 Distributed locking for race condition prevention
+- 🔄 Circuit breaker for Spotify API failures
+- 🔄 Token caching to reduce database load  
+- 🔄 Metrics and monitoring for token refresh rates
+- 🔄 Graceful degradation strategies
+
 ## Next Steps
 
-The authentication system is **production-ready**. Future enhancements could include:
+The authentication system is **production-ready** with the planned Spotify Token Middleware. Implementation priorities:
 
-- **Refresh Token Handling** - Automatic Spotify token refresh
-- **Role-Based Access Control** - User roles and permissions  
-- **Session Management** - JWT token rotation
-- **Multi-Provider Auth** - Additional OAuth providers
-- **Audit Logging** - Authentication event tracking
+1. **Immediate**: Implement basic Spotify Token Middleware (Phase 1)
+2. **Future**: Enhanced production features (Phase 2)
+3. **Optional**: Role-Based Access Control, Session Management, Multi-Provider Auth

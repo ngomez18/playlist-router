@@ -43,8 +43,8 @@ type SpotifyPlaylistTracks struct {
 	Total int    `json:"total"`
 }
 
-type CreateSpotifyPlaylistRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Public      bool   `json:"public"`
+type SpotifyPlaylistRequest struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Public      *bool   `json:"public,omitempty"`
 }

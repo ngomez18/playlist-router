@@ -14,6 +14,9 @@ var (
 	// Base playlist errors
 	ErrBasePlaylistNotFound = errors.New("base playlist not found")
 
+	// Child playlist errors
+	ErrChildPlaylistNotFound = errors.New("child playlist not found")
+
 	// Spotify integration errors
 	ErrSpotifyIntegrationNotFound = errors.New("spotify integration not found")
 )

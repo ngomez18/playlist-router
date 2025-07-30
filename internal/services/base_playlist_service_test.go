@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-
 func TestNewBasePlaylistService(t *testing.T) {
 	require := require.New(t)
 
@@ -436,10 +435,10 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 
 func TestBasePlaylistService_GetBasePlaylistsByUserID_Success(t *testing.T) {
 	tests := []struct {
-		name              string
-		userId            string
-		mockPlaylists     []*models.BasePlaylist
-		expectedCount     int
+		name          string
+		userId        string
+		mockPlaylists []*models.BasePlaylist
+		expectedCount int
 	}{
 		{
 			name:   "user with multiple playlists",
@@ -455,7 +454,7 @@ func TestBasePlaylistService_GetBasePlaylistsByUserID_Success(t *testing.T) {
 				{
 					ID:                "playlist2",
 					UserID:            "user123",
-					Name:              "Second Playlist", 
+					Name:              "Second Playlist",
 					SpotifyPlaylistID: "spotify2",
 					IsActive:          true,
 				},

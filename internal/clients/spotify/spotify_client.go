@@ -20,10 +20,13 @@ import (
 type SpotifyAPI interface {
 	GenerateAuthURL(state string) string
 	ExchangeCodeForTokens(ctx context.Context, code string) (*SpotifyTokenResponse, error)
+	RefreshTokens(ctx context.Context, refreshToken string) (*SpotifyTokenResponse, error)
 	GetUserProfile(ctx context.Context, accessToken string) (*SpotifyUserProfile, error)
 	GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*SpotifyPlaylist, error)
 	GetPlaylist(ctx context.Context, accessToken string, playlistId string) (*SpotifyPlaylist, error)
 	CreatePlaylist(ctx context.Context, accessToken, userId, name, description string, public bool) (*SpotifyPlaylist, error)
+	DeletePlaylist(ctx context.Context, accessToken, userId, playlistId string) error
+	UpdatePlaylist(ctx context.Context, accessToken, userId, playlistId, name, description string) error
 }
 
 type SpotifyClient struct {
@@ -116,6 +119,52 @@ func (c *SpotifyClient) ExchangeCodeForTokens(ctx context.Context, code string) 
 	return &tokens, nil
 }
 
+func (c *SpotifyClient) RefreshTokens(ctx context.Context, refreshToken string) (*SpotifyTokenResponse, error) {
+	c.logger.InfoContext(ctx, "refreshing spotify access tokens")
+	path := "api/token"
+
+	data := url.Values{
+		"grant_type":    {"refresh_token"},
+		"refresh_token": {refreshToken},
+	}
+
+	url := fmt.Sprintf("%s%s", c.authBaseUrl, path)
+	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(data.Encode()))
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to create token refresh request", "error", err)
+		return nil, fmt.Errorf("failed to create token refresh request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth(c.config.SpotifyClientID, c.config.SpotifyClientSecret)
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to refresh tokens", "error", err)
+		return nil, fmt.Errorf("failed to refresh tokens: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		c.logger.ErrorContext(ctx, "spotify token refresh failed", "status_code", resp.StatusCode, "response_body", string(body))
+		return nil, fmt.Errorf("spotify token refresh failed (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	var tokens SpotifyTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+		c.logger.ErrorContext(ctx, "failed to decode token refresh response", "error", err)
+		return nil, fmt.Errorf("failed to decode token refresh response: %w", err)
+	}
+
+	c.logger.InfoContext(ctx, "successfully refreshed spotify tokens")
+	return &tokens, nil
+}
+
 func (c *SpotifyClient) GetUserProfile(ctx context.Context, accessToken string) (*SpotifyUserProfile, error) {
 	c.logger.InfoContext(ctx, "fetching user profile from spotify")
 	path := "me"
@@ -204,7 +253,7 @@ func (c *SpotifyClient) GetUserPlaylists(ctx context.Context, accessToken string
 
 func (c *SpotifyClient) GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*SpotifyPlaylist, error) {
 	c.logger.InfoContext(ctx, "fetching all user playlists from spotify")
-	
+
 	allPlaylists := make([]*SpotifyPlaylist, 0)
 	limit := 50 // Spotify API max limit
 	offset := 0
@@ -215,21 +264,20 @@ func (c *SpotifyClient) GetAllUserPlaylists(ctx context.Context, accessToken str
 			c.logger.ErrorContext(ctx, "failed to fetch playlists batch", "offset", offset, "error", err)
 			return nil, fmt.Errorf("failed to fetch playlists batch at offset %d: %w", offset, err)
 		}
-		
+
 		allPlaylists = append(allPlaylists, response.Items...)
-		
+
 		// Break if we have all the items according to the total
 		if len(allPlaylists) >= response.Total || len(response.Items) == 0 {
 			break
 		}
-		
+
 		offset += limit
 	}
-	
+
 	c.logger.InfoContext(ctx, "successfully fetched all user playlists", "total_count", len(allPlaylists))
 	return allPlaylists, nil
 }
-
 
 func (c *SpotifyClient) GetPlaylist(ctx context.Context, accessToken string, playlistId string) (*SpotifyPlaylist, error) {
 	c.logger.InfoContext(ctx, "fetching playlist from spotify")
@@ -278,10 +326,10 @@ func (c *SpotifyClient) CreatePlaylist(ctx context.Context, accessToken, userId,
 	path := fmt.Sprintf("users/%s/playlists", userId)
 	url := fmt.Sprintf("%s%s", c.apiBaseUrl, path)
 
-	requestBody := CreateSpotifyPlaylistRequest{
-		Name:        name,
-		Description: description,
-		Public:      public,
+	requestBody := SpotifyPlaylistRequest{
+		Name:        &name,
+		Description: &description,
+		Public:      &public,
 	}
 
 	jsonData, err := json.Marshal(requestBody)
@@ -324,4 +372,91 @@ func (c *SpotifyClient) CreatePlaylist(ctx context.Context, accessToken, userId,
 
 	c.logger.InfoContext(ctx, "successfully created playlist", "playlist_id", playlist.ID, "name", playlist.Name)
 	return &playlist, nil
+}
+
+func (c *SpotifyClient) DeletePlaylist(ctx context.Context, accessToken, userId, playlistId string) error {
+	c.logger.InfoContext(ctx, "deleting playlist from spotify", "user_id", userId, "playlist_id", playlistId)
+
+	path := fmt.Sprintf("playlists/%s/followers", playlistId)
+	url := fmt.Sprintf("%s%s", c.apiBaseUrl, path)
+
+	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to create delete playlist request", "error", err)
+		return fmt.Errorf("failed to create delete playlist request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to delete playlist", "error", err)
+		return fmt.Errorf("failed to delete playlist: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		c.logger.ErrorContext(ctx, "spotify playlist deletion failed", "status_code", resp.StatusCode, "response_body", string(body))
+		return fmt.Errorf("spotify playlist deletion failed (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	c.logger.InfoContext(ctx, "successfully deleted playlist", "playlist_id", playlistId)
+	return nil
+}
+
+func (c *SpotifyClient) UpdatePlaylist(ctx context.Context, accessToken, userId, playlistId, name, description string) error {
+	c.logger.InfoContext(ctx, "updating playlist in spotify", "user_id", userId, "playlist_id", playlistId, "name", name)
+
+	path := fmt.Sprintf("playlists/%s", playlistId)
+	url := fmt.Sprintf("%s%s", c.apiBaseUrl, path)
+
+	requestBody := SpotifyPlaylistRequest{}
+
+	if name != "" {
+		requestBody.Name = &name
+	}
+
+	if description != "" {
+		requestBody.Description = &description
+	}
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to marshal update playlist request", "error", err)
+		return fmt.Errorf("failed to marshal update playlist request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "PUT", url, strings.NewReader(string(jsonData)))
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to create update playlist request", "error", err)
+		return fmt.Errorf("failed to create update playlist request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		c.logger.ErrorContext(ctx, "failed to update playlist", "error", err)
+		return fmt.Errorf("failed to update playlist: %w", err)
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		c.logger.ErrorContext(ctx, "spotify playlist update failed", "status_code", resp.StatusCode, "response_body", string(body))
+		return fmt.Errorf("spotify playlist update failed (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	c.logger.InfoContext(ctx, "successfully updated playlist", "playlist_id", playlistId)
+	return nil
 }

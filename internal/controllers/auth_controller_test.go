@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/ngomez18/playlist-router/internal/config"
-	"github.com/ngomez18/playlist-router/internal/middleware"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
@@ -76,13 +76,13 @@ func TestAuthController_SpotifyLogin(t *testing.T) {
 
 func TestAuthController_SpotifyCallback(t *testing.T) {
 	tests := []struct {
-		name                 string
-		queryParams          map[string]string
-		mockAuthResult       *services.AuthResult
-		mockError            error
-		expectedStatusCode   int
-		expectedRedirectURL  string
-		expectRedirect       bool
+		name                string
+		queryParams         map[string]string
+		mockAuthResult      *services.AuthResult
+		mockError           error
+		expectedStatusCode  int
+		expectedRedirectURL string
+		expectRedirect      bool
 	}{
 		{
 			name: "successful callback",
@@ -256,7 +256,6 @@ func TestNewAuthController(t *testing.T) {
 	assert.Equal(cfg, controller.config)
 }
 
-
 // Test that the controller properly handles context in requests
 func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
 	assert := require.New(t)
@@ -346,7 +345,7 @@ func TestAuthController_ValidateToken_Success(t *testing.T) {
 
 			// Create request with user context
 			req := httptest.NewRequest(http.MethodGet, "/auth/validate", nil)
-			ctx := context.WithValue(req.Context(), middleware.UserContextKey, tt.user)
+			ctx := requestcontext.ContextWithUser(req.Context(), tt.user)
 			req = req.WithContext(ctx)
 			w := httptest.NewRecorder()
 
@@ -382,16 +381,6 @@ func TestAuthController_ValidateToken_Unauthorized(t *testing.T) {
 			setupContext: func(req *http.Request) *http.Request {
 				// Return request without user context
 				return req
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "user not found in context",
-		},
-		{
-			name: "invalid user context type",
-			setupContext: func(req *http.Request) *http.Request {
-				// Add invalid type to context
-				ctx := context.WithValue(req.Context(), middleware.UserContextKey, "invalid_user_type")
-				return req.WithContext(ctx)
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   "user not found in context",

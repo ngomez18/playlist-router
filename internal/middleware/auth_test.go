@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	serviceMocks "github.com/ngomez18/playlist-router/internal/services/mocks"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func TestGetUserFromContext(t *testing.T) {
 					Username: "testuser",
 					Name:     "Test User",
 				}
-				return context.WithValue(context.Background(), UserContextKey, user)
+				return requestcontext.ContextWithUser(context.Background(), user)
 			},
 			expectedUser: &models.User{
 				ID:       "user123",
@@ -48,14 +49,6 @@ func TestGetUserFromContext(t *testing.T) {
 			expectedUser:  nil,
 			expectedFound: false,
 		},
-		{
-			name: "wrong_type_in_context",
-			setupContext: func() context.Context {
-				return context.WithValue(context.Background(), UserContextKey, "not a user")
-			},
-			expectedUser:  nil,
-			expectedFound: false,
-		},
 	}
 
 	for _, tt := range tests {
@@ -63,7 +56,7 @@ func TestGetUserFromContext(t *testing.T) {
 			assert := assert.New(t)
 
 			ctx := tt.setupContext()
-			user, found := GetUserFromContext(ctx)
+			user, found := requestcontext.GetUserFromContext(ctx)
 
 			assert.Equal(tt.expectedFound, found)
 			if tt.expectedFound {
@@ -159,10 +152,10 @@ func TestAuthMiddleware_RequireAuth_Errors(t *testing.T) {
 
 func TestAuthMiddleware_OptionalAuth_Success(t *testing.T) {
 	tests := []struct {
-		name           string
-		authHeader     string
-		setupMock      func(*serviceMocks.MockUserServicer) *models.User
-		expectUser     bool
+		name       string
+		authHeader string
+		setupMock  func(*serviceMocks.MockUserServicer) *models.User
+		expectUser bool
 	}{
 		{
 			name:       "no_auth_header",
@@ -206,8 +199,8 @@ func TestAuthMiddleware_OptionalAuth_Success(t *testing.T) {
 
 			handler := middleware.OptionalAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				handlerCalled = true
-				user, found := GetUserFromContext(r.Context())
-				
+				user, found := requestcontext.GetUserFromContext(r.Context())
+
 				if tt.expectUser {
 					assert.True(found)
 					assert.Equal(expectedUser.ID, user.ID)
@@ -215,7 +208,7 @@ func TestAuthMiddleware_OptionalAuth_Success(t *testing.T) {
 					assert.False(found)
 					assert.Nil(user)
 				}
-				
+
 				w.WriteHeader(http.StatusOK)
 				_, err := w.Write([]byte("success"))
 				assert.NoError(err)
@@ -234,47 +227,6 @@ func TestAuthMiddleware_OptionalAuth_Success(t *testing.T) {
 			assert.Equal("success", recorder.Body.String())
 		})
 	}
-}
-
-func TestAuthMiddleware_ExtractUserID_Success(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	user := &models.User{
-		ID:       "user123",
-		Email:    "test@example.com",
-		Username: "testuser",
-		Name:     "Test User",
-	}
-
-	ctx := context.WithValue(context.Background(), UserContextKey, user)
-	req := httptest.NewRequest("GET", "/test", nil)
-	req = req.WithContext(ctx)
-
-	mockUserService := serviceMocks.NewMockUserServicer(ctrl)
-	middleware := NewAuthMiddleware(mockUserService)
-	userID, err := middleware.ExtractUserID(req)
-
-	assert.NoError(err)
-	assert.Equal("user123", userID)
-}
-
-func TestAuthMiddleware_ExtractUserID_NoUser(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	req := httptest.NewRequest("GET", "/test", nil)
-	// No user in context
-
-	mockUserService := serviceMocks.NewMockUserServicer(ctrl)
-	middleware := NewAuthMiddleware(mockUserService)
-	userID, err := middleware.ExtractUserID(req)
-
-	assert.Error(err)
-	assert.Empty(userID)
-	assert.Contains(err.Error(), "User not found in context")
 }
 
 func TestAuthMiddleware_RequireAuth_ValidToken(t *testing.T) {
@@ -302,11 +254,11 @@ func TestAuthMiddleware_RequireAuth_ValidToken(t *testing.T) {
 	handler := middleware.RequireAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
 		// Check that user is in context
-		user, found := GetUserFromContext(r.Context())
+		user, found := requestcontext.GetUserFromContext(r.Context())
 		assert.True(found)
 		assert.Equal(expectedUser.ID, user.ID)
 		assert.Equal(expectedUser.Email, user.Email)
-		
+
 		w.WriteHeader(http.StatusOK)
 		_, err := w.Write([]byte("success"))
 		assert.NoError(err)
@@ -322,8 +274,6 @@ func TestAuthMiddleware_RequireAuth_ValidToken(t *testing.T) {
 	assert.Equal(http.StatusOK, recorder.Code)
 	assert.Equal("success", recorder.Body.String())
 }
-
-
 
 func TestAuthMiddleware_OptionalAuth_InvalidToken(t *testing.T) {
 	assert := assert.New(t)
@@ -341,10 +291,10 @@ func TestAuthMiddleware_OptionalAuth_InvalidToken(t *testing.T) {
 	handler := middleware.OptionalAuth(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
 		// Check that no user is in context (failed auth continues without user)
-		user, found := GetUserFromContext(r.Context())
+		user, found := requestcontext.GetUserFromContext(r.Context())
 		assert.False(found)
 		assert.Nil(user)
-		
+
 		w.WriteHeader(http.StatusOK)
 		_, err := w.Write([]byte("success"))
 		assert.NoError(err)

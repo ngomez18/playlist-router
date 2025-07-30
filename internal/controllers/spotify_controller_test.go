@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/ngomez18/playlist-router/internal/middleware"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
 	"github.com/stretchr/testify/require"
@@ -102,16 +101,6 @@ func TestSpotifyController_GetUserPlaylists_AuthenticationError(t *testing.T) {
 			setupContext: func(req *http.Request) *http.Request {
 				// Return request without user context
 				return req
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "user not found in context\n",
-		},
-		{
-			name: "invalid user context type",
-			setupContext: func(req *http.Request) *http.Request {
-				// Add invalid type to context
-				ctx := context.WithValue(req.Context(), middleware.UserContextKey, "invalid_user_type")
-				return req.WithContext(ctx)
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedBody:   "user not found in context\n",
@@ -213,6 +202,6 @@ func TestSpotifyController_GetUserPlaylists_ServiceError(t *testing.T) {
 // Helper function to add user to request context for Spotify controller tests
 func addUserToSpotifyContext(req *http.Request) *http.Request {
 	user := &models.User{ID: "test_user_123", Email: "test@example.com", Name: "Test User"}
-	ctx := context.WithValue(req.Context(), middleware.UserContextKey, user)
+	ctx := requestcontext.ContextWithUser(req.Context(), user)
 	return req.WithContext(ctx)
 }

@@ -190,6 +190,178 @@ func TestSpotifyClient_ExchangeCodeForTokens(t *testing.T) {
 	}
 }
 
+func TestSpotifyClient_RefreshTokens_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		refreshToken   string
+		responseBody   *SpotifyTokenResponse
+		expectedTokens *SpotifyTokenResponse
+	}{
+		{
+			name:         "successful token refresh with new refresh token",
+			refreshToken: "refresh_token_123",
+			responseBody: &SpotifyTokenResponse{
+				AccessToken:  "new_access_token_456",
+				TokenType:    "Bearer",
+				Scope:        "user-read-email playlist-modify-public",
+				ExpiresIn:    3600,
+				RefreshToken: "new_refresh_token_456",
+			},
+			expectedTokens: &SpotifyTokenResponse{
+				AccessToken:  "new_access_token_456",
+				TokenType:    "Bearer",
+				Scope:        "user-read-email playlist-modify-public",
+				ExpiresIn:    3600,
+				RefreshToken: "new_refresh_token_456",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{
+				SpotifyClientID:     "test_client_id",
+				SpotifyClientSecret: "test_client_secret",
+			}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			// Create client and overwrite HTTP client with mock
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Create response body
+			bodyBytes, _ := json.Marshal(tt.responseBody)
+			responseBody := io.NopCloser(bytes.NewReader(bodyBytes))
+
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       responseBody,
+			}
+
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					// Validate request
+					assert.Equal("POST", req.Method)
+					assert.Equal("https://accounts.spotify.com/api/token", req.URL.String())
+					assert.Equal("application/x-www-form-urlencoded", req.Header.Get("Content-Type"))
+
+					// Check basic auth
+					username, password, ok := req.BasicAuth()
+					assert.True(ok)
+					assert.Equal("test_client_id", username)
+					assert.Equal("test_client_secret", password)
+
+					// Check form data
+					body, _ := io.ReadAll(req.Body)
+					form, _ := url.ParseQuery(string(body))
+					assert.Equal("refresh_token", form.Get("grant_type"))
+					assert.Equal(tt.refreshToken, form.Get("refresh_token"))
+
+					return resp, nil
+				}).
+				Times(1)
+
+			ctx := context.Background()
+			tokens, err := client.RefreshTokens(ctx, tt.refreshToken)
+
+			assert.NoError(err)
+			assert.Equal(tt.expectedTokens, tokens)
+		})
+	}
+}
+
+func TestSpotifyClient_RefreshTokens_Errors(t *testing.T) {
+	tests := []struct {
+		name           string
+		refreshToken   string
+		responseStatus int
+		responseError  error
+	}{
+		{
+			name:           "invalid refresh token",
+			refreshToken:   "invalid_refresh_token",
+			responseStatus: http.StatusBadRequest,
+		},
+		{
+			name:          "http client error",
+			refreshToken:  "refresh_token_123",
+			responseError: errors.New("network timeout"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{
+				SpotifyClientID:     "test_client_id",
+				SpotifyClientSecret: "test_client_secret",
+			}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			// Create client and overwrite HTTP client with mock
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Setup mock expectations
+			if tt.responseError != nil {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(nil, tt.responseError).
+					Times(1)
+			} else {
+				responseBody := io.NopCloser(strings.NewReader(`{"error":"invalid_grant","error_description":"Invalid refresh token"}`))
+
+				resp := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       responseBody,
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					DoAndReturn(func(req *http.Request) (*http.Response, error) {
+						// Validate request
+						assert.Equal("POST", req.Method)
+						assert.Equal("https://accounts.spotify.com/api/token", req.URL.String())
+						assert.Equal("application/x-www-form-urlencoded", req.Header.Get("Content-Type"))
+
+						// Check basic auth
+						username, password, ok := req.BasicAuth()
+						assert.True(ok)
+						assert.Equal("test_client_id", username)
+						assert.Equal("test_client_secret", password)
+
+						// Check form data
+						body, _ := io.ReadAll(req.Body)
+						form, _ := url.ParseQuery(string(body))
+						assert.Equal("refresh_token", form.Get("grant_type"))
+						assert.Equal(tt.refreshToken, form.Get("refresh_token"))
+
+						return resp, nil
+					}).
+					Times(1)
+			}
+
+			ctx := context.Background()
+			tokens, err := client.RefreshTokens(ctx, tt.refreshToken)
+
+			assert.Error(err)
+			assert.Nil(tokens)
+		})
+	}
+}
+
 func TestSpotifyClient_GetUserProfile(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -297,7 +469,6 @@ func TestSpotifyClient_GetUserProfile(t *testing.T) {
 		})
 	}
 }
-
 
 func TestSpotifyClient_GetUserPlaylists_Success(t *testing.T) {
 	tests := []struct {
@@ -798,12 +969,15 @@ func TestSpotifyClient_CreatePlaylist_Success(t *testing.T) {
 
 					// Validate request body
 					body, _ := io.ReadAll(req.Body)
-					var requestBody CreateSpotifyPlaylistRequest
+					var requestBody SpotifyPlaylistRequest
 					err := json.Unmarshal(body, &requestBody)
 					assert.NoError(err)
-					assert.Equal(tt.playlistName, requestBody.Name)
-					assert.Equal(tt.description, requestBody.Description)
-					assert.Equal(tt.public, requestBody.Public)
+					assert.NotNil(requestBody.Name)
+					assert.Equal(tt.playlistName, *requestBody.Name)
+					assert.NotNil(requestBody.Description)
+					assert.Equal(tt.description, *requestBody.Description)
+					assert.NotNil(requestBody.Public)
+					assert.Equal(tt.public, *requestBody.Public)
 
 					return resp, nil
 				}).
@@ -910,10 +1084,10 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 
 func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
 	tests := []struct {
-		name                string
-		mockResponses       []SpotifyPlaylistResponse
-		expectedPlaylists   []*SpotifyPlaylist
-		accessToken         string
+		name              string
+		mockResponses     []SpotifyPlaylistResponse
+		expectedPlaylists []*SpotifyPlaylist
+		accessToken       string
 	}{
 		{
 			name: "single page with results",
@@ -1018,10 +1192,10 @@ func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
 
 func TestSpotifyClient_GetAllUserPlaylists_Error(t *testing.T) {
 	tests := []struct {
-		name          string
-		responseError error
+		name           string
+		responseError  error
 		responseStatus int
-		accessToken   string
+		accessToken    string
 	}{
 		{
 			name:          "http client error",
@@ -1067,6 +1241,357 @@ func TestSpotifyClient_GetAllUserPlaylists_Error(t *testing.T) {
 
 			assert.Error(err)
 			assert.Nil(result)
+		})
+	}
+}
+
+func TestSpotifyClient_DeletePlaylist_Success(t *testing.T) {
+	tests := []struct {
+		name        string
+		userId      string
+		playlistId  string
+		accessToken string
+	}{
+		{
+			name:        "successful playlist deletion",
+			userId:      "user123",
+			playlistId:  "playlist456",
+			accessToken: "valid_token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Create successful response
+			responseBody := io.NopCloser(strings.NewReader(""))
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       responseBody,
+			}
+
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					// Validate request
+					assert.Equal("DELETE", req.Method)
+					assert.Equal("https://api.spotify.com/v1/playlists/"+tt.playlistId+"/followers", req.URL.String())
+					assert.Equal("Bearer "+tt.accessToken, req.Header.Get("Authorization"))
+
+					return resp, nil
+				}).
+				Times(1)
+
+			ctx := context.Background()
+			err := client.DeletePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId)
+
+			assert.NoError(err)
+		})
+	}
+}
+
+func TestSpotifyClient_DeletePlaylist_Errors(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		playlistId     string
+		responseStatus int
+		responseError  error
+		accessToken    string
+	}{
+		{
+			name:           "playlist not found",
+			userId:         "user123",
+			playlistId:     "nonexistent_playlist",
+			responseStatus: http.StatusNotFound,
+			accessToken:    "valid_token",
+		},
+		{
+			name:          "http client error",
+			userId:        "user123",
+			playlistId:    "playlist456",
+			responseError: errors.New("connection timeout"),
+			accessToken:   "valid_token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			if tt.responseError != nil {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(nil, tt.responseError).
+					Times(1)
+			} else {
+				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error","error_description":"Test error description"}`))
+				resp := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       responseBody,
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(resp, nil).
+					Times(1)
+			}
+
+			ctx := context.Background()
+			err := client.DeletePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId)
+
+			assert.Error(err)
+		})
+	}
+}
+
+func TestSpotifyClient_UpdatePlaylist_Success(t *testing.T) {
+	tests := []struct {
+		name                  string
+		userId                string
+		playlistId            string
+		playlistName          string
+		description           string
+		accessToken           string
+		expectedRequestFields map[string]any
+	}{
+		{
+			name:         "update both name and description",
+			userId:       "user123",
+			playlistId:   "playlist456",
+			playlistName: "Updated Playlist Name",
+			description:  "Updated description",
+			accessToken:  "valid_token",
+			expectedRequestFields: map[string]any{
+				"name":        "Updated Playlist Name",
+				"description": "Updated description",
+			},
+		},
+		{
+			name:         "update only name (empty description)",
+			userId:       "user123",
+			playlistId:   "playlist456",
+			playlistName: "New Name Only",
+			description:  "",
+			accessToken:  "valid_token",
+			expectedRequestFields: map[string]any{
+				"name": "New Name Only",
+			},
+		},
+		{
+			name:         "update only description (empty name)",
+			userId:       "user123",
+			playlistId:   "playlist456",
+			playlistName: "",
+			description:  "New description only",
+			accessToken:  "valid_token",
+			expectedRequestFields: map[string]any{
+				"description": "New description only",
+			},
+		},
+		{
+			name:                  "no updates (both empty)",
+			userId:                "user123",
+			playlistId:            "playlist456",
+			playlistName:          "",
+			description:           "",
+			accessToken:           "valid_token",
+			expectedRequestFields: map[string]any{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Create successful response
+			responseBody := io.NopCloser(strings.NewReader(""))
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       responseBody,
+			}
+
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					// Validate request
+					assert.Equal("PUT", req.Method)
+					assert.Equal("https://api.spotify.com/v1/playlists/"+tt.playlistId, req.URL.String())
+					assert.Equal("Bearer "+tt.accessToken, req.Header.Get("Authorization"))
+					assert.Equal("application/json", req.Header.Get("Content-Type"))
+
+					// Validate request body
+					body, _ := io.ReadAll(req.Body)
+					var requestBody map[string]any
+					err := json.Unmarshal(body, &requestBody)
+					assert.NoError(err)
+
+					// Check that only expected fields are present
+					assert.Equal(len(tt.expectedRequestFields), len(requestBody))
+					for key, expectedValue := range tt.expectedRequestFields {
+						assert.Equal(expectedValue, requestBody[key], "Field %s should match expected value", key)
+					}
+
+					// Ensure fields that should be omitted are not present
+					if tt.playlistName == "" {
+						_, hasName := requestBody["name"]
+						assert.False(hasName, "Name field should be omitted when empty")
+					}
+					if tt.description == "" {
+						_, hasDescription := requestBody["description"]
+						assert.False(hasDescription, "Description field should be omitted when empty")
+					}
+
+					// Public field should never be present in update requests
+					_, hasPublic := requestBody["public"]
+					assert.False(hasPublic, "Public field should not be present in update requests")
+
+					return resp, nil
+				}).
+				Times(1)
+
+			ctx := context.Background()
+			err := client.UpdatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId, tt.playlistName, tt.description)
+
+			assert.NoError(err)
+		})
+	}
+}
+
+func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
+	tests := []struct {
+		name           string
+		userId         string
+		playlistId     string
+		playlistName   string
+		description    string
+		responseStatus int
+		responseError  error
+		accessToken    string
+	}{
+		{
+			name:           "playlist not found",
+			userId:         "user123",
+			playlistId:     "nonexistent_playlist",
+			playlistName:   "New Name",
+			description:    "New Description",
+			responseStatus: http.StatusNotFound,
+			accessToken:    "valid_token",
+		},
+		{
+			name:           "unauthorized error",
+			userId:         "user123",
+			playlistId:     "playlist456",
+			playlistName:   "New Name",
+			description:    "New Description",
+			responseStatus: http.StatusUnauthorized,
+			accessToken:    "invalid_token",
+		},
+		{
+			name:           "forbidden error - not owner",
+			userId:         "user123",
+			playlistId:     "other_users_playlist",
+			playlistName:   "New Name",
+			description:    "New Description",
+			responseStatus: http.StatusForbidden,
+			accessToken:    "valid_token",
+		},
+		{
+			name:           "bad request error",
+			userId:         "user123",
+			playlistId:     "playlist456",
+			playlistName:   "Name with invalid characters that are too long for Spotify's limits and exceed the maximum allowed length",
+			description:    "Description",
+			responseStatus: http.StatusBadRequest,
+			accessToken:    "valid_token",
+		},
+		{
+			name:          "http client error",
+			userId:        "user123",
+			playlistId:    "playlist456",
+			playlistName:  "New Name",
+			description:   "New Description",
+			responseError: errors.New("network timeout"),
+			accessToken:   "valid_token",
+		},
+		{
+			name:           "internal server error",
+			userId:         "user123",
+			playlistId:     "playlist456",
+			playlistName:   "New Name",
+			description:    "New Description",
+			responseStatus: http.StatusInternalServerError,
+			accessToken:    "valid_token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			if tt.responseError != nil {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(nil, tt.responseError).
+					Times(1)
+			} else {
+				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error","error_description":"Test error description"}`))
+				resp := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       responseBody,
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(resp, nil).
+					Times(1)
+			}
+
+			ctx := context.Background()
+			err := client.UpdatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId, tt.playlistName, tt.description)
+
+			assert.Error(err)
 		})
 	}
 }

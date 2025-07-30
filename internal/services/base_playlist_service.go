@@ -20,10 +20,10 @@ type BasePlaylistServicer interface {
 }
 
 type BasePlaylistService struct {
-	basePlaylistRepo         repositories.BasePlaylistRepository
-	spotifyIntegrationRepo   repositories.SpotifyIntegrationRepository
-	spotifyClient            spotifyclient.SpotifyAPI
-	logger                   *slog.Logger
+	basePlaylistRepo       repositories.BasePlaylistRepository
+	spotifyIntegrationRepo repositories.SpotifyIntegrationRepository
+	spotifyClient          spotifyclient.SpotifyAPI
+	logger                 *slog.Logger
 }
 
 func NewBasePlaylistService(
@@ -48,7 +48,7 @@ func (bpService *BasePlaylistService) CreateBasePlaylist(ctx context.Context, us
 	// If no Spotify playlist ID provided, create a new playlist in Spotify
 	if spotifyPlaylistID == "" {
 		bpService.logger.InfoContext(ctx, "spotify playlist ID empty, creating new playlist in Spotify", "name", input.Name)
-		
+
 		// Get user's Spotify integration to access tokens
 		integration, err := bpService.spotifyIntegrationRepo.GetByUserID(ctx, userId)
 		if err != nil {
@@ -62,7 +62,7 @@ func (bpService *BasePlaylistService) CreateBasePlaylist(ctx context.Context, us
 			integration.AccessToken,
 			integration.SpotifyID,
 			input.Name,
-			"", // empty description for now
+			"",    // empty description for now
 			false, // private by default
 		)
 		if err != nil {

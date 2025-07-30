@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/ngomez18/playlist-router/internal/middleware"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/services"
 )
 
@@ -20,7 +20,7 @@ func NewSpotifyController(spotifyApiService services.SpotifyAPIServicer) *Spotif
 
 func (c *SpotifyController) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from auth context
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := requestcontext.GetUserFromContext(r.Context())
 	if !ok {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return

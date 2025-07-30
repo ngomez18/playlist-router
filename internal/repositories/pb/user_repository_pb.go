@@ -21,7 +21,7 @@ func NewUserRepositoryPocketbase(pb *pocketbase.PocketBase) *UserRepositoryPocke
 	return &UserRepositoryPocketbase{
 		app:        pb,
 		collection: CollectionUsers,
-		log:        pb.Logger().With("component", "UserRepository"),
+		log:        pb.Logger().With("component", "UserRepositoryPocketbase"),
 	}
 }
 

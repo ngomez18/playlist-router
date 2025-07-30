@@ -7,10 +7,10 @@ func ParseSpotifyPlaylist(p *SpotifyPlaylist) *models.SpotifyPlaylist {
 	if p.Tracks != nil {
 		tracks = p.Tracks.Total
 	}
-	
+
 	return &models.SpotifyPlaylist{
-		ID: p.ID,
-		Name: p.Name,
+		ID:     p.ID,
+		Name:   p.Name,
 		Tracks: tracks,
 	}
 }

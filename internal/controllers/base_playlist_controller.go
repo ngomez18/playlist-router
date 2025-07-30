@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/ngomez18/playlist-router/internal/middleware"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
 )
@@ -35,7 +35,7 @@ func (c *BasePlaylistController) Create(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Extract user ID from auth context
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := requestcontext.GetUserFromContext(r.Context())
 	if !ok {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return
@@ -65,7 +65,7 @@ func (c *BasePlaylistController) Delete(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Extract user ID from auth context
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := requestcontext.GetUserFromContext(r.Context())
 	if !ok {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return
@@ -90,7 +90,7 @@ func (c *BasePlaylistController) GetByID(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Extract user ID from auth context
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := requestcontext.GetUserFromContext(r.Context())
 	if !ok {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return
@@ -112,7 +112,7 @@ func (c *BasePlaylistController) GetByID(w http.ResponseWriter, r *http.Request)
 
 func (c *BasePlaylistController) GetByUserID(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from auth context
-	user, ok := middleware.GetUserFromContext(r.Context())
+	user, ok := requestcontext.GetUserFromContext(r.Context())
 	if !ok {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return

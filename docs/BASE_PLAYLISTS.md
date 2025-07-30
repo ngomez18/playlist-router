@@ -176,22 +176,88 @@ type BasePlaylist struct {
 - Plan for webhook-based playlist change detection
 - Consider offline-first design for mobile users
 
-## Implementation Priority
+## Implementation Status
 
-### Phase 1 (MVP)
-1. Basic CRUD operations for base playlists
-2. Link existing Spotify playlist flow
-3. Simple dashboard with list view
-4. Enable/disable sync toggle
+### ✅ Phase 1 (MVP) - COMPLETED
+1. ✅ Basic CRUD operations for base playlists
+2. ✅ Link existing Spotify playlist flow
+3. ✅ Simple dashboard with list view
+4. ❌ Enable/disable sync toggle - **MISSING**
 
-### Phase 2 (Enhanced)
-1. Create new Spotify playlist flow
-2. Enhanced UI with cards and quick actions
-3. Edit playlist details functionality
-4. Comprehensive error handling
+### 🔄 Phase 2 (Enhanced) - PARTIALLY COMPLETED
+1. ✅ Create new Spotify playlist flow
+2. ✅ Enhanced UI with cards and quick actions
+3. ❌ Edit playlist details functionality - **MISSING**
+4. 🔄 Comprehensive error handling - **PARTIAL**
 
-### Phase 3 (Polish)
-1. Advanced search and filtering
-2. Bulk operations
-3. Detailed statistics and analytics
-4. Mobile-optimized interface
+### ⏳ Phase 3 (Polish) - NOT STARTED
+1. ❌ Advanced search and filtering
+2. ❌ Bulk operations
+3. ❌ Detailed statistics and analytics
+4. ❌ Mobile-optimized interface
+
+## Current Implementation Details
+
+### ✅ What's Working
+**Backend (`internal/`):**
+- Base playlist CRUD operations in controller and service layers
+- Automatic Spotify playlist creation when no ID provided
+- User authentication and authorization
+- Repository layer with PocketBase integration
+
+**Frontend (`web/src/`):**
+- Base playlists management page with card layout
+- Create form supporting both "link existing" and "create new" workflows
+- Spotify playlists fetching and selection
+- Basic error handling and loading states
+
+### ❌ Critical Missing Features
+
+#### Data Model Extensions Needed
+```go
+// Current model is missing these fields from original design:
+type BasePlaylist struct {
+    // ... existing fields ...
+    Description       string     `json:"description"`        // Missing
+    SyncEnabled       bool       `json:"sync_enabled"`       // Missing  
+    TrackCount        int        `json:"track_count"`        // Missing
+    LastSyncedAt      *time.Time `json:"last_synced_at"`    // Missing
+}
+```
+
+#### API Endpoints Missing
+- `PUT /api/base-playlists/:id` - Update playlist details
+- `PUT /api/base-playlists/:id/sync-toggle` - Toggle sync on/off
+- Playlist ownership validation for existing playlist linking
+
+#### Frontend Components Missing
+- Edit base playlist modal/form
+- Sync enable/disable toggle switch
+- Track count and last sync time display
+- Subscription tier limit enforcement
+- Enhanced error handling for Spotify API failures
+
+#### Business Logic Missing
+- Subscription tier limits (Free: 1, Basic: 2, Premium: unlimited)
+- Playlist ownership validation when linking existing playlists
+- Spotify playlist accessibility checks
+
+## Next Development Steps
+
+### Immediate Priority (Phase 1 Completion)
+1. **Add missing fields to BasePlaylist model** - Add description, sync_enabled, track_count, last_synced_at
+2. **Implement sync toggle API** - PUT /api/base-playlists/:id/sync-toggle endpoint
+3. **Add sync toggle to frontend** - Toggle switch component in playlist cards
+4. **Add subscription tier limits** - Enforce playlist creation limits based on user tier
+
+### Medium Priority (Phase 2 Completion)  
+1. **Edit playlist functionality** - Update API endpoint and frontend modal
+2. **Enhanced playlist validation** - Verify ownership and accessibility when linking
+3. **Track count caching** - Store and display playlist track counts
+4. **Improved error handling** - Better UX for Spotify API failures
+
+### Lower Priority (Phase 3)
+1. **Search and filtering** - Filter playlists by name, status, etc.
+2. **Bulk operations** - Multi-select and bulk enable/disable
+3. **Analytics dashboard** - Usage statistics per playlist
+4. **Mobile optimization** - Responsive design improvements

@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/ngomez18/playlist-router/internal/config"
-	"github.com/ngomez18/playlist-router/internal/middleware"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/services"
 )
 
@@ -60,7 +60,7 @@ func (c *AuthController) SpotifyCallback(w http.ResponseWriter, r *http.Request)
 func (c *AuthController) ValidateToken(w http.ResponseWriter, r *http.Request) {
 	// This endpoint is protected by auth middleware, so user is already validated
 	// and available in context. Just return the user.
-	user, found := middleware.GetUserFromContext(r.Context())
+	user, found := requestcontext.GetUserFromContext(r.Context())
 	if !found {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return

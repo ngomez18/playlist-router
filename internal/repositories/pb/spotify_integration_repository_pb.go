@@ -22,7 +22,7 @@ func NewSpotifyIntegrationRepositoryPocketbase(pb *pocketbase.PocketBase) *Spoti
 	return &SpotifyIntegrationRepositoryPocketbase{
 		app:        pb,
 		collection: CollectionSpotifyIntegration,
-		log:        pb.Logger().With("component", "SpotifyIntegrationRepository"),
+		log:        pb.Logger().With("component", "SpotifyIntegrationRepositoryPocketbase"),
 	}
 }
 
@@ -125,7 +125,7 @@ func (siRepo *SpotifyIntegrationRepositoryPocketbase) UpdateTokens(
 	}
 
 	record.Set("access_token", tokens.AccessToken)
-	
+
 	if tokens.RefreshToken != "" {
 		record.Set("refresh_token", tokens.RefreshToken)
 	}

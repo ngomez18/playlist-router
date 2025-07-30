@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,11 +10,25 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/ngomez18/playlist-router/internal/middleware"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
 	"github.com/stretchr/testify/require"
 )
+
+func TestNewBasePlaylistController(t *testing.T) {
+	assert := require.New(t)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+	controller := NewBasePlaylistController(mockService)
+
+	assert.NotNil(controller)
+	assert.Equal(mockService, controller.basePlaylistService)
+	assert.NotNil(controller.validator)
+}
 
 func TestBasePlaylistController_Create_Success(t *testing.T) {
 	tests := []struct {
@@ -341,20 +354,6 @@ func TestBasePlaylistController_Create_ResponseEncodingError(t *testing.T) {
 	// Verify successful response (since our test data is actually valid)
 	assert.Equal(http.StatusCreated, w.Code)
 	assert.Equal("application/json", w.Header().Get("Content-Type"))
-}
-
-func TestNewBasePlaylistController(t *testing.T) {
-	assert := require.New(t)
-
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockService := mocks.NewMockBasePlaylistServicer(ctrl)
-	controller := NewBasePlaylistController(mockService)
-
-	assert.NotNil(controller)
-	assert.Equal(mockService, controller.basePlaylistService)
-	assert.NotNil(controller.validator)
 }
 
 func TestBasePlaylistController_Delete_Success(t *testing.T) {
@@ -918,6 +917,6 @@ func TestBasePlaylistController_GetByUserID_ResponseEncodingError(t *testing.T) 
 // Helper function to add user to request context
 func addUserToContext(req *http.Request) *http.Request {
 	user := &models.User{ID: "test_user_123", Email: "test@example.com", Name: "Test User"}
-	ctx := context.WithValue(req.Context(), middleware.UserContextKey, user)
+	ctx := requestcontext.ContextWithUser(req.Context(), user)
 	return req.WithContext(ctx)
 }

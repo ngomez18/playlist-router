@@ -206,7 +206,7 @@ func TestUserRepositoryPocketbase_GenerateAuthToken_Success(t *testing.T) {
 	assert.NoError(err)
 	assert.NotEmpty(token)
 	assert.IsType("string", token)
-	
+
 	// Verify the token is a valid JWT (should have 3 parts separated by dots)
 	tokenParts := len(strings.Split(token, "."))
 	assert.Equal(3, tokenParts, "JWT token should have 3 parts separated by dots")

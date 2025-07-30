@@ -13,6 +13,7 @@ type Collection string
 var (
 	CollectionUsers              Collection = "users"
 	CollectionBasePlaylist       Collection = "base_playlists"
+	CollectionChildPlaylist      Collection = "child_playlists"
 	CollectionSpotifyIntegration Collection = "spotify_integrations"
 )
 

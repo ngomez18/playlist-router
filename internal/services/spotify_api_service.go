@@ -27,7 +27,7 @@ func NewSpotifyAPIService(
 	spotifyClient spotifyclient.SpotifyAPI,
 	logger *slog.Logger,
 ) *SpotifyAPIService {
-		return &SpotifyAPIService{
+	return &SpotifyAPIService{
 		integrationRepo: integrationRepo,
 		spotifyClient:   spotifyClient,
 		logger:          logger.With("component", "SpotifyAPIService"),
