@@ -104,7 +104,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
 		childPlaylistService:      services.NewChildPlaylistService(repositories.childPlaylistRepository, repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
 		spotifyIntegrationService: spotifyIntegrationService,
-		spotifyApiService:         services.NewSpotifyAPIService(repositories.spotifyIntegrationRepository, spotifyClient, logger),
+		spotifyApiService:         services.NewSpotifyAPIService(spotifyClient, logger),
 	}
 
 	controllers := Controllers{
@@ -129,7 +129,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 }
 
 func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
-	// Auth routes (public - no middleware)
+	// Auth routes
 	auth := e.Router.Group("/auth")
 	auth.GET("/spotify/login", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyLogin)))
 	auth.GET("/spotify/callback", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.authController.SpotifyCallback)))
@@ -137,27 +137,29 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 
 	// Protected API routes (require authentication)
 	api := e.Router.Group("/api")
+	api.BindFunc(apis.WrapStdMiddleware(deps.middleware.auth.RequireAuth))
 
-	// Base Playlist routes (protected)
+	// Base Playlist routes
 	basePlaylist := api.Group("/base_playlist")
-	basePlaylist.POST("", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Create))))
-	basePlaylist.GET("", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID))))
-	basePlaylist.GET("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID))))
-	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Delete))))
+	basePlaylist.POST("", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Create))))
+	basePlaylist.GET("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID)))
+	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
+	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
 
-	// Child Playlist routes for a specific base playlist (protected + spotify auth required)
-	basePlaylist.POST("/{basePlaylistID}/child_playlist", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Create)))))
-	basePlaylist.GET("/{basePlaylistID}/child_playlist", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.childPlaylistController.GetByBasePlaylistID))))
+	// Child Playlist routes for a specific base playlist
+	basePlaylist.POST("/{basePlaylistID}/child_playlist", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Create))))
+	basePlaylist.GET("/{basePlaylistID}/child_playlist", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.childPlaylistController.GetByBasePlaylistID)))
 
-	// Child Playlist routes by ID (protected + spotify auth required for update/delete)
+	// Child Playlist routes by ID
 	childPlaylist := api.Group("/child_playlist")
-	childPlaylist.GET("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.childPlaylistController.GetByID))))
-	childPlaylist.PUT("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Update)))))
-	childPlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Delete)))))
+	childPlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.childPlaylistController.GetByID)))
+	childPlaylist.PUT("/{id}", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Update))))
+	childPlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Delete))))
 
 	// Spotify routes (protected)
 	spotify := api.Group("/spotify")
-	spotify.GET("/playlists", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.spotifyController.GetUserPlaylists))))
+	spotify.BindFunc(apis.WrapStdMiddleware(deps.middleware.spotifyAuth.RequireSpotifyAuth))
+	spotify.GET("/playlists", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.spotifyController.GetUserPlaylists)))
 
 	// Serve static files (must be after API routes)
 	setupStaticFileServer(e)

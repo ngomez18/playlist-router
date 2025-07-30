@@ -11,8 +11,8 @@ import (
 	"github.com/golang/mock/gomock"
 	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
 	spotifyClientMocks "github.com/ngomez18/playlist-router/internal/clients/spotify/mocks"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
-	repoMocks "github.com/ngomez18/playlist-router/internal/repositories/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -99,17 +99,10 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-			service := NewSpotifyAPIService(mockIntegrationRepo, mockSpotifyClient, logger)
-
-			// Mock repository call
-			mockIntegrationRepo.EXPECT().
-				GetByUserID(gomock.Any(), tt.userID).
-				Return(tt.integration, nil).
-				Times(1)
+			service := NewSpotifyAPIService(mockSpotifyClient, logger)
 
 			// Mock Spotify client call
 			mockSpotifyClient.EXPECT().
@@ -117,7 +110,8 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 				Return(tt.spotifyPlaylists, nil).
 				Times(1)
 
-			ctx := context.Background()
+			ctx := requestcontext.ContextWithSpotifyAuth(context.Background(), tt.integration)
+
 			result, err := service.GetUserPlaylists(ctx, tt.userID)
 
 			assert.NoError(err)
@@ -144,11 +138,6 @@ func TestSpotifyAPIService_GetUserPlaylists_RepositoryError(t *testing.T) {
 			userID:        "nonexistent_user",
 			repositoryErr: errors.New("spotify integration not found"),
 		},
-		{
-			name:          "database connection error",
-			userID:        "user123",
-			repositoryErr: errors.New("database connection failed"),
-		},
 	}
 
 	for _, tt := range tests {
@@ -157,24 +146,17 @@ func TestSpotifyAPIService_GetUserPlaylists_RepositoryError(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-			service := NewSpotifyAPIService(mockIntegrationRepo, mockSpotifyClient, logger)
-
-			// Mock repository error
-			mockIntegrationRepo.EXPECT().
-				GetByUserID(gomock.Any(), tt.userID).
-				Return(nil, tt.repositoryErr).
-				Times(1)
+			service := NewSpotifyAPIService(mockSpotifyClient, logger)
 
 			// Spotify client should not be called
 			mockSpotifyClient.EXPECT().
 				GetAllUserPlaylists(gomock.Any(), gomock.Any()).
 				Times(0)
 
-			ctx := context.Background()
+			ctx := context.Background() // No integration in context
 			result, err := service.GetUserPlaylists(ctx, tt.userID)
 
 			assert.Error(err)
@@ -238,17 +220,10 @@ func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-			service := NewSpotifyAPIService(mockIntegrationRepo, mockSpotifyClient, logger)
-
-			// Mock successful repository call
-			mockIntegrationRepo.EXPECT().
-				GetByUserID(gomock.Any(), tt.userID).
-				Return(tt.integration, nil).
-				Times(1)
+			service := NewSpotifyAPIService(mockSpotifyClient, logger)
 
 			// Mock Spotify client error
 			mockSpotifyClient.EXPECT().
@@ -256,7 +231,7 @@ func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 				Return(nil, tt.clientErr).
 				Times(1)
 
-			ctx := context.Background()
+			ctx := requestcontext.ContextWithSpotifyAuth(context.Background(), tt.integration)
 			result, err := service.GetUserPlaylists(ctx, tt.userID)
 
 			assert.Error(err)
@@ -271,14 +246,12 @@ func TestNewSpotifyAPIService(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	mockIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	service := NewSpotifyAPIService(mockIntegrationRepo, mockSpotifyClient, logger)
+	service := NewSpotifyAPIService(mockSpotifyClient, logger)
 
 	assert.NotNil(service)
-	assert.Equal(mockIntegrationRepo, service.integrationRepo)
 	assert.Equal(mockSpotifyClient, service.spotifyClient)
 	assert.NotNil(service.logger)
 }

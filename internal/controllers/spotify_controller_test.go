@@ -89,112 +89,55 @@ func TestSpotifyController_GetUserPlaylists_Success(t *testing.T) {
 	}
 }
 
-func TestSpotifyController_GetUserPlaylists_AuthenticationError(t *testing.T) {
+func TestSpotifyController_GetUserPlaylists_Errors(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupContext   func(*http.Request) *http.Request
-		expectedStatus int
-		expectedBody   string
+		name               string
+		serviceError       error
+		noUserInContext    bool
+		expectedStatusCode int
+		expectedError      string
 	}{
 		{
-			name: "user not found in context",
-			setupContext: func(req *http.Request) *http.Request {
-				// Return request without user context
-				return req
-			},
-			expectedStatus: http.StatusUnauthorized,
-			expectedBody:   "user not found in context\n",
+			name:               "service error",
+			serviceError:       errors.New("some service error"),
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedError:      "unable to retrieve spotify playlists",
+		},
+		{
+			name:               "no user in context",
+			noUserInContext:    true,
+			expectedStatusCode: http.StatusUnauthorized,
+			expectedError:      "user not found in context",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
 			mockSpotifyApiService := mocks.NewMockSpotifyAPIServicer(ctrl)
 			controller := NewSpotifyController(mockSpotifyApiService)
 
-			// Service should not be called when auth fails
-			mockSpotifyApiService.EXPECT().
-				GetUserPlaylists(gomock.Any(), gomock.Any()).
-				Times(0)
+			if tt.serviceError != nil {
+				mockSpotifyApiService.EXPECT().
+					GetUserPlaylists(gomock.Any(), "test_user_123").
+					Return(nil, tt.serviceError).
+					Times(1)
+			}
 
-			// Create request with specific context setup
 			req := httptest.NewRequest(http.MethodGet, "/api/spotify/playlists", nil)
-			req = tt.setupContext(req)
-			w := httptest.NewRecorder()
+			if !tt.noUserInContext {
+				req = addUserToSpotifyContext(req)
+			}
 
-			// Execute
+			w := httptest.NewRecorder()
 			controller.GetUserPlaylists(w, req)
 
-			// Assert response
-			assert.Equal(tt.expectedStatus, w.Code)
-			assert.Equal(tt.expectedBody, w.Body.String())
-		})
-	}
-}
-
-func TestSpotifyController_GetUserPlaylists_ServiceError(t *testing.T) {
-	tests := []struct {
-		name           string
-		serviceError   error
-		expectedStatus int
-		expectedBody   string
-	}{
-		{
-			name:           "spotify integration not found",
-			serviceError:   errors.New("failed to get spotify integration: spotify integration not found"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "unable to retrieve spotify playlists\n",
-		},
-		{
-			name:           "spotify API unauthorized",
-			serviceError:   errors.New("failed to fetch user playlists: spotify API unauthorized (401)"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "unable to retrieve spotify playlists\n",
-		},
-		{
-			name:           "spotify API network error",
-			serviceError:   errors.New("failed to fetch user playlists: network timeout"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "unable to retrieve spotify playlists\n",
-		},
-		{
-			name:           "database connection error",
-			serviceError:   errors.New("failed to get spotify integration: database connection failed"),
-			expectedStatus: http.StatusInternalServerError,
-			expectedBody:   "unable to retrieve spotify playlists\n",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert := require.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockSpotifyApiService := mocks.NewMockSpotifyAPIServicer(ctrl)
-			controller := NewSpotifyController(mockSpotifyApiService)
-
-			// Mock service error
-			mockSpotifyApiService.EXPECT().
-				GetUserPlaylists(gomock.Any(), "test_user_123").
-				Return(nil, tt.serviceError).
-				Times(1)
-
-			// Create request
-			req := httptest.NewRequest(http.MethodGet, "/api/spotify/playlists", nil)
-			req = addUserToSpotifyContext(req)
-			w := httptest.NewRecorder()
-
-			// Execute
-			controller.GetUserPlaylists(w, req)
-
-			// Assert response
-			assert.Equal(tt.expectedStatus, w.Code)
-			assert.Equal(tt.expectedBody, w.Body.String())
+			assert.Equal(tt.expectedStatusCode, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
 		})
 	}
 }
