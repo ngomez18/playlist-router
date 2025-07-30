@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/ngomez18/playlist-router/internal/config"
+	"github.com/ngomez18/playlist-router/internal/middleware"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/services"
 	"github.com/ngomez18/playlist-router/internal/services/mocks"
@@ -302,4 +304,125 @@ func TestAuthController_SpotifyCallback_ContextPropagation(t *testing.T) {
 	assert.Equal(http.StatusTemporaryRedirect, w.Code)
 	expectedURL := "http://localhost:3000/?token=pb_token_123"
 	assert.Equal(expectedURL, w.Header().Get("Location"))
+}
+
+func TestAuthController_ValidateToken_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		user           *models.User
+		expectedStatus int
+	}{
+		{
+			name: "successful token validation with complete user",
+			user: &models.User{
+				ID:    "user123",
+				Email: "test@example.com",
+				Name:  "Test User",
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "successful token validation with minimal user",
+			user: &models.User{
+				ID:    "user456",
+				Email: "minimal@example.com",
+				Name:  "Minimal User",
+			},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockAuthService := mocks.NewMockAuthServicer(ctrl)
+			cfg := createTestConfig()
+			controller := NewAuthController(mockAuthService, cfg)
+
+			// Create request with user context
+			req := httptest.NewRequest(http.MethodGet, "/auth/validate", nil)
+			ctx := context.WithValue(req.Context(), middleware.UserContextKey, tt.user)
+			req = req.WithContext(ctx)
+			w := httptest.NewRecorder()
+
+			// No service expectations needed since this method does not call the service
+
+			// Execute
+			controller.ValidateToken(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Equal("application/json", w.Header().Get("Content-Type"))
+
+			// Verify response body contains user data
+			var responseUser models.User
+			err := json.Unmarshal(w.Body.Bytes(), &responseUser)
+			assert.NoError(err)
+			assert.Equal(tt.user.ID, responseUser.ID)
+			assert.Equal(tt.user.Email, responseUser.Email)
+			assert.Equal(tt.user.Name, responseUser.Name)
+		})
+	}
+}
+
+func TestAuthController_ValidateToken_Unauthorized(t *testing.T) {
+	tests := []struct {
+		name           string
+		setupContext   func(*http.Request) *http.Request
+		expectedStatus int
+		expectedBody   string
+	}{
+		{
+			name: "user not found in context",
+			setupContext: func(req *http.Request) *http.Request {
+				// Return request without user context
+				return req
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   "user not found in context",
+		},
+		{
+			name: "invalid user context type",
+			setupContext: func(req *http.Request) *http.Request {
+				// Add invalid type to context
+				ctx := context.WithValue(req.Context(), middleware.UserContextKey, "invalid_user_type")
+				return req.WithContext(ctx)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedBody:   "user not found in context",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockAuthService := mocks.NewMockAuthServicer(ctrl)
+			cfg := createTestConfig()
+			controller := NewAuthController(mockAuthService, cfg)
+
+			// Create request with specific context setup
+			req := httptest.NewRequest(http.MethodGet, "/auth/validate", nil)
+			req = tt.setupContext(req)
+			w := httptest.NewRecorder()
+
+			// No service expectations needed since auth should fail before service call
+
+			// Execute
+			controller.ValidateToken(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedBody)
+		})
+	}
 }

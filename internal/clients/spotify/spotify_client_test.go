@@ -907,3 +907,166 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 		})
 	}
 }
+
+func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
+	tests := []struct {
+		name                string
+		mockResponses       []SpotifyPlaylistResponse
+		expectedPlaylists   []*SpotifyPlaylist
+		accessToken         string
+	}{
+		{
+			name: "single page with results",
+			mockResponses: []SpotifyPlaylistResponse{
+				{
+					Items: []*SpotifyPlaylist{
+						{ID: "playlist1", Name: "Rock Classics", Tracks: &SpotifyPlaylistTracks{Total: 25}},
+						{ID: "playlist2", Name: "Jazz Favorites", Tracks: &SpotifyPlaylistTracks{Total: 18}},
+					},
+					Total: 2,
+				},
+			},
+			expectedPlaylists: []*SpotifyPlaylist{
+				{ID: "playlist1", Name: "Rock Classics", Tracks: &SpotifyPlaylistTracks{Total: 25}},
+				{ID: "playlist2", Name: "Jazz Favorites", Tracks: &SpotifyPlaylistTracks{Total: 18}},
+			},
+			accessToken: "valid_token",
+		},
+		{
+			name: "multiple pages",
+			mockResponses: []SpotifyPlaylistResponse{
+				{
+					Items: []*SpotifyPlaylist{
+						{ID: "playlist1", Name: "Page 1 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 10}},
+						{ID: "playlist2", Name: "Page 1 Playlist 2", Tracks: &SpotifyPlaylistTracks{Total: 15}},
+					},
+					Total: 3,
+				},
+				{
+					Items: []*SpotifyPlaylist{
+						{ID: "playlist3", Name: "Page 2 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 20}},
+					},
+					Total: 3,
+				},
+			},
+			expectedPlaylists: []*SpotifyPlaylist{
+				{ID: "playlist1", Name: "Page 1 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 10}},
+				{ID: "playlist2", Name: "Page 1 Playlist 2", Tracks: &SpotifyPlaylistTracks{Total: 15}},
+				{ID: "playlist3", Name: "Page 2 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 20}},
+			},
+			accessToken: "valid_token",
+		},
+		{
+			name: "empty result",
+			mockResponses: []SpotifyPlaylistResponse{
+				{
+					Items: []*SpotifyPlaylist{},
+					Total: 0,
+				},
+			},
+			expectedPlaylists: []*SpotifyPlaylist{},
+			accessToken:       "valid_token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Set up mock calls for each expected response
+			for _, response := range tt.mockResponses {
+				responseJSON, _ := json.Marshal(response)
+				responseBody := io.NopCloser(bytes.NewReader(responseJSON))
+				resp := &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       responseBody,
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(resp, nil).
+					Times(1)
+			}
+
+			ctx := context.Background()
+			result, err := client.GetAllUserPlaylists(ctx, tt.accessToken)
+
+			assert.NoError(err)
+			assert.NotNil(result)
+			assert.Equal(len(tt.expectedPlaylists), len(result))
+
+			for i, expected := range tt.expectedPlaylists {
+				assert.Equal(expected.ID, result[i].ID)
+				assert.Equal(expected.Name, result[i].Name)
+				if expected.Tracks != nil && result[i].Tracks != nil {
+					assert.Equal(expected.Tracks.Total, result[i].Tracks.Total)
+				}
+			}
+		})
+	}
+}
+
+func TestSpotifyClient_GetAllUserPlaylists_Error(t *testing.T) {
+	tests := []struct {
+		name          string
+		responseError error
+		responseStatus int
+		accessToken   string
+	}{
+		{
+			name:          "http client error",
+			responseError: errors.New("network timeout"),
+			accessToken:   "valid_token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			if tt.responseError != nil {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(nil, tt.responseError).
+					Times(1)
+			} else {
+				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error"}`))
+				resp := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       responseBody,
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(resp, nil).
+					Times(1)
+			}
+
+			ctx := context.Background()
+			result, err := client.GetAllUserPlaylists(ctx, tt.accessToken)
+
+			assert.Error(err)
+			assert.Nil(result)
+		})
+	}
+}

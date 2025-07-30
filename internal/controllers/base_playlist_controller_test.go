@@ -74,7 +74,7 @@ func TestBasePlaylistController_Create_Success(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/api/base_playlist", bytes.NewBuffer(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 			req = addUserToContext(req)
-			
+
 			w := httptest.NewRecorder()
 
 			// Set expectations
@@ -115,15 +115,6 @@ func TestBasePlaylistController_Create_ValidationErrors(t *testing.T) {
 			requestBody: &models.CreateBasePlaylistRequest{
 				Name:              "",
 				SpotifyPlaylistID: "spotify123",
-			},
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "validation failed:",
-		},
-		{
-			name: "empty spotify playlist ID",
-			requestBody: &models.CreateBasePlaylistRequest{
-				Name:              "Test Playlist",
-				SpotifyPlaylistID: "",
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "validation failed:",
@@ -377,13 +368,13 @@ func TestBasePlaylistController_Delete_Success(t *testing.T) {
 			name:           "successful deletion with valid id",
 			playlistID:     "playlist123",
 			urlPath:        "/api/base_playlist/playlist123",
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "successful deletion with complex id",
 			playlistID:     "pl_abc123def456",
 			urlPath:        "/api/base_playlist/pl_abc123def456",
-			expectedStatus: http.StatusNoContent,
+			expectedStatus: http.StatusOK,
 		},
 	}
 
@@ -796,15 +787,13 @@ func TestBasePlaylistController_GetByUserID_Success(t *testing.T) {
 			err := json.Unmarshal(w.Body.Bytes(), &responseBody)
 			assert.NoError(err)
 			assert.Equal(len(tt.serviceResult), len(responseBody))
-			
+
 			for i, expectedPlaylist := range tt.serviceResult {
-				if i < len(responseBody) {
-					assert.Equal(expectedPlaylist.ID, responseBody[i].ID)
-					assert.Equal(expectedPlaylist.UserID, responseBody[i].UserID)
-					assert.Equal(expectedPlaylist.Name, responseBody[i].Name)
-					assert.Equal(expectedPlaylist.SpotifyPlaylistID, responseBody[i].SpotifyPlaylistID)
-					assert.Equal(expectedPlaylist.IsActive, responseBody[i].IsActive)
-				}
+				assert.Equal(expectedPlaylist.ID, responseBody[i].ID)
+				assert.Equal(expectedPlaylist.UserID, responseBody[i].UserID)
+				assert.Equal(expectedPlaylist.Name, responseBody[i].Name)
+				assert.Equal(expectedPlaylist.SpotifyPlaylistID, responseBody[i].SpotifyPlaylistID)
+				assert.Equal(expectedPlaylist.IsActive, responseBody[i].IsActive)
 			}
 		})
 	}

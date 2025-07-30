@@ -28,6 +28,7 @@ type SpotifyPlaylist struct {
 	Description   string                  `json:"description"`
 	Href          string                  `json:"href"`
 	Images        []*SpotifyPlaylistImage `json:"images"`
+	Tracks        *SpotifyPlaylistTracks  `json:"tracks"`
 	SnapshotID    string                  `json:"snapshot_id"`
 }
 

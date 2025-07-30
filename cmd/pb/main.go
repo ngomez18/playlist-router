@@ -32,15 +32,17 @@ type Repositories struct {
 }
 
 type Services struct {
-	basePlaylistService       services.BasePlaylistServicer
-	userService               services.UserServicer
-	spotifyIntegrationService services.SpotifyIntegrationServicer
 	authService               services.AuthServicer
+	userService               services.UserServicer
+	basePlaylistService       services.BasePlaylistServicer
+	spotifyIntegrationService services.SpotifyIntegrationServicer
+	spotifyApiService		services.SpotifyAPIServicer
 }
 
 type Controllers struct {
 	basePlaylistController controllers.BasePlaylistController
 	authController         controllers.AuthController
+	spotifyController      controllers.SpotifyController
 }
 
 type Middleware struct {
@@ -92,15 +94,17 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	spotifyIntegrationService := services.NewSpotifyIntegrationService(repositories.spotifyIntegrationRepository, logger)
 
 	serviceInstances := Services{
-		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
-		userService:               userService,
-		spotifyIntegrationService: spotifyIntegrationService,
 		authService:               services.NewAuthService(userService, spotifyIntegrationService, spotifyClient, logger),
+		userService:               userService,
+		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
+		spotifyIntegrationService: spotifyIntegrationService,
+		spotifyApiService: services.NewSpotifyAPIService(repositories.spotifyIntegrationRepository, spotifyClient, logger),
 	}
 
 	controllers := Controllers{
 		basePlaylistController: *controllers.NewBasePlaylistController(serviceInstances.basePlaylistService),
 		authController:         *controllers.NewAuthController(serviceInstances.authService, cfg),
+		spotifyController:      *controllers.NewSpotifyController(serviceInstances.spotifyApiService),
 	}
 
 	middleware := Middleware{
@@ -132,6 +136,10 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	basePlaylist.GET("", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID))))
 	basePlaylist.GET("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID))))
 	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Delete))))
+
+	// Spotify routes (protected)
+	spotify := api.Group("/spotify")
+	spotify.GET("/playlists", apis.WrapStdHandler(deps.middleware.auth.RequireAuth(http.HandlerFunc(deps.controllers.spotifyController.GetUserPlaylists))))
 
 	// Serve static files (must be after API routes)
 	setupStaticFileServer(e)

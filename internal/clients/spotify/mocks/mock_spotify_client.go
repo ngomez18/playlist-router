@@ -79,6 +79,21 @@ func (mr *MockSpotifyAPIMockRecorder) GenerateAuthURL(state interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateAuthURL", reflect.TypeOf((*MockSpotifyAPI)(nil).GenerateAuthURL), state)
 }
 
+// GetAllUserPlaylists mocks base method.
+func (m *MockSpotifyAPI) GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*spotifyclient.SpotifyPlaylist, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllUserPlaylists", ctx, accessToken)
+	ret0, _ := ret[0].([]*spotifyclient.SpotifyPlaylist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllUserPlaylists indicates an expected call of GetAllUserPlaylists.
+func (mr *MockSpotifyAPIMockRecorder) GetAllUserPlaylists(ctx, accessToken interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUserPlaylists", reflect.TypeOf((*MockSpotifyAPI)(nil).GetAllUserPlaylists), ctx, accessToken)
+}
+
 // GetPlaylist mocks base method.
 func (m *MockSpotifyAPI) GetPlaylist(ctx context.Context, accessToken, playlistId string) (*spotifyclient.SpotifyPlaylist, error) {
 	m.ctrl.T.Helper()

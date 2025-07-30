@@ -414,3 +414,69 @@ func TestUserService_GenerateAuthToken_DatabaseError(t *testing.T) {
 	_, err := service.GenerateAuthToken(context.Background(), userID)
 	assert.ErrorIs(err, repositories.ErrDatabaseOperation)
 }
+
+func TestUserService_ValidateAuthToken_Success(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockRepo := mocks.NewMockUserRepository(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	service := NewUserService(mockRepo, logger)
+
+	token := "valid_token_123"
+	expectedUser := &models.User{
+		ID:    "user123",
+		Email: "test@example.com",
+		Name:  "Test User",
+	}
+
+	mockRepo.EXPECT().
+		ValidateAuthToken(gomock.Any(), token).
+		Return(expectedUser, nil).
+		Times(1)
+
+	user, err := service.ValidateAuthToken(context.Background(), token)
+	assert.NoError(err)
+	assert.Equal(expectedUser.ID, user.ID)
+	assert.Equal(expectedUser.Email, user.Email)
+	assert.Equal(expectedUser.Name, user.Name)
+}
+
+func TestUserService_ValidateAuthToken_Error(t *testing.T) {
+	tests := []struct {
+		name          string
+		token         string
+		repositoryErr error
+		expectedErr   error
+	}{
+		{
+			name:          "generic repository error",
+			token:         "some_token",
+			repositoryErr: errors.New("repository failure"),
+			expectedErr:   errors.New("repository failure"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockRepo := mocks.NewMockUserRepository(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			service := NewUserService(mockRepo, logger)
+
+			mockRepo.EXPECT().
+				ValidateAuthToken(gomock.Any(), tt.token).
+				Return(nil, tt.repositoryErr).
+				Times(1)
+
+			user, err := service.ValidateAuthToken(context.Background(), tt.token)
+			assert.Error(err)
+			assert.Nil(user)
+			assert.Contains(err.Error(), "failed to validate auth token")
+		})
+	}
+}

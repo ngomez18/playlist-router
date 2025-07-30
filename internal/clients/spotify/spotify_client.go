@@ -21,7 +21,7 @@ type SpotifyAPI interface {
 	GenerateAuthURL(state string) string
 	ExchangeCodeForTokens(ctx context.Context, code string) (*SpotifyTokenResponse, error)
 	GetUserProfile(ctx context.Context, accessToken string) (*SpotifyUserProfile, error)
-	GetUserPlaylists(ctx context.Context, accessToken string, limit, offset int) (*SpotifyPlaylistResponse, error)
+	GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*SpotifyPlaylist, error)
 	GetPlaylist(ctx context.Context, accessToken string, playlistId string) (*SpotifyPlaylist, error)
 	CreatePlaylist(ctx context.Context, accessToken, userId, name, description string, public bool) (*SpotifyPlaylist, error)
 }
@@ -200,6 +200,34 @@ func (c *SpotifyClient) GetUserPlaylists(ctx context.Context, accessToken string
 
 	c.logger.InfoContext(ctx, "successfully fetched user playlists")
 	return &playlists, nil
+}
+
+func (c *SpotifyClient) GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*SpotifyPlaylist, error) {
+	c.logger.InfoContext(ctx, "fetching all user playlists from spotify")
+	
+	allPlaylists := make([]*SpotifyPlaylist, 0)
+	limit := 50 // Spotify API max limit
+	offset := 0
+
+	for {
+		response, err := c.GetUserPlaylists(ctx, accessToken, limit, offset)
+		if err != nil {
+			c.logger.ErrorContext(ctx, "failed to fetch playlists batch", "offset", offset, "error", err)
+			return nil, fmt.Errorf("failed to fetch playlists batch at offset %d: %w", offset, err)
+		}
+		
+		allPlaylists = append(allPlaylists, response.Items...)
+		
+		// Break if we have all the items according to the total
+		if len(allPlaylists) >= response.Total || len(response.Items) == 0 {
+			break
+		}
+		
+		offset += limit
+	}
+	
+	c.logger.InfoContext(ctx, "successfully fetched all user playlists", "total_count", len(allPlaylists))
+	return allPlaylists, nil
 }
 
 

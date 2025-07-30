@@ -1,6 +1,7 @@
 import { getAuthToken, removeAuthToken } from './auth'
 import type { User } from '../types/auth'
 import type { BasePlaylist, CreateBasePlaylistRequest } from '../types/playlist'
+import type { SpotifyPlaylist } from '../types/spotify'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -86,6 +87,11 @@ class ApiClient {
     return this.request<void>(`/api/base_playlist/${id}`, {
       method: 'DELETE',
     })
+  }
+
+  // Spotify endpoints
+  async getSpotifyPlaylists(): Promise<SpotifyPlaylist[]> {
+    return this.request<SpotifyPlaylist[]>('/api/spotify/playlists')
   }
 }
 
