@@ -9,7 +9,6 @@ help:
 	@echo ""
 	@echo "Backend:"
 	@echo "  build      - Build the Go application"
-	@echo "  build-em 	- Build the Go application with the frontend embedded"
 	@echo "  run        - Run the application in production mode"
 	@echo "  run-dev    - Run the application in development mode"
 	@echo "  dev        - Run the application in development mode with hot reload (air)"
@@ -37,20 +36,21 @@ build:
 	go build -o playlist-router ./cmd/pb
 
 # Build the application with the frontend embedded
-build-em: frontend-build
+build-all: frontend-build
 	@echo "Building application with embedded frontend..."
 	@mkdir -p internal/static/dist
 	@cp -r web/dist/* internal/static/dist/
 	go build -o playlist-router ./cmd/pb
+	@echo "Full stack build completed!"
 
 # Run in production mode
 run: build
 	@echo "Starting server in production mode..."
 	./playlist-router serve
 
-# Run in production mode
+# Run in dev mode
 run-dev: build
-	@echo "Starting server in production mode..."
+	@echo "Starting server in development mode..."
 	./playlist-router serve --dev
 
 # Run in development mode with hot reload
@@ -105,12 +105,6 @@ frontend-dev:
 frontend-build:
 	@echo "Building frontend for production..."
 	cd web && npm run build
-
-# Build both frontend and backend for production
-build-all: build-embed
-	@echo "Full stack build completed!"
-	@echo "Frontend built in web/dist/"
-	@echo "Backend binary: playlist-router"
 
 # Build everything and run in production mode
 run-prod: build-all

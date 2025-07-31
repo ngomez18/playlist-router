@@ -226,6 +226,67 @@ func TestUserRepositoryPocketbase_GenerateAuthToken_UserNotFound(t *testing.T) {
 	assert.Equal(repositories.ErrUseNotFound, err)
 }
 
+func TestUserRepositoryPocketbase_ValidateAuthToken_Success(t *testing.T) {
+	assert := assert.New(t)
+	app := NewTestApp(t)
+	repo := NewUserRepositoryPocketbase(app)
+	ctx := context.Background()
+
+	// Create a test user first
+	testUser := &models.User{
+		Email:    "test@example.com",
+		Username: "testuser",
+		Name:     "Test User",
+	}
+	createdUser, err := createUserInDB(t, app, testUser)
+	assert.NoError(err)
+
+	// Generate a token for the user
+	token, err := repo.GenerateAuthToken(ctx, createdUser.ID)
+	assert.NoError(err)
+
+	// Now test ValidateAuthToken
+	validatedUser, err := repo.ValidateAuthToken(ctx, token)
+
+	assert.NoError(err)
+	assert.NotNil(validatedUser)
+	assert.Equal(createdUser.ID, validatedUser.ID)
+}
+
+func TestUserRepositoryPocketbase_ValidateAuthToken_Errors(t *testing.T) {
+	tests := []struct {
+		name          string
+		token         string
+		expectedError error
+	}{
+		{
+			name:          "invalid token format",
+			token:         "invalid-token",
+			expectedError: repositories.ErrUseNotFound,
+		},
+		{
+			name:          "token with missing user ID",
+			token:         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c", // A valid JWT with no 'id' claim
+			expectedError: repositories.ErrUseNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := assert.New(t)
+			app := NewTestApp(t)
+			repo := NewUserRepositoryPocketbase(app)
+			ctx := context.Background()
+
+			validatedUser, err := repo.ValidateAuthToken(ctx, tt.token)
+
+			assert.Error(err)
+			assert.Nil(validatedUser)
+			assert.Equal(tt.expectedError, err)
+		})
+	}
+}
+
 func createUserInDB(t *testing.T, app *pocketbase.PocketBase, user *models.User) (*models.User, error) {
 	t.Helper()
 	assert := require.New(t)

@@ -30,7 +30,6 @@ type UpdateChildPlaylistRequest struct {
 	Description *string              `json:"description,omitempty"`
 	FilterRules *AudioFeatureFilters `json:"filter_rules,omitempty"`
 	IsActive    *bool                `json:"is_active,omitempty"`
-	SyncEnabled *bool                `json:"sync_enabled,omitempty"`
 }
 
 func BuildChildPlaylistName(basePlaylistName, childPlaylistName string) string {

@@ -171,5 +171,5 @@ func setupStaticFileServer(e *core.ServeEvent) {
 		log.Fatal(err)
 	}
 
-	e.Router.GET("/", apis.Static(fsys, false))
+	e.Router.GET("/{path...}", apis.Static(fsys, true))
 }

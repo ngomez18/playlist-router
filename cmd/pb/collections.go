@@ -15,6 +15,10 @@ func initCollections(app *pocketbase.PocketBase) error {
 		return err
 	}
 
+	if err := createChildPlaylistCollection(app); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -144,6 +148,68 @@ func createSpotifyIntegrationsCollection(app *pocketbase.PocketBase) error {
 	collection.Indexes = []string{
 		"CREATE UNIQUE INDEX idx_spotify_integrations_user ON spotify_integrations (user)",
 	}
+
+	return app.Save(collection)
+}
+
+// createChildPlaylistCollection creates the child_playlists collection
+func createChildPlaylistCollection(app *pocketbase.PocketBase) error {
+	// Check if child_playlists collection exists
+	_, err := app.FindCollectionByNameOrId("child_playlists")
+	if err == nil {
+		// Collection already exists
+		return nil
+	}
+
+	// Create child_playlists collection
+	collection := core.NewBaseCollection("child_playlists")
+
+	// Add fields
+	collection.Fields.Add(&core.TextField{
+		Name:     "user_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "base_playlist_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "name",
+		Required: true,
+		Max:      100,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "description",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "spotify_playlist_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "filter_rules",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.BoolField{
+		Name:     "is_active",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "created",
+		OnCreate: true,
+	})
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "updated",
+		OnCreate: true,
+		OnUpdate: true,
+	})
 
 	return app.Save(collection)
 }
