@@ -482,15 +482,68 @@ func (c *CachedSpotifyClient) InvalidateAll(ctx context.Context, cacheType strin
 3. Implement cache clustering for scale
 4. Advanced invalidation strategies
 
-## Implementation Priority
+## Implementation Status
 
-### Phase 1 (MVP)
-1. ✅ SyncEvent model and repository
-2. ✅ SyncService with core sync logic
-3. ✅ SyncController with HTTP endpoint
-4. ✅ Sync locking middleware
-5. ✅ Server startup cleanup
-6. ✅ Frontend sync button integration
+### ✅ **Completed Components:**
+
+#### 1. SyncEvent Model & Repository Layer
+- **SyncEvent Model** (`internal/models/sync_event.go`) - Tracks sync operations with all required fields
+- **SyncEventRepository Interface** (`internal/repositories/sync_event_repository.go`) - Clean 5-method interface for CRUD operations
+- **SyncEventRepository PocketBase Implementation** (`internal/repositories/pb/sync_event_repository_pb.go`) - Full implementation with JSON serialization, error handling, and logging
+- **Comprehensive Unit Tests** (`internal/repositories/pb/sync_event_repository_pb_test.go`) - Table-driven tests with 100% coverage
+- **Database Schema Support** - Collection setup and helper functions for testing
+
+#### 2. SyncEvent Service Layer  
+- **SyncEventService Interface & Implementation** (`internal/services/sync_event_service.go`) - CRUD operations and active sync checks
+- **Unit Tests** (`internal/services/sync_event_service_test.go`) - Full test coverage following existing patterns
+- **Purpose**: Used by middleware for sync locking and controllers for sync status/history
+
+#### 3. Track Routing Service Interface
+- **TrackRouterService Interface** (`internal/services/track_router_service.go`) - Single-method interface for core routing logic
+- **Purpose**: Will orchestrate the complete track routing process from base playlists to child playlists
+
+### 🔄 **Next Steps (MVP):**
+
+#### 4. TrackRouterService Implementation
+- Core track routing orchestration logic
+- Integration with existing services (SyncEventService, ChildPlaylistService, BasePlaylistService)
+- Spotify API integration for track fetching and metadata enrichment
+- Filter application logic for child playlists
+
+#### 5. SyncController - HTTP endpoints for sync operations
+- `POST /api/base-playlists/:id/sync` - Trigger sync using TrackRouterService
+- `GET /api/sync-events/:id` - Get sync event details using SyncEventService
+- `GET /api/base-playlists/:id/sync-status` - Check active sync status using SyncEventService
+
+#### 6. Sync Locking Middleware - Prevent conflicts during sync operations
+- Uses SyncEventService.HasActiveSyncForBasePlaylist() for locking logic
+- Block child playlist create/edit/delete during sync
+- Block base playlist edit/delete during sync
+- Base playlist level locking (locks all related child playlists)
+
+#### 7. Server Startup Cleanup - Handle orphaned syncs on restart
+- Mark stuck "in_progress" syncs as failed on server startup
+- Can be implemented as startup function using SyncEventService
+
+#### 8. Frontend Integration - Update UI components
+- Sync button on base playlist cards
+- Sync status indicators and loading states  
+- Disabled actions during sync
+
+## Revised Architecture
+
+Based on implementation experience, the architecture has been refined:
+
+### Service Layer Separation
+- **SyncEventService**: Pure CRUD operations for sync events, used by middleware and controllers
+- **TrackRouterService**: Core track routing business logic, focused solely on the routing process
+- **Clear Dependencies**: TrackRouterService uses SyncEventService for sync event management
+
+### Benefits of This Architecture
+- **Single Responsibility**: Each service has one clear purpose
+- **Reusability**: SyncEventService perfect for middleware sync locking
+- **Testability**: Clean interfaces with focused responsibilities
+- **Maintainability**: Clear separation between data management and business logic
 
 ### Success Criteria
 - Users can manually trigger sync for base playlists
