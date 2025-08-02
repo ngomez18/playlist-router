@@ -45,10 +45,9 @@ func TestChildPlaylistRepositoryPocketbase_Create_Success(t *testing.T) {
 			playlistName:      "Chill Vibes",
 			description:       "Low energy chill songs",
 			spotifyPlaylistID: "spotify789",
-			filterRules: &models.AudioFeatureFilters{
-				Energy:  &models.RangeFilter{Min: ptrFloat64(0.0), Max: ptrFloat64(0.5)},
-				Valence: &models.RangeFilter{Min: ptrFloat64(0.3), Max: ptrFloat64(0.7)},
-				Genres:  &models.SetFilter{Include: []string{"chill", "ambient"}},
+			filterRules: &models.MetadataFilters{
+				Popularity: &models.RangeFilter{Min: ptrFloat64(30), Max: ptrFloat64(70)},
+				Genres:     &models.SetFilter{Include: []string{"chill", "ambient"}},
 			},
 		},
 	}
@@ -253,8 +252,8 @@ func TestChildPlaylistRepositoryPocketbase_GetByID_Success(t *testing.T) {
 
 	// Create filter rules for testing
 	filterRules := &models.AudioFeatureFilters{
-		Energy:  &models.RangeFilter{Min: ptrFloat64(0.7), Max: ptrFloat64(1.0)},
-		Valence: &models.RangeFilter{Min: ptrFloat64(0.5), Max: ptrFloat64(0.9)},
+		Popularity: &models.RangeFilter{Min: ptrFloat64(70), Max: ptrFloat64(100)},
+		Duration: &models.RangeFilter{Min: ptrFloat64(180000), Max: ptrFloat64(300000)},
 	}
 
 	// First create a playlist to retrieve
@@ -431,7 +430,7 @@ func TestChildPlaylistRepositoryPocketbase_Update_Success(t *testing.T) {
 
 	// Create initial child playlist
 	initialFilterRules := &models.AudioFeatureFilters{
-		Energy: &models.RangeFilter{Min: ptrFloat64(0.5), Max: ptrFloat64(0.8)},
+		Popularity: &models.RangeFilter{Min: ptrFloat64(50), Max: ptrFloat64(80)},
 	}
 	playlist, err := repo.Create(ctx, "user123", "base123", "Original Name", "Original description", "spotify123", initialFilterRules)
 	assert.NoError(err)
@@ -442,8 +441,8 @@ func TestChildPlaylistRepositoryPocketbase_Update_Success(t *testing.T) {
 	newDescription := "Updated description"
 	newIsActive := false
 	newFilterRules := &models.AudioFeatureFilters{
-		Energy:  &models.RangeFilter{Min: ptrFloat64(0.7), Max: ptrFloat64(1.0)},
-		Valence: &models.RangeFilter{Min: ptrFloat64(0.6), Max: ptrFloat64(0.9)},
+		Popularity: &models.RangeFilter{Min: ptrFloat64(70), Max: ptrFloat64(100)},
+		Duration: &models.RangeFilter{Min: ptrFloat64(200000), Max: ptrFloat64(350000)},
 	}
 
 	updateReq := &models.UpdateChildPlaylistRequest{

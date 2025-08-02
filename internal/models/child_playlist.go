@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -37,13 +36,5 @@ func BuildChildPlaylistName(basePlaylistName, childPlaylistName string) string {
 }
 
 func BuildChildPlaylistDescription(description string) string {
-	descriptionItems := []string{
-		"****************************************************",
-		"* PLAYLIST GENERATED AND MANAGED BY PlaylistRouter *",
-		"*********** PLEASE DO NOT EDIT OR DELETE ***********",
-		"****************************************************",
-		description,
-	}
-
-	return strings.Join(descriptionItems, "\n")
+	return fmt.Sprintf("[PLAYLIST GENERATED AND MANAGEED BY PlaylistRouter] %s", description)
 }

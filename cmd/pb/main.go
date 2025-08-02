@@ -65,7 +65,7 @@ func main() {
 
 		deps = initAppDependencies(app)
 
-		if err := initCollections(app); err != nil {
+		if err := pb.InitCollections(app); err != nil {
 			return err
 		}
 

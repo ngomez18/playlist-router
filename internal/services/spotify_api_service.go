@@ -17,8 +17,8 @@ type SpotifyAPIServicer interface {
 }
 
 type SpotifyAPIService struct {
-	spotifyClient   spotifyclient.SpotifyAPI
-	logger          *slog.Logger
+	spotifyClient spotifyclient.SpotifyAPI
+	logger        *slog.Logger
 }
 
 func NewSpotifyAPIService(
@@ -26,8 +26,8 @@ func NewSpotifyAPIService(
 	logger *slog.Logger,
 ) *SpotifyAPIService {
 	return &SpotifyAPIService{
-		spotifyClient:   spotifyClient,
-		logger:          logger.With("component", "SpotifyAPIService"),
+		spotifyClient: spotifyClient,
+		logger:        logger.With("component", "SpotifyAPIService"),
 	}
 }
 

@@ -44,8 +44,8 @@ func TestChildPlaylistController_Create_Success(t *testing.T) {
 			request: models.CreateChildPlaylistRequest{
 				Name:        "Test Child Playlist",
 				Description: "Test description",
-				FilterRules: &models.AudioFeatureFilters{
-					Energy: &models.RangeFilter{Min: ptrFloat64(0.5), Max: ptrFloat64(1.0)},
+				FilterRules: &models.MetadataFilters{
+					Popularity: &models.RangeFilter{Min: ptrFloat64(50), Max: ptrFloat64(100)},
 				},
 			},
 			serviceResult: &models.ChildPlaylist{
@@ -573,7 +573,6 @@ func TestChildPlaylistController_Update_Errors(t *testing.T) {
 func stringToPointer(s string) *string {
 	return &s
 }
-
 
 func TestChildPlaylistController_Delete_Success(t *testing.T) {
 	assert := require.New(t)
