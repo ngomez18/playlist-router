@@ -277,11 +277,11 @@ func TestSyncEventService_GetSyncEvent_Error(t *testing.T) {
 
 func TestSyncEventService_HasActiveSyncForBasePlaylist_Success(t *testing.T) {
 	tests := []struct {
-		name        string
-		userID      string
+		name           string
+		userID         string
 		basePlaylistID string
-		syncEvents  []*models.SyncEvent
-		expected    bool
+		syncEvents     []*models.SyncEvent
+		expected       bool
 	}{
 		{
 			name:           "has active sync for user and base playlist",

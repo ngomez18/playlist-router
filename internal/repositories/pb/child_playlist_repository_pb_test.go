@@ -253,7 +253,7 @@ func TestChildPlaylistRepositoryPocketbase_GetByID_Success(t *testing.T) {
 	// Create filter rules for testing
 	filterRules := &models.AudioFeatureFilters{
 		Popularity: &models.RangeFilter{Min: ptrFloat64(70), Max: ptrFloat64(100)},
-		Duration: &models.RangeFilter{Min: ptrFloat64(180000), Max: ptrFloat64(300000)},
+		Duration:   &models.RangeFilter{Min: ptrFloat64(180000), Max: ptrFloat64(300000)},
 	}
 
 	// First create a playlist to retrieve
@@ -442,7 +442,7 @@ func TestChildPlaylistRepositoryPocketbase_Update_Success(t *testing.T) {
 	newIsActive := false
 	newFilterRules := &models.AudioFeatureFilters{
 		Popularity: &models.RangeFilter{Min: ptrFloat64(70), Max: ptrFloat64(100)},
-		Duration: &models.RangeFilter{Min: ptrFloat64(200000), Max: ptrFloat64(350000)},
+		Duration:   &models.RangeFilter{Min: ptrFloat64(200000), Max: ptrFloat64(350000)},
 	}
 
 	updateReq := &models.UpdateChildPlaylistRequest{

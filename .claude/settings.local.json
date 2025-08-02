@@ -27,7 +27,8 @@
       "Bash(npm run type-check:*)",
       "WebFetch(domain:musicbrainz.org)",
       "WebFetch(domain:metabrainz.org)",
-      "WebFetch(domain:data.metabrainz.org)"
+      "WebFetch(domain:data.metabrainz.org)",
+      "Bash(go generate:*)"
     ],
     "deny": []
   }

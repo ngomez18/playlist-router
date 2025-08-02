@@ -21,8 +21,8 @@ type SyncEvent struct {
 	StartedAt        time.Time  `json:"started_at"`
 	CompletedAt      *time.Time `json:"completed_at,omitempty"`
 	ErrorMessage     *string    `json:"error_message,omitempty"`
-	Created time.Time `json:"created"`
-	Updated time.Time `json:"updated"`
+	Created          time.Time  `json:"created"`
+	Updated          time.Time  `json:"updated"`
 
 	// Sync statistics
 	TracksProcessed  int `json:"tracks_processed"`

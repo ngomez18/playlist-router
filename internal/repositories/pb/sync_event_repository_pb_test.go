@@ -13,15 +13,15 @@ import (
 
 func TestSyncEventRepositoryPocketbase_Create_Success(t *testing.T) {
 	tests := []struct {
-		name               string
-		userID             string
-		basePlaylistID     string
-		childPlaylistIDs   []string
-		status             models.SyncStatus
-		tracksProcessed    int
-		totalAPIRequests   int
-		completedAt        *time.Time
-		errorMessage       *string
+		name             string
+		userID           string
+		basePlaylistID   string
+		childPlaylistIDs []string
+		status           models.SyncStatus
+		tracksProcessed  int
+		totalAPIRequests int
+		completedAt      *time.Time
+		errorMessage     *string
 	}{
 		{
 			name:             "successful creation with minimal data",
@@ -203,52 +203,52 @@ func TestSyncEventRepositoryPocketbase_Create_ValidationErrors(t *testing.T) {
 
 func TestSyncEventRepositoryPocketbase_Update_Success(t *testing.T) {
 	tests := []struct {
-		name                  string
-		initialStatus         models.SyncStatus
+		name                   string
+		initialStatus          models.SyncStatus
 		initialTracksProcessed int
-		initialAPIRequests    int
-		updateStatus          models.SyncStatus
-		updateTracksProcessed int
-		updateAPIRequests     int
+		initialAPIRequests     int
+		updateStatus           models.SyncStatus
+		updateTracksProcessed  int
+		updateAPIRequests      int
 		updateChildPlaylistIDs []string
-		hasCompletedAt        bool
-		errorMessage          *string
+		hasCompletedAt         bool
+		errorMessage           *string
 	}{
 		{
-			name:                  "successful completion update",
-			initialStatus:         models.SyncStatusInProgress,
+			name:                   "successful completion update",
+			initialStatus:          models.SyncStatusInProgress,
 			initialTracksProcessed: 0,
-			initialAPIRequests:    0,
-			updateStatus:          models.SyncStatusCompleted,
-			updateTracksProcessed: 150,
-			updateAPIRequests:     30,
+			initialAPIRequests:     0,
+			updateStatus:           models.SyncStatusCompleted,
+			updateTracksProcessed:  150,
+			updateAPIRequests:      30,
 			updateChildPlaylistIDs: []string{"child1", "child2", "child3"},
-			hasCompletedAt:        true,
-			errorMessage:          nil,
+			hasCompletedAt:         true,
+			errorMessage:           nil,
 		},
 		{
-			name:                  "failed sync with error message",
-			initialStatus:         models.SyncStatusInProgress,
+			name:                   "failed sync with error message",
+			initialStatus:          models.SyncStatusInProgress,
 			initialTracksProcessed: 25,
-			initialAPIRequests:    5,
-			updateStatus:          models.SyncStatusFailed,
-			updateTracksProcessed: 25,
-			updateAPIRequests:     6,
+			initialAPIRequests:     5,
+			updateStatus:           models.SyncStatusFailed,
+			updateTracksProcessed:  25,
+			updateAPIRequests:      6,
 			updateChildPlaylistIDs: []string{},
-			hasCompletedAt:        true,
-			errorMessage:          ptrString("Spotify API returned 429 - Rate limit exceeded"),
+			hasCompletedAt:         true,
+			errorMessage:           ptrString("Spotify API returned 429 - Rate limit exceeded"),
 		},
 		{
-			name:                  "in-progress update with more tracks",
-			initialStatus:         models.SyncStatusInProgress,
+			name:                   "in-progress update with more tracks",
+			initialStatus:          models.SyncStatusInProgress,
 			initialTracksProcessed: 50,
-			initialAPIRequests:    10,
-			updateStatus:          models.SyncStatusInProgress,
-			updateTracksProcessed: 100,
-			updateAPIRequests:     20,
+			initialAPIRequests:     10,
+			updateStatus:           models.SyncStatusInProgress,
+			updateTracksProcessed:  100,
+			updateAPIRequests:      20,
 			updateChildPlaylistIDs: []string{"child1", "child2"},
-			hasCompletedAt:        false,
-			errorMessage:          nil,
+			hasCompletedAt:         false,
+			errorMessage:           nil,
 		},
 	}
 
@@ -429,15 +429,21 @@ func TestSyncEventRepositoryPocketbase_GetByID_NotFoundError(t *testing.T) {
 
 func TestSyncEventRepositoryPocketbase_GetByUserID_Success(t *testing.T) {
 	tests := []struct {
-		name                string
-		userID              string
-		syncEventsToCreate  []struct{ basePlaylistID string; status models.SyncStatus }
-		expectedCount       int
+		name               string
+		userID             string
+		syncEventsToCreate []struct {
+			basePlaylistID string
+			status         models.SyncStatus
+		}
+		expectedCount int
 	}{
 		{
 			name:   "user with multiple sync events",
 			userID: "user123",
-			syncEventsToCreate: []struct{ basePlaylistID string; status models.SyncStatus }{
+			syncEventsToCreate: []struct {
+				basePlaylistID string
+				status         models.SyncStatus
+			}{
 				{"base1", models.SyncStatusCompleted},
 				{"base2", models.SyncStatusInProgress},
 				{"base3", models.SyncStatusFailed},
@@ -447,16 +453,22 @@ func TestSyncEventRepositoryPocketbase_GetByUserID_Success(t *testing.T) {
 		{
 			name:   "user with single sync event",
 			userID: "user456",
-			syncEventsToCreate: []struct{ basePlaylistID string; status models.SyncStatus }{
+			syncEventsToCreate: []struct {
+				basePlaylistID string
+				status         models.SyncStatus
+			}{
 				{"base4", models.SyncStatusInProgress},
 			},
 			expectedCount: 1,
 		},
 		{
-			name:               "user with no sync events",
-			userID:             "user789",
-			syncEventsToCreate: []struct{ basePlaylistID string; status models.SyncStatus }{},
-			expectedCount:      0,
+			name:   "user with no sync events",
+			userID: "user789",
+			syncEventsToCreate: []struct {
+				basePlaylistID string
+				status         models.SyncStatus
+			}{},
+			expectedCount: 0,
 		},
 	}
 
@@ -537,15 +549,21 @@ func TestSyncEventRepositoryPocketbase_GetByUserID_Success(t *testing.T) {
 
 func TestSyncEventRepositoryPocketbase_GetByBasePlaylistID_Success(t *testing.T) {
 	tests := []struct {
-		name                string
-		basePlaylistID      string
-		syncEventsToCreate  []struct{ userID string; status models.SyncStatus }
-		expectedCount       int
+		name               string
+		basePlaylistID     string
+		syncEventsToCreate []struct {
+			userID string
+			status models.SyncStatus
+		}
+		expectedCount int
 	}{
 		{
 			name:           "base playlist with multiple sync events",
 			basePlaylistID: "base123",
-			syncEventsToCreate: []struct{ userID string; status models.SyncStatus }{
+			syncEventsToCreate: []struct {
+				userID string
+				status models.SyncStatus
+			}{
 				{"user1", models.SyncStatusCompleted},
 				{"user1", models.SyncStatusInProgress},
 				{"user2", models.SyncStatusFailed},
@@ -555,16 +573,22 @@ func TestSyncEventRepositoryPocketbase_GetByBasePlaylistID_Success(t *testing.T)
 		{
 			name:           "base playlist with single sync event",
 			basePlaylistID: "base456",
-			syncEventsToCreate: []struct{ userID string; status models.SyncStatus }{
+			syncEventsToCreate: []struct {
+				userID string
+				status models.SyncStatus
+			}{
 				{"user3", models.SyncStatusCompleted},
 			},
 			expectedCount: 1,
 		},
 		{
-			name:               "base playlist with no sync events",
-			basePlaylistID:     "base789",
-			syncEventsToCreate: []struct{ userID string; status models.SyncStatus }{},
-			expectedCount:      0,
+			name:           "base playlist with no sync events",
+			basePlaylistID: "base789",
+			syncEventsToCreate: []struct {
+				userID string
+				status models.SyncStatus
+			}{},
+			expectedCount: 0,
 		},
 	}
 

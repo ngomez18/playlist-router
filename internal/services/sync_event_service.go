@@ -103,7 +103,7 @@ func (seService *SyncEventService) HasActiveSyncForUser(ctx context.Context, use
 		return false, fmt.Errorf("failed to check for active sync: %w", err)
 	}
 
-for _, syncEvent := range syncEvents {
+	for _, syncEvent := range syncEvents {
 		if syncEvent.Status == models.SyncStatusInProgress {
 			seService.logger.InfoContext(ctx, "active sync found", "user_id", userID, "sync_event_id", syncEvent.ID)
 			return true, nil
