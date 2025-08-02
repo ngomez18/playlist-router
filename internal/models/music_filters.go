@@ -1,28 +1,23 @@
 package models
 
-type AudioFeatureFilters struct {
-	// Musical Qualities
-	Energy       *RangeFilter `json:"energy,omitempty"`
-	Danceability *RangeFilter `json:"danceability,omitempty"`
-	Valence      *RangeFilter `json:"valence,omitempty"`
-	Tempo        *RangeFilter `json:"tempo,omitempty"`
-	Liveness     *RangeFilter `json:"liveness,omitempty"`
-	Speechiness  *RangeFilter `json:"speechiness,omitempty"`
+type MetadataFilters struct {
+	// Track Information
+	Duration   *RangeFilter `json:"duration_ms,omitempty"`
+	Popularity *RangeFilter `json:"popularity,omitempty"`
+	Explicit   *bool        `json:"explicit,omitempty"` // true = explicit only, false = clean only, nil = both
 
-	// Technical Attributes
-	Acousticness     *RangeFilter `json:"acousticness,omitempty"`
-	Instrumentalness *RangeFilter `json:"instrumentalness,omitempty"`
-	Loudness         *RangeFilter `json:"loudness,omitempty"`
-	Key              *SetFilter   `json:"key,omitempty"`
-	Mode             *SetFilter   `json:"mode,omitempty"`
-	TimeSignature    *SetFilter   `json:"time_signature,omitempty"`
+	// Artist & Album Information
+	Genres           *SetFilter   `json:"genres,omitempty"`
+	ReleaseYear      *RangeFilter `json:"release_year,omitempty"`
+	ArtistPopularity *RangeFilter `json:"artist_popularity,omitempty"`
 
-	// Context & Metadata
-	Duration    *RangeFilter `json:"duration_ms,omitempty"`
-	Popularity  *RangeFilter `json:"popularity,omitempty"`
-	Genres      *SetFilter   `json:"genres,omitempty"`
-	ReleaseYear *RangeFilter `json:"release_year,omitempty"`
+	// Search-based Filters
+	TrackKeywords  *SetFilter `json:"track_keywords,omitempty"`  // Keywords to search for in track names
+	ArtistKeywords *SetFilter `json:"artist_keywords,omitempty"` // Keywords to search for in artist names
 }
+
+// Legacy type alias for backward compatibility during transition
+type AudioFeatureFilters = MetadataFilters
 
 type RangeFilter struct {
 	Min *float64 `json:"min,omitempty"`

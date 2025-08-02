@@ -1,6 +1,12 @@
 import { getAuthToken, removeAuthToken } from './auth'
 import type { User } from '../types/auth'
-import type { BasePlaylist, CreateBasePlaylistRequest } from '../types/playlist'
+import type { 
+  BasePlaylist, 
+  CreateBasePlaylistRequest,
+  ChildPlaylist,
+  CreateChildPlaylistRequest,
+  UpdateChildPlaylistRequest
+} from '../types/playlist'
 import type { SpotifyPlaylist } from '../types/spotify'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
@@ -85,6 +91,41 @@ class ApiClient {
 
   async deleteBasePlaylist(id: string): Promise<void> {
     return this.request<void>(`/api/base_playlist/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Child playlist endpoints
+  async getChildPlaylists(basePlaylistId: string): Promise<ChildPlaylist[]> {
+    return this.request<ChildPlaylist[]>(`/api/base_playlist/${basePlaylistId}/child_playlist`)
+  }
+
+  async getChildPlaylist(id: string): Promise<ChildPlaylist> {
+    return this.request<ChildPlaylist>(`/api/child_playlist/${id}`)
+  }
+
+  async createChildPlaylist(
+    basePlaylistId: string, 
+    data: CreateChildPlaylistRequest
+  ): Promise<ChildPlaylist> {
+    return this.request<ChildPlaylist>(`/api/base_playlist/${basePlaylistId}/child_playlist`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateChildPlaylist(
+    id: string, 
+    data: UpdateChildPlaylistRequest
+  ): Promise<ChildPlaylist> {
+    return this.request<ChildPlaylist>(`/api/child_playlist/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteChildPlaylist(id: string): Promise<void> {
+    return this.request<void>(`/api/child_playlist/${id}`, {
       method: 'DELETE',
     })
   }

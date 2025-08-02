@@ -23,22 +23,22 @@ func TestGetUserFromContext(t *testing.T) {
 	user := &models.User{ID: "123", Email: "test@example.com"}
 
 	testCases := []struct {
-		name           string
-		ctx            context.Context
-		expectedUser   *models.User
-		expectedOk     bool
+		name         string
+		ctx          context.Context
+		expectedUser *models.User
+		expectedOk   bool
 	}{
 		{
-			name:           "user exists in context",
-			ctx:            context.WithValue(context.Background(), UserContextKey, user),
-			expectedUser:   user,
-			expectedOk:     true,
+			name:         "user exists in context",
+			ctx:          context.WithValue(context.Background(), UserContextKey, user),
+			expectedUser: user,
+			expectedOk:   true,
 		},
 		{
-			name:           "user does not exist in context",
-			ctx:            context.Background(),
-			expectedUser:   nil,
-			expectedOk:     false,
+			name:         "user does not exist in context",
+			ctx:          context.Background(),
+			expectedUser: nil,
+			expectedOk:   false,
 		},
 	}
 
@@ -107,29 +107,29 @@ func TestGetUserAndSpotifyAuthFromContext(t *testing.T) {
 		expectedOk          bool
 	}{
 		{
-			name: "both user and spotify auth exist",
-			ctx: context.WithValue(context.WithValue(context.Background(), UserContextKey, user), SpotifyAuthContextKey, spotifyAuth),
+			name:                "both user and spotify auth exist",
+			ctx:                 context.WithValue(context.WithValue(context.Background(), UserContextKey, user), SpotifyAuthContextKey, spotifyAuth),
 			expectedUser:        user,
 			expectedSpotifyAuth: spotifyAuth,
 			expectedOk:          true,
 		},
 		{
-			name: "only user exists",
-			ctx: context.WithValue(context.Background(), UserContextKey, user),
+			name:                "only user exists",
+			ctx:                 context.WithValue(context.Background(), UserContextKey, user),
 			expectedUser:        user,
 			expectedSpotifyAuth: nil,
 			expectedOk:          false,
 		},
 		{
-			name: "only spotify auth exists",
-			ctx: context.WithValue(context.Background(), SpotifyAuthContextKey, spotifyAuth),
+			name:                "only spotify auth exists",
+			ctx:                 context.WithValue(context.Background(), SpotifyAuthContextKey, spotifyAuth),
 			expectedUser:        nil,
 			expectedSpotifyAuth: spotifyAuth,
 			expectedOk:          false,
 		},
 		{
-			name: "neither user nor spotify auth exist",
-			ctx: context.Background(),
+			name:                "neither user nor spotify auth exist",
+			ctx:                 context.Background(),
 			expectedUser:        nil,
 			expectedSpotifyAuth: nil,
 			expectedOk:          false,

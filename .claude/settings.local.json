@@ -23,7 +23,11 @@
       "Bash(mv:*)",
       "Bash(cat:*)",
       "Bash(go run:*)",
-      "WebFetch(domain:developer.spotify.com)"
+      "WebFetch(domain:developer.spotify.com)",
+      "Bash(npm run type-check:*)",
+      "WebFetch(domain:musicbrainz.org)",
+      "WebFetch(domain:metabrainz.org)",
+      "WebFetch(domain:data.metabrainz.org)"
     ],
     "deny": []
   }

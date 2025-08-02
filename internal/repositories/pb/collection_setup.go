@@ -1,12 +1,14 @@
-package main
+package pb
 
 import (
+	"fmt"
+
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
 
-// initCollections creates all required collections if they don't exist
-func initCollections(app *pocketbase.PocketBase) error {
+// InitCollections creates all required collections if they don't exist
+func InitCollections(app *pocketbase.PocketBase) error {
 	if err := createBasePlaylistCollection(app); err != nil {
 		return err
 	}
@@ -25,14 +27,14 @@ func initCollections(app *pocketbase.PocketBase) error {
 // createBasePlaylistCollection creates the base_playlists collection
 func createBasePlaylistCollection(app *pocketbase.PocketBase) error {
 	// Check if base_playlists collection exists
-	_, err := app.FindCollectionByNameOrId("base_playlists")
+	_, err := app.FindCollectionByNameOrId(string(CollectionBasePlaylist))
 	if err == nil {
 		// Collection already exists
 		return nil
 	}
 
 	// Create base_playlists collection
-	collection := core.NewBaseCollection("base_playlists")
+	collection := core.NewBaseCollection(string(CollectionBasePlaylist))
 
 	// Add fields
 	collection.Fields.Add(&core.TextField{
@@ -72,14 +74,14 @@ func createBasePlaylistCollection(app *pocketbase.PocketBase) error {
 // createSpotifyIntegrationsCollection creates the spotify_integrations collection
 func createSpotifyIntegrationsCollection(app *pocketbase.PocketBase) error {
 	// Check if spotify_integrations collection exists
-	_, err := app.FindCollectionByNameOrId("spotify_integrations")
+	_, err := app.FindCollectionByNameOrId(string(CollectionSpotifyIntegration))
 	if err == nil {
 		// Collection already exists
 		return nil
 	}
 
 	// Create spotify_integrations collection
-	collection := core.NewBaseCollection("spotify_integrations")
+	collection := core.NewBaseCollection(string(CollectionSpotifyIntegration))
 
 	// Foreign key to users collection (PocketBase relation field)
 	collection.Fields.Add(&core.RelationField{
@@ -155,14 +157,20 @@ func createSpotifyIntegrationsCollection(app *pocketbase.PocketBase) error {
 // createChildPlaylistCollection creates the child_playlists collection
 func createChildPlaylistCollection(app *pocketbase.PocketBase) error {
 	// Check if child_playlists collection exists
-	_, err := app.FindCollectionByNameOrId("child_playlists")
+	_, err := app.FindCollectionByNameOrId(string(CollectionChildPlaylist))
 	if err == nil {
 		// Collection already exists
 		return nil
 	}
 
+	// Get the base_playlists collection to reference it properly
+	basePlaylistCollection, err := app.FindCollectionByNameOrId(string(CollectionBasePlaylist))
+	if err != nil {
+		return fmt.Errorf("base_playlists collection must exist before creating child_playlists: %w", err)
+	}
+
 	// Create child_playlists collection
-	collection := core.NewBaseCollection("child_playlists")
+	collection := core.NewBaseCollection(string(CollectionChildPlaylist))
 
 	// Add fields
 	collection.Fields.Add(&core.TextField{
@@ -170,9 +178,13 @@ func createChildPlaylistCollection(app *pocketbase.PocketBase) error {
 		Required: true,
 	})
 
-	collection.Fields.Add(&core.TextField{
-		Name:     "base_playlist_id",
-		Required: true,
+	// Foreign key to base_playlists collection
+	collection.Fields.Add(&core.RelationField{
+		Name:          "base_playlist_id",
+		Required:      true,
+		MaxSelect:     1,
+		CollectionId:  basePlaylistCollection.Id,
+		CascadeDelete: true,
 	})
 
 	collection.Fields.Add(&core.TextField{

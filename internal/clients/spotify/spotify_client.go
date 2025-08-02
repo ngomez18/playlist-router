@@ -349,7 +349,7 @@ func (c *SpotifyClient) CreatePlaylist(ctx context.Context, accessToken, userId,
 
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		c.logger.ErrorContext(ctx, "failed to create playlist", "error", err)
+		c.logger.ErrorContext(ctx, "failed to create playlist", "error", err, "body", string(jsonData))
 		return nil, fmt.Errorf("failed to create playlist: %w", err)
 	}
 	defer func() {
@@ -442,7 +442,7 @@ func (c *SpotifyClient) UpdatePlaylist(ctx context.Context, accessToken, userId,
 
 	resp, err := c.HttpClient.Do(req)
 	if err != nil {
-		c.logger.ErrorContext(ctx, "failed to update playlist", "error", err)
+		c.logger.ErrorContext(ctx, "failed to update playlist", "error", err, "body", string(jsonData))
 		return fmt.Errorf("failed to update playlist: %w", err)
 	}
 	defer func() {

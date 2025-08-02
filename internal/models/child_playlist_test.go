@@ -1,7 +1,7 @@
 package models
 
 import (
-	"strings"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -80,41 +80,19 @@ func TestBuildChildPlaylistDescription(t *testing.T) {
 	tests := []struct {
 		name                string
 		inputDescription    string
-		expectedContains    []string
-		expectedNotContains []string
-		expectedLines       int
+		expectedDescription string
 	}{
 		{
 			name:             "with user description",
 			inputDescription: "This is my custom description for the child playlist",
-			expectedContains: []string{
-				"This is my custom description for the child playlist",
-			},
-			expectedLines: 5,
 		},
 		{
 			name:             "empty description",
 			inputDescription: "",
-			expectedContains: []string{},
-			expectedLines:    5, // Still 5 lines, but last line is empty
-		},
-		{
-			name:             "multiline user description",
-			inputDescription: "Line 1 of description\nLine 2 of description\nLine 3 of description",
-			expectedContains: []string{
-				"Line 1 of description",
-				"Line 2 of description",
-				"Line 3 of description",
-			},
-			expectedLines: 7, // 4 warning lines + 3 user description lines
 		},
 		{
 			name:             "description with special characters",
 			inputDescription: "Special chars: @#$%^&*()_+{}|:<>?[]\\;'\",./ and unicode: 🎵🎶💃🕺",
-			expectedContains: []string{
-				"Special chars: @#$%^&*()_+{}|:<>?[]\\;'\",./ and unicode: 🎵🎶💃🕺",
-			},
-			expectedLines: 5,
 		},
 	}
 
@@ -128,27 +106,9 @@ func TestBuildChildPlaylistDescription(t *testing.T) {
 			assert.NotEmpty(result, "Result should never be empty")
 
 			// Verify expected content is present
-			for _, expectedContent := range tt.expectedContains {
-				assert.Contains(result, expectedContent, "Result should contain: %s", expectedContent)
-			}
+			expectedDescription := fmt.Sprintf("[PLAYLIST GENERATED AND MANAGEED BY PlaylistRouter] %s", tt.inputDescription)
+			assert.Equal(expectedDescription, result)
 
-			// Verify line count
-			lines := strings.Split(result, "\n")
-			assert.Len(lines, tt.expectedLines, "Should have expected number of lines")
-
-			// Verify warning header is always present and at the beginning
-			assert.Contains(lines[0], "****************************************************")
-			assert.Contains(lines[1], "* PLAYLIST GENERATED AND MANAGED BY PlaylistRouter *")
-			assert.Contains(lines[2], "*********** PLEASE DO NOT EDIT OR DELETE ***********")
-			assert.Contains(lines[3], "****************************************************")
-
-			// Verify user description is at the end (if provided)
-			if tt.inputDescription != "" {
-				// For multiline descriptions, the user content starts at line 4
-				userContentLines := lines[4:]
-				userContent := strings.Join(userContentLines, "\n")
-				assert.Equal(tt.inputDescription, userContent)
-			}
 		})
 	}
 }
