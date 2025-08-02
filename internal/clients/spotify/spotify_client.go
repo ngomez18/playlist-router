@@ -13,6 +13,11 @@ import (
 
 	"github.com/ngomez18/playlist-router/internal/clients"
 	"github.com/ngomez18/playlist-router/internal/config"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
+)
+
+const (
+	MAX_PLAYLISTS = 50
 )
 
 //go:generate mockgen -source=spotify_client.go -destination=mocks/mock_spotify_client.go -package=mocks
@@ -23,10 +28,10 @@ type SpotifyAPI interface {
 	ExchangeCodeForTokens(ctx context.Context, code string) (*SpotifyTokenResponse, error)
 	RefreshTokens(ctx context.Context, refreshToken string) (*SpotifyTokenResponse, error)
 	GetUserProfile(ctx context.Context, accessToken string) (*SpotifyUserProfile, error)
-	
+
 	// Playlists
-	GetPlaylist(ctx context.Context, accessToken string, playlistId string) (*SpotifyPlaylist, error)
-	GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*SpotifyPlaylist, error)
+	GetPlaylist(ctx context.Context, playlistId string) (*SpotifyPlaylist, error)
+	GetAllUserPlaylists(ctx context.Context) ([]*SpotifyPlaylist, error)
 	CreatePlaylist(ctx context.Context, accessToken, userId, name, description string, public bool) (*SpotifyPlaylist, error)
 	DeletePlaylist(ctx context.Context, accessToken, userId, playlistId string) error
 	UpdatePlaylist(ctx context.Context, accessToken, userId, playlistId, name, description string) error
@@ -102,11 +107,7 @@ func (c *SpotifyClient) ExchangeCodeForTokens(ctx context.Context, code string) 
 		c.logger.ErrorContext(ctx, "failed to exchange code", "error", err)
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
-		}
-	}()
+	defer c.responseBodyCloser(ctx, resp)
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -148,11 +149,8 @@ func (c *SpotifyClient) RefreshTokens(ctx context.Context, refreshToken string) 
 		c.logger.ErrorContext(ctx, "failed to refresh tokens", "error", err)
 		return nil, fmt.Errorf("failed to refresh tokens: %w", err)
 	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
-		}
-	}()
+	defer c.responseBodyCloser(ctx, resp)
+
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -188,11 +186,7 @@ func (c *SpotifyClient) GetUserProfile(ctx context.Context, accessToken string) 
 		c.logger.ErrorContext(ctx, "failed to get user profile", "error", err)
 		return nil, fmt.Errorf("failed to get user profile: %w", err)
 	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
-		}
-	}()
+	defer c.responseBodyCloser(ctx, resp)
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -208,4 +202,21 @@ func (c *SpotifyClient) GetUserProfile(ctx context.Context, accessToken string) 
 
 	c.logger.InfoContext(ctx, "successfully fetched user profile", "user_id", profile.ID, "email", profile.Email)
 	return &profile, nil
+}
+
+func (c *SpotifyClient) responseBodyCloser(ctx context.Context, resp *http.Response) {
+	if closeErr := resp.Body.Close(); closeErr != nil {
+		c.logger.WarnContext(ctx, "failed to close response body", "error", closeErr)
+	}
+}
+
+func (c *SpotifyClient) getAccessToken(ctx context.Context) (string, error) {
+	// Get the user's Spotify integration to get the access token
+	integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
+	if !ok {
+		c.logger.ErrorContext(ctx, "failed to get spotify integration")
+		return "", ErrSpotifyCredentialsNotFound
+	}
+
+	return integration.AccessToken, nil
 }

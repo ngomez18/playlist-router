@@ -16,9 +16,191 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/ngomez18/playlist-router/internal/clients/mocks"
 	"github.com/ngomez18/playlist-router/internal/config"
+	requestcontext "github.com/ngomez18/playlist-router/internal/context"
+	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/stretchr/testify/require"
 )
 
+func TestSpotifyClient_GetPlaylist_Success(t *testing.T) {
+	tests := []struct {
+		name             string
+		playlistId       string
+		responseBody     *SpotifyPlaylist
+		expectedPlaylist *SpotifyPlaylist
+		accessToken      string
+	}{
+		{
+			name:       "successful playlist fetch",
+			playlistId: "playlist123",
+			responseBody: &SpotifyPlaylist{
+				ID:            "playlist123",
+				Name:          "Test Playlist",
+				URI:           "spotify:playlist:playlist123",
+				Public:        true,
+				Collaborative: false,
+				Description:   "A test playlist",
+				Href:          "https://api.spotify.com/v1/playlists/playlist123",
+				SnapshotID:    "snapshot123",
+				Images: []*SpotifyPlaylistImage{
+					{URL: "https://image.jpg", Height: 640, Width: 640},
+				},
+			},
+			expectedPlaylist: &SpotifyPlaylist{
+				ID:            "playlist123",
+				Name:          "Test Playlist",
+				URI:           "spotify:playlist:playlist123",
+				Public:        true,
+				Collaborative: false,
+				Description:   "A test playlist",
+				Href:          "https://api.spotify.com/v1/playlists/playlist123",
+				SnapshotID:    "snapshot123",
+				Images: []*SpotifyPlaylistImage{
+					{URL: "https://image.jpg", Height: 640, Width: 640},
+				},
+			},
+			accessToken: "valid_token",
+		},
+		{
+			name:       "successful playlist fetch without images",
+			playlistId: "playlist456",
+			responseBody: &SpotifyPlaylist{
+				ID:            "playlist456",
+				Name:          "Simple Playlist",
+				URI:           "spotify:playlist:playlist456",
+				Public:        false,
+				Collaborative: true,
+				Description:   "",
+				Href:          "https://api.spotify.com/v1/playlists/playlist456",
+				SnapshotID:    "snapshot456",
+				Images:        []*SpotifyPlaylistImage{},
+			},
+			expectedPlaylist: &SpotifyPlaylist{
+				ID:            "playlist456",
+				Name:          "Simple Playlist",
+				URI:           "spotify:playlist:playlist456",
+				Public:        false,
+				Collaborative: true,
+				Description:   "",
+				Href:          "https://api.spotify.com/v1/playlists/playlist456",
+				SnapshotID:    "snapshot456",
+				Images:        []*SpotifyPlaylistImage{},
+			},
+			accessToken: "valid_token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Create response body
+			bodyBytes, _ := json.Marshal(tt.responseBody)
+			responseBody := io.NopCloser(bytes.NewReader(bodyBytes))
+
+			resp := &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       responseBody,
+			}
+
+			mockHTTPClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					// Validate request
+					assert.Equal("GET", req.Method)
+					assert.Equal("https://api.spotify.com/v1/playlists/"+tt.playlistId, req.URL.String())
+					assert.Equal("Bearer "+tt.accessToken, req.Header.Get("Authorization"))
+
+					return resp, nil
+				}).
+				Times(1)
+
+			ctx := contextWithToken(tt.accessToken)
+			result, err := client.GetPlaylist(ctx, tt.playlistId)
+
+			assert.NoError(err)
+			assert.Equal(tt.expectedPlaylist, result)
+		})
+	}
+}
+
+func TestSpotifyClient_GetPlaylist_Errors(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistId     string
+		responseStatus int
+		responseError  error
+		accessToken    string
+	}{
+		{
+			name:           "playlist not found",
+			playlistId:     "nonexistent",
+			responseStatus: http.StatusNotFound,
+			accessToken:    "valid_token",
+		},
+		{
+			name:          "http client error",
+			playlistId:    "playlist123",
+			responseError: errors.New("connection timeout"),
+			accessToken:   "valid_token",
+		},
+		{
+			name:           "unauthorized error",
+			playlistId:     "playlist123",
+			accessToken:    "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			cfg := &config.AuthConfig{}
+			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+			client := NewSpotifyClient(cfg, logger)
+			client.HttpClient = mockHTTPClient
+
+			if tt.responseError != nil {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(nil, tt.responseError).
+					Times(1)
+			} 
+			if tt.responseStatus > 0 {
+				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error"}`))
+				resp := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       responseBody,
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(resp, nil).
+					Times(1)
+			}
+
+			ctx := contextWithToken(tt.accessToken)
+			result, err := client.GetPlaylist(ctx, tt.playlistId)
+
+			assert.Error(err)
+			assert.Nil(result)
+		})
+	}
+}
 
 func TestSpotifyClient_GetUserPlaylists_Success(t *testing.T) {
 	tests := []struct {
@@ -143,8 +325,8 @@ func TestSpotifyClient_GetUserPlaylists_Success(t *testing.T) {
 				}).
 				Times(1)
 
-			ctx := context.Background()
-			result, err := client.GetUserPlaylists(ctx, tt.accessToken, tt.limit, tt.offset)
+			ctx := contextWithToken(tt.accessToken)
+			result, err := client.GetUserPlaylists(ctx, tt.limit, tt.offset)
 
 			assert.NoError(err)
 			assert.Equal(tt.expectedResponse, result)
@@ -169,18 +351,15 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 			offset:         0,
 		},
 		{
-			name:           "forbidden error",
-			responseStatus: http.StatusForbidden,
-			accessToken:    "valid_token",
-			limit:          50,
-			offset:         0,
-		},
-		{
 			name:          "http client error",
 			responseError: errors.New("network error"),
 			accessToken:   "valid_token",
 			limit:         50,
 			offset:        0,
+		},
+		{
+			name:           "missing access token",
+			accessToken:    "",
 		},
 	}
 
@@ -203,7 +382,8 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 					Do(gomock.Any()).
 					Return(nil, tt.responseError).
 					Times(1)
-			} else {
+			}
+			if tt.responseStatus > 0 {
 				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error"}`))
 				resp := &http.Response{
 					StatusCode: tt.responseStatus,
@@ -216,8 +396,8 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 					Times(1)
 			}
 
-			ctx := context.Background()
-			result, err := client.GetUserPlaylists(ctx, tt.accessToken, tt.limit, tt.offset)
+			ctx := contextWithToken(tt.accessToken)
+			result, err := client.GetUserPlaylists(ctx, tt.limit, tt.offset)
 
 			assert.Error(err)
 			assert.Nil(result)
@@ -225,71 +405,65 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 	}
 }
 
-func TestSpotifyClient_GetPlaylist_Success(t *testing.T) {
+
+func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
 	tests := []struct {
-		name             string
-		playlistId       string
-		responseBody     *SpotifyPlaylist
-		expectedPlaylist *SpotifyPlaylist
-		accessToken      string
+		name              string
+		mockResponses     []SpotifyPlaylistResponse
+		expectedPlaylists []*SpotifyPlaylist
+		accessToken       string
 	}{
 		{
-			name:       "successful playlist fetch",
-			playlistId: "playlist123",
-			responseBody: &SpotifyPlaylist{
-				ID:            "playlist123",
-				Name:          "Test Playlist",
-				URI:           "spotify:playlist:playlist123",
-				Public:        true,
-				Collaborative: false,
-				Description:   "A test playlist",
-				Href:          "https://api.spotify.com/v1/playlists/playlist123",
-				SnapshotID:    "snapshot123",
-				Images: []*SpotifyPlaylistImage{
-					{URL: "https://image.jpg", Height: 640, Width: 640},
+			name: "single page with results",
+			mockResponses: []SpotifyPlaylistResponse{
+				{
+					Items: []*SpotifyPlaylist{
+						{ID: "playlist1", Name: "Rock Classics", Tracks: &SpotifyPlaylistTracks{Total: 25}},
+						{ID: "playlist2", Name: "Jazz Favorites", Tracks: &SpotifyPlaylistTracks{Total: 18}},
+					},
+					Total: 2,
 				},
 			},
-			expectedPlaylist: &SpotifyPlaylist{
-				ID:            "playlist123",
-				Name:          "Test Playlist",
-				URI:           "spotify:playlist:playlist123",
-				Public:        true,
-				Collaborative: false,
-				Description:   "A test playlist",
-				Href:          "https://api.spotify.com/v1/playlists/playlist123",
-				SnapshotID:    "snapshot123",
-				Images: []*SpotifyPlaylistImage{
-					{URL: "https://image.jpg", Height: 640, Width: 640},
-				},
+			expectedPlaylists: []*SpotifyPlaylist{
+				{ID: "playlist1", Name: "Rock Classics", Tracks: &SpotifyPlaylistTracks{Total: 25}},
+				{ID: "playlist2", Name: "Jazz Favorites", Tracks: &SpotifyPlaylistTracks{Total: 18}},
 			},
 			accessToken: "valid_token",
 		},
 		{
-			name:       "successful playlist fetch without images",
-			playlistId: "playlist456",
-			responseBody: &SpotifyPlaylist{
-				ID:            "playlist456",
-				Name:          "Simple Playlist",
-				URI:           "spotify:playlist:playlist456",
-				Public:        false,
-				Collaborative: true,
-				Description:   "",
-				Href:          "https://api.spotify.com/v1/playlists/playlist456",
-				SnapshotID:    "snapshot456",
-				Images:        []*SpotifyPlaylistImage{},
+			name: "multiple pages",
+			mockResponses: []SpotifyPlaylistResponse{
+				{
+					Items: []*SpotifyPlaylist{
+						{ID: "playlist1", Name: "Page 1 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 10}},
+						{ID: "playlist2", Name: "Page 1 Playlist 2", Tracks: &SpotifyPlaylistTracks{Total: 15}},
+					},
+					Total: 3,
+				},
+				{
+					Items: []*SpotifyPlaylist{
+						{ID: "playlist3", Name: "Page 2 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 20}},
+					},
+					Total: 3,
+				},
 			},
-			expectedPlaylist: &SpotifyPlaylist{
-				ID:            "playlist456",
-				Name:          "Simple Playlist",
-				URI:           "spotify:playlist:playlist456",
-				Public:        false,
-				Collaborative: true,
-				Description:   "",
-				Href:          "https://api.spotify.com/v1/playlists/playlist456",
-				SnapshotID:    "snapshot456",
-				Images:        []*SpotifyPlaylistImage{},
+			expectedPlaylists: []*SpotifyPlaylist{
+				{ID: "playlist1", Name: "Page 1 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 10}},
+				{ID: "playlist2", Name: "Page 1 Playlist 2", Tracks: &SpotifyPlaylistTracks{Total: 15}},
+				{ID: "playlist3", Name: "Page 2 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 20}},
 			},
 			accessToken: "valid_token",
+		},
+		{
+			name: "empty result",
+			mockResponses: []SpotifyPlaylistResponse{
+				{
+					Items: []*SpotifyPlaylist{},
+					Total: 0,
+				},
+			},
+			expectedPlaylists: []*SpotifyPlaylist{},
+			accessToken:       "valid_token",
 		},
 	}
 
@@ -307,66 +481,49 @@ func TestSpotifyClient_GetPlaylist_Success(t *testing.T) {
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
 
-			// Create response body
-			bodyBytes, _ := json.Marshal(tt.responseBody)
-			responseBody := io.NopCloser(bytes.NewReader(bodyBytes))
+			// Set up mock calls for each expected response
+			for _, response := range tt.mockResponses {
+				responseJSON, _ := json.Marshal(response)
+				responseBody := io.NopCloser(bytes.NewReader(responseJSON))
+				resp := &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       responseBody,
+				}
 
-			resp := &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       responseBody,
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(resp, nil).
+					Times(1)
 			}
 
-			mockHTTPClient.EXPECT().
-				Do(gomock.Any()).
-				DoAndReturn(func(req *http.Request) (*http.Response, error) {
-					// Validate request
-					assert.Equal("GET", req.Method)
-					assert.Equal("https://api.spotify.com/v1/playlists/"+tt.playlistId, req.URL.String())
-					assert.Equal("Bearer "+tt.accessToken, req.Header.Get("Authorization"))
-
-					return resp, nil
-				}).
-				Times(1)
-
-			ctx := context.Background()
-			result, err := client.GetPlaylist(ctx, tt.accessToken, tt.playlistId)
+			ctx := contextWithToken(tt.accessToken)
+			result, err := client.GetAllUserPlaylists(ctx)
 
 			assert.NoError(err)
-			assert.Equal(tt.expectedPlaylist, result)
+			assert.NotNil(result)
+			assert.Equal(len(tt.expectedPlaylists), len(result))
+
+			for i, expected := range tt.expectedPlaylists {
+				assert.Equal(expected.ID, result[i].ID)
+				assert.Equal(expected.Name, result[i].Name)
+				if expected.Tracks != nil && result[i].Tracks != nil {
+					assert.Equal(expected.Tracks.Total, result[i].Tracks.Total)
+				}
+			}
 		})
 	}
 }
 
-func TestSpotifyClient_GetPlaylist_Errors(t *testing.T) {
+func TestSpotifyClient_GetAllUserPlaylists_Error(t *testing.T) {
 	tests := []struct {
 		name           string
-		playlistId     string
-		responseStatus int
 		responseError  error
+		responseStatus int
 		accessToken    string
 	}{
 		{
-			name:           "playlist not found",
-			playlistId:     "nonexistent",
-			responseStatus: http.StatusNotFound,
-			accessToken:    "valid_token",
-		},
-		{
-			name:           "unauthorized error",
-			playlistId:     "playlist123",
-			responseStatus: http.StatusUnauthorized,
-			accessToken:    "invalid_token",
-		},
-		{
-			name:           "forbidden error",
-			playlistId:     "private_playlist",
-			responseStatus: http.StatusForbidden,
-			accessToken:    "valid_token",
-		},
-		{
 			name:          "http client error",
-			playlistId:    "playlist123",
-			responseError: errors.New("connection timeout"),
+			responseError: errors.New("network timeout"),
 			accessToken:   "valid_token",
 		},
 	}
@@ -403,8 +560,8 @@ func TestSpotifyClient_GetPlaylist_Errors(t *testing.T) {
 					Times(1)
 			}
 
-			ctx := context.Background()
-			result, err := client.GetPlaylist(ctx, tt.accessToken, tt.playlistId)
+			ctx := contextWithToken(tt.accessToken)
+			result, err := client.GetAllUserPlaylists(ctx)
 
 			assert.Error(err)
 			assert.Nil(result)
@@ -625,169 +782,6 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 
 			ctx := context.Background()
 			result, err := client.CreatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistName, tt.description, tt.public)
-
-			assert.Error(err)
-			assert.Nil(result)
-		})
-	}
-}
-
-func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
-	tests := []struct {
-		name              string
-		mockResponses     []SpotifyPlaylistResponse
-		expectedPlaylists []*SpotifyPlaylist
-		accessToken       string
-	}{
-		{
-			name: "single page with results",
-			mockResponses: []SpotifyPlaylistResponse{
-				{
-					Items: []*SpotifyPlaylist{
-						{ID: "playlist1", Name: "Rock Classics", Tracks: &SpotifyPlaylistTracks{Total: 25}},
-						{ID: "playlist2", Name: "Jazz Favorites", Tracks: &SpotifyPlaylistTracks{Total: 18}},
-					},
-					Total: 2,
-				},
-			},
-			expectedPlaylists: []*SpotifyPlaylist{
-				{ID: "playlist1", Name: "Rock Classics", Tracks: &SpotifyPlaylistTracks{Total: 25}},
-				{ID: "playlist2", Name: "Jazz Favorites", Tracks: &SpotifyPlaylistTracks{Total: 18}},
-			},
-			accessToken: "valid_token",
-		},
-		{
-			name: "multiple pages",
-			mockResponses: []SpotifyPlaylistResponse{
-				{
-					Items: []*SpotifyPlaylist{
-						{ID: "playlist1", Name: "Page 1 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 10}},
-						{ID: "playlist2", Name: "Page 1 Playlist 2", Tracks: &SpotifyPlaylistTracks{Total: 15}},
-					},
-					Total: 3,
-				},
-				{
-					Items: []*SpotifyPlaylist{
-						{ID: "playlist3", Name: "Page 2 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 20}},
-					},
-					Total: 3,
-				},
-			},
-			expectedPlaylists: []*SpotifyPlaylist{
-				{ID: "playlist1", Name: "Page 1 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 10}},
-				{ID: "playlist2", Name: "Page 1 Playlist 2", Tracks: &SpotifyPlaylistTracks{Total: 15}},
-				{ID: "playlist3", Name: "Page 2 Playlist 1", Tracks: &SpotifyPlaylistTracks{Total: 20}},
-			},
-			accessToken: "valid_token",
-		},
-		{
-			name: "empty result",
-			mockResponses: []SpotifyPlaylistResponse{
-				{
-					Items: []*SpotifyPlaylist{},
-					Total: 0,
-				},
-			},
-			expectedPlaylists: []*SpotifyPlaylist{},
-			accessToken:       "valid_token",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert := require.New(t)
-
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
-			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
-			client := NewSpotifyClient(cfg, logger)
-			client.HttpClient = mockHTTPClient
-
-			// Set up mock calls for each expected response
-			for _, response := range tt.mockResponses {
-				responseJSON, _ := json.Marshal(response)
-				responseBody := io.NopCloser(bytes.NewReader(responseJSON))
-				resp := &http.Response{
-					StatusCode: http.StatusOK,
-					Body:       responseBody,
-				}
-
-				mockHTTPClient.EXPECT().
-					Do(gomock.Any()).
-					Return(resp, nil).
-					Times(1)
-			}
-
-			ctx := context.Background()
-			result, err := client.GetAllUserPlaylists(ctx, tt.accessToken)
-
-			assert.NoError(err)
-			assert.NotNil(result)
-			assert.Equal(len(tt.expectedPlaylists), len(result))
-
-			for i, expected := range tt.expectedPlaylists {
-				assert.Equal(expected.ID, result[i].ID)
-				assert.Equal(expected.Name, result[i].Name)
-				if expected.Tracks != nil && result[i].Tracks != nil {
-					assert.Equal(expected.Tracks.Total, result[i].Tracks.Total)
-				}
-			}
-		})
-	}
-}
-
-func TestSpotifyClient_GetAllUserPlaylists_Error(t *testing.T) {
-	tests := []struct {
-		name           string
-		responseError  error
-		responseStatus int
-		accessToken    string
-	}{
-		{
-			name:          "http client error",
-			responseError: errors.New("network timeout"),
-			accessToken:   "valid_token",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert := require.New(t)
-
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
-			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
-			client := NewSpotifyClient(cfg, logger)
-			client.HttpClient = mockHTTPClient
-
-			if tt.responseError != nil {
-				mockHTTPClient.EXPECT().
-					Do(gomock.Any()).
-					Return(nil, tt.responseError).
-					Times(1)
-			} else {
-				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error"}`))
-				resp := &http.Response{
-					StatusCode: tt.responseStatus,
-					Body:       responseBody,
-				}
-
-				mockHTTPClient.EXPECT().
-					Do(gomock.Any()).
-					Return(resp, nil).
-					Times(1)
-			}
-
-			ctx := context.Background()
-			result, err := client.GetAllUserPlaylists(ctx, tt.accessToken)
 
 			assert.Error(err)
 			assert.Nil(result)
@@ -1144,4 +1138,16 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 			assert.Error(err)
 		})
 	}
+}
+
+func contextWithToken(token string) context.Context {
+	ctx := context.Background()
+	
+	if token == "" {
+		return ctx
+	}
+
+	return requestcontext.ContextWithSpotifyAuth(context.Background(), &models.SpotifyIntegration{
+		AccessToken: token,
+	})
 }

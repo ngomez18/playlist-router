@@ -94,33 +94,33 @@ func (mr *MockSpotifyAPIMockRecorder) GenerateAuthURL(state interface{}) *gomock
 }
 
 // GetAllUserPlaylists mocks base method.
-func (m *MockSpotifyAPI) GetAllUserPlaylists(ctx context.Context, accessToken string) ([]*spotifyclient.SpotifyPlaylist, error) {
+func (m *MockSpotifyAPI) GetAllUserPlaylists(ctx context.Context) ([]*spotifyclient.SpotifyPlaylist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllUserPlaylists", ctx, accessToken)
+	ret := m.ctrl.Call(m, "GetAllUserPlaylists", ctx)
 	ret0, _ := ret[0].([]*spotifyclient.SpotifyPlaylist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllUserPlaylists indicates an expected call of GetAllUserPlaylists.
-func (mr *MockSpotifyAPIMockRecorder) GetAllUserPlaylists(ctx, accessToken interface{}) *gomock.Call {
+func (mr *MockSpotifyAPIMockRecorder) GetAllUserPlaylists(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUserPlaylists", reflect.TypeOf((*MockSpotifyAPI)(nil).GetAllUserPlaylists), ctx, accessToken)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUserPlaylists", reflect.TypeOf((*MockSpotifyAPI)(nil).GetAllUserPlaylists), ctx)
 }
 
 // GetPlaylist mocks base method.
-func (m *MockSpotifyAPI) GetPlaylist(ctx context.Context, accessToken, playlistId string) (*spotifyclient.SpotifyPlaylist, error) {
+func (m *MockSpotifyAPI) GetPlaylist(ctx context.Context, playlistId string) (*spotifyclient.SpotifyPlaylist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPlaylist", ctx, accessToken, playlistId)
+	ret := m.ctrl.Call(m, "GetPlaylist", ctx, playlistId)
 	ret0, _ := ret[0].(*spotifyclient.SpotifyPlaylist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPlaylist indicates an expected call of GetPlaylist.
-func (mr *MockSpotifyAPIMockRecorder) GetPlaylist(ctx, accessToken, playlistId interface{}) *gomock.Call {
+func (mr *MockSpotifyAPIMockRecorder) GetPlaylist(ctx, playlistId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaylist", reflect.TypeOf((*MockSpotifyAPI)(nil).GetPlaylist), ctx, accessToken, playlistId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaylist", reflect.TypeOf((*MockSpotifyAPI)(nil).GetPlaylist), ctx, playlistId)
 }
 
 // GetUserProfile mocks base method.

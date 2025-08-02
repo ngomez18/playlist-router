@@ -6,15 +6,28 @@ import (
 	"log/slog"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
 	spotifyClientMocks "github.com/ngomez18/playlist-router/internal/clients/spotify/mocks"
-	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewSpotifyAPIService(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	service := NewSpotifyAPIService(mockSpotifyClient, logger)
+
+	assert.NotNil(service)
+	assert.Equal(mockSpotifyClient, service.spotifyClient)
+	assert.NotNil(service.logger)
+}
 
 func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 	tests := []struct {
@@ -27,15 +40,6 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 		{
 			name:   "successful fetch with playlists",
 			userID: "user123",
-			integration: &models.SpotifyIntegration{
-				ID:           "integration123",
-				UserID:       "user123",
-				SpotifyID:    "spotify_user_123",
-				AccessToken:  "valid_access_token",
-				RefreshToken: "refresh_token",
-				TokenType:    "Bearer",
-				ExpiresAt:    time.Now().Add(time.Hour),
-			},
 			spotifyPlaylists: []*spotifyclient.SpotifyPlaylist{
 				{
 					ID:     "playlist1",
@@ -56,30 +60,12 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 		{
 			name:   "successful fetch with empty playlists",
 			userID: "user456",
-			integration: &models.SpotifyIntegration{
-				ID:           "integration456",
-				UserID:       "user456",
-				SpotifyID:    "spotify_user_456",
-				AccessToken:  "valid_access_token",
-				RefreshToken: "refresh_token",
-				TokenType:    "Bearer",
-				ExpiresAt:    time.Now().Add(time.Hour),
-			},
 			spotifyPlaylists:  []*spotifyclient.SpotifyPlaylist{},
 			expectedPlaylists: []*models.SpotifyPlaylist{},
 		},
 		{
 			name:   "successful fetch with nil tracks",
 			userID: "user789",
-			integration: &models.SpotifyIntegration{
-				ID:           "integration789",
-				UserID:       "user789",
-				SpotifyID:    "spotify_user_789",
-				AccessToken:  "valid_access_token",
-				RefreshToken: "refresh_token",
-				TokenType:    "Bearer",
-				ExpiresAt:    time.Now().Add(time.Hour),
-			},
 			spotifyPlaylists: []*spotifyclient.SpotifyPlaylist{
 				{
 					ID:     "playlist_no_tracks",
@@ -106,13 +92,11 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 
 			// Mock Spotify client call
 			mockSpotifyClient.EXPECT().
-				GetAllUserPlaylists(gomock.Any(), tt.integration.AccessToken).
+				GetAllUserPlaylists(gomock.Any()).
 				Return(tt.spotifyPlaylists, nil).
 				Times(1)
 
-			ctx := requestcontext.ContextWithSpotifyAuth(context.Background(), tt.integration)
-
-			result, err := service.GetUserPlaylists(ctx, tt.userID)
+			result, err := service.GetUserPlaylists(context.Background(), tt.userID)
 
 			assert.NoError(err)
 			assert.NotNil(result)
@@ -127,45 +111,6 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 	}
 }
 
-func TestSpotifyAPIService_GetUserPlaylists_RepositoryError(t *testing.T) {
-	tests := []struct {
-		name          string
-		userID        string
-		repositoryErr error
-	}{
-		{
-			name:          "integration not found",
-			userID:        "nonexistent_user",
-			repositoryErr: errors.New("spotify integration not found"),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
-			service := NewSpotifyAPIService(mockSpotifyClient, logger)
-
-			// Spotify client should not be called
-			mockSpotifyClient.EXPECT().
-				GetAllUserPlaylists(gomock.Any(), gomock.Any()).
-				Times(0)
-
-			ctx := context.Background() // No integration in context
-			result, err := service.GetUserPlaylists(ctx, tt.userID)
-
-			assert.Error(err)
-			assert.Nil(result)
-			assert.Contains(err.Error(), "failed to get spotify integration")
-		})
-	}
-}
-
 func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -174,43 +119,9 @@ func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 		clientErr   error
 	}{
 		{
-			name:   "spotify API unauthorized",
-			userID: "user123",
-			integration: &models.SpotifyIntegration{
-				ID:           "integration123",
-				UserID:       "user123",
-				AccessToken:  "expired_token",
-				RefreshToken: "refresh_token",
-				TokenType:    "Bearer",
-				ExpiresAt:    time.Now().Add(-time.Hour), // expired
-			},
-			clientErr: errors.New("spotify API unauthorized (401)"),
-		},
-		{
 			name:   "spotify API network error",
 			userID: "user456",
-			integration: &models.SpotifyIntegration{
-				ID:           "integration456",
-				UserID:       "user456",
-				AccessToken:  "valid_token",
-				RefreshToken: "refresh_token",
-				TokenType:    "Bearer",
-				ExpiresAt:    time.Now().Add(time.Hour),
-			},
 			clientErr: errors.New("network timeout"),
-		},
-		{
-			name:   "spotify API rate limit",
-			userID: "user789",
-			integration: &models.SpotifyIntegration{
-				ID:           "integration789",
-				UserID:       "user789",
-				AccessToken:  "valid_token",
-				RefreshToken: "refresh_token",
-				TokenType:    "Bearer",
-				ExpiresAt:    time.Now().Add(time.Hour),
-			},
-			clientErr: errors.New("spotify API rate limit exceeded (429)"),
 		},
 	}
 
@@ -227,31 +138,15 @@ func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 
 			// Mock Spotify client error
 			mockSpotifyClient.EXPECT().
-				GetAllUserPlaylists(gomock.Any(), tt.integration.AccessToken).
+				GetAllUserPlaylists(gomock.Any()).
 				Return(nil, tt.clientErr).
 				Times(1)
 
-			ctx := requestcontext.ContextWithSpotifyAuth(context.Background(), tt.integration)
-			result, err := service.GetUserPlaylists(ctx, tt.userID)
+			result, err := service.GetUserPlaylists(context.Background(), tt.userID)
 
 			assert.Error(err)
 			assert.Nil(result)
 			assert.Contains(err.Error(), "failed to fetch user playlists")
 		})
 	}
-}
-
-func TestNewSpotifyAPIService(t *testing.T) {
-	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-
-	service := NewSpotifyAPIService(mockSpotifyClient, logger)
-
-	assert.NotNil(service)
-	assert.Equal(mockSpotifyClient, service.spotifyClient)
-	assert.NotNil(service.logger)
 }
