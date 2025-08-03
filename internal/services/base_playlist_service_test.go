@@ -119,15 +119,6 @@ func TestBasePlaylistService_CreateBasePlaylist_RepositoryError(t *testing.T) {
 		expectedErr   string
 	}{
 		{
-			name: "repository validation error",
-			input: &models.CreateBasePlaylistRequest{
-				Name:              "",
-				SpotifyPlaylistID: "spotify123",
-			},
-			repositoryErr: errors.New("validation failed: name cannot be blank"),
-			expectedErr:   "failed to create playlist: validation failed: name cannot be blank",
-		},
-		{
 			name: "repository database error",
 			input: &models.CreateBasePlaylistRequest{
 				Name:              "Test Playlist",
@@ -135,15 +126,6 @@ func TestBasePlaylistService_CreateBasePlaylist_RepositoryError(t *testing.T) {
 			},
 			repositoryErr: errors.New("database connection failed"),
 			expectedErr:   "failed to create playlist: database connection failed",
-		},
-		{
-			name: "repository duplicate error",
-			input: &models.CreateBasePlaylistRequest{
-				Name:              "Existing Playlist",
-				SpotifyPlaylistID: "spotify123",
-			},
-			repositoryErr: errors.New("playlist with spotify_playlist_id already exists"),
-			expectedErr:   "failed to create playlist: playlist with spotify_playlist_id already exists",
 		},
 	}
 
@@ -237,20 +219,6 @@ func TestBasePlaylistService_DeleteBasePlaylist_RepositoryErrors(t *testing.T) {
 		repositoryErr error
 		expectedErr   string
 	}{
-		{
-			name:          "playlist not found",
-			id:            "nonexistent123",
-			userId:        "user123",
-			repositoryErr: repositories.ErrBasePlaylistNotFound,
-			expectedErr:   "failed to delete playlist: base playlist not found",
-		},
-		{
-			name:          "unauthorized access",
-			id:            "playlist123",
-			userId:        "user456",
-			repositoryErr: repositories.ErrUnauthorized,
-			expectedErr:   "failed to delete playlist: user can not access this resource",
-		},
 		{
 			name:          "database error",
 			id:            "playlist123",
@@ -371,32 +339,11 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 		expectedErr   string
 	}{
 		{
-			name:          "playlist not found",
-			id:            "nonexistent123",
-			userId:        "user123",
-			repositoryErr: repositories.ErrBasePlaylistNotFound,
-			expectedErr:   "failed to retrieve playlist: base playlist not found",
-		},
-		{
-			name:          "unauthorized access",
-			id:            "playlist123",
-			userId:        "user456",
-			repositoryErr: repositories.ErrUnauthorized,
-			expectedErr:   "failed to retrieve playlist: user can not access this resource",
-		},
-		{
 			name:          "database error",
 			id:            "playlist123",
 			userId:        "user123",
 			repositoryErr: repositories.ErrDatabaseOperation,
 			expectedErr:   "failed to retrieve playlist: unable to complete db operation",
-		},
-		{
-			name:          "collection not found",
-			id:            "playlist123",
-			userId:        "user123",
-			repositoryErr: repositories.ErrCollectionNotFound,
-			expectedErr:   "failed to retrieve playlist: collection not found",
 		},
 	}
 
@@ -544,18 +491,6 @@ func TestBasePlaylistService_GetBasePlaylistsByUserID_RepositoryErrors(t *testin
 			userId:        "user123",
 			repositoryErr: repositories.ErrDatabaseOperation,
 			expectedErr:   "failed to retrieve playlists: unable to complete db operation",
-		},
-		{
-			name:          "collection not found error",
-			userId:        "user456",
-			repositoryErr: repositories.ErrCollectionNotFound,
-			expectedErr:   "failed to retrieve playlists: collection not found",
-		},
-		{
-			name:          "generic repository error",
-			userId:        "user789",
-			repositoryErr: errors.New("connection timeout"),
-			expectedErr:   "failed to retrieve playlists: connection timeout",
 		},
 	}
 

@@ -127,7 +127,15 @@ func (c *SpotifyClient) GetAllUserPlaylists(ctx context.Context) ([]*SpotifyPlay
 	return allPlaylists, nil
 }
 
-func (c *SpotifyClient) CreatePlaylist(ctx context.Context, accessToken, userId, name, description string, public bool) (*SpotifyPlaylist, error) {
+func (c *SpotifyClient) CreatePlaylist(ctx context.Context, name, description string, public bool) (*SpotifyPlaylist, error) {
+	integration, err := c.getIntegrationInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken := integration.AccessToken
+	userId := integration.UserID
+
 	c.logger.InfoContext(ctx, "creating playlist in spotify", "user_id", userId, "name", name)
 
 	path := fmt.Sprintf("users/%s/playlists", userId)
@@ -177,7 +185,15 @@ func (c *SpotifyClient) CreatePlaylist(ctx context.Context, accessToken, userId,
 	return &playlist, nil
 }
 
-func (c *SpotifyClient) DeletePlaylist(ctx context.Context, accessToken, userId, playlistId string) error {
+func (c *SpotifyClient) DeletePlaylist(ctx context.Context, playlistId string) error {
+	integration, err := c.getIntegrationInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	accessToken := integration.AccessToken
+	userId := integration.UserID
+
 	c.logger.InfoContext(ctx, "deleting playlist from spotify", "user_id", userId, "playlist_id", playlistId)
 
 	path := fmt.Sprintf("playlists/%s/followers", playlistId)
@@ -208,7 +224,15 @@ func (c *SpotifyClient) DeletePlaylist(ctx context.Context, accessToken, userId,
 	return nil
 }
 
-func (c *SpotifyClient) UpdatePlaylist(ctx context.Context, accessToken, userId, playlistId, name, description string) error {
+func (c *SpotifyClient) UpdatePlaylist(ctx context.Context, playlistId, name, description string) error {
+	integration, err := c.getIntegrationInfo(ctx)
+	if err != nil {
+		return err
+	}
+
+	accessToken := integration.AccessToken
+	userId := integration.UserID
+
 	c.logger.InfoContext(ctx, "updating playlist in spotify", "user_id", userId, "playlist_id", playlistId, "name", name)
 
 	path := fmt.Sprintf("playlists/%s", playlistId)

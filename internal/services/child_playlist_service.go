@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
-	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 )
@@ -48,12 +47,6 @@ func NewChildPlaylistService(
 func (cpService *ChildPlaylistService) CreateChildPlaylist(ctx context.Context, userID, basePlaylistID string, input *models.CreateChildPlaylistRequest) (*models.ChildPlaylist, error) {
 	cpService.logger.InfoContext(ctx, "creating child playlist", "user_id", userID, "base_playlist_id", basePlaylistID, "input", input)
 
-	integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
-	if !ok {
-		cpService.logger.ErrorContext(ctx, "failed to get spotify integration", "user_id", userID)
-		return nil, fmt.Errorf("failed to get spotify integration")
-	}
-
 	basePlaylist, err := cpService.basePlaylistRepo.GetByID(ctx, basePlaylistID, userID)
 	if err != nil {
 		cpService.logger.ErrorContext(ctx, "failed to get base playlist", "base_playlist_id", basePlaylistID, "user_id", userID, "error", err.Error())
@@ -66,8 +59,6 @@ func (cpService *ChildPlaylistService) CreateChildPlaylist(ctx context.Context, 
 
 	spotifyPlaylist, err := cpService.spotifyClient.CreatePlaylist(
 		ctx,
-		integration.AccessToken,
-		integration.SpotifyID,
 		spotifyPlaylistName,
 		models.BuildChildPlaylistDescription(input.Description),
 		false, // private by default
@@ -108,15 +99,8 @@ func (cpService *ChildPlaylistService) DeleteChildPlaylist(ctx context.Context, 
 		return fmt.Errorf("failed to get child playlist: %w", err)
 	}
 
-	// Get user's Spotify integration to access tokens
-	integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
-	if !ok {
-		cpService.logger.ErrorContext(ctx, "failed to get spotify integration", "user_id", userID)
-		return fmt.Errorf("failed to get spotify integration")
-	}
-
 	// Delete from Spotify first
-	err = cpService.spotifyClient.DeletePlaylist(ctx, integration.AccessToken, integration.SpotifyID, childPlaylist.SpotifyPlaylistID)
+	err = cpService.spotifyClient.DeletePlaylist(ctx, childPlaylist.SpotifyPlaylistID)
 	if err != nil {
 		cpService.logger.ErrorContext(ctx, "failed to delete playlist from spotify", "spotify_playlist_id", childPlaylist.SpotifyPlaylistID, "error", err.Error())
 		return fmt.Errorf("failed to delete spotify playlist: %w", err)
@@ -193,18 +177,9 @@ func (cpService *ChildPlaylistService) UpdateChildPlaylist(ctx context.Context, 
 	}
 
 	if spotifyUpdate.shouldUpdate {
-		// Get user's Spotify integration to access tokens
-		integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
-		if !ok {
-			cpService.logger.ErrorContext(ctx, "failed to get spotify integration", "user_id", userID)
-			return nil, fmt.Errorf("failed to get spotify integration")
-		}
-
 		// Update Spotify playlist metadata
 		err = cpService.spotifyClient.UpdatePlaylist(
 			ctx,
-			integration.AccessToken,
-			integration.SpotifyID,
 			updatedChildPlaylist.SpotifyPlaylistID,
 			spotifyUpdate.name,
 			spotifyUpdate.description,

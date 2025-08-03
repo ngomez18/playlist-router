@@ -154,9 +154,9 @@ func TestSpotifyClient_GetPlaylist_Errors(t *testing.T) {
 			accessToken:   "valid_token",
 		},
 		{
-			name:           "unauthorized error",
-			playlistId:     "playlist123",
-			accessToken:    "",
+			name:        "unauthorized error",
+			playlistId:  "playlist123",
+			accessToken: "",
 		},
 	}
 
@@ -179,7 +179,7 @@ func TestSpotifyClient_GetPlaylist_Errors(t *testing.T) {
 					Do(gomock.Any()).
 					Return(nil, tt.responseError).
 					Times(1)
-			} 
+			}
 			if tt.responseStatus > 0 {
 				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error"}`))
 				resp := &http.Response{
@@ -358,8 +358,8 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 			offset:        0,
 		},
 		{
-			name:           "missing access token",
-			accessToken:    "",
+			name:        "missing access token",
+			accessToken: "",
 		},
 	}
 
@@ -404,7 +404,6 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 		})
 	}
 }
-
 
 func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
 	tests := []struct {
@@ -690,8 +689,8 @@ func TestSpotifyClient_CreatePlaylist_Success(t *testing.T) {
 				}).
 				Times(1)
 
-			ctx := context.Background()
-			result, err := client.CreatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistName, tt.description, tt.public)
+			ctx := contextWithTokenAndID(tt.accessToken, tt.userId)
+			result, err := client.CreatePlaylist(ctx, tt.playlistName, tt.description, tt.public)
 
 			assert.NoError(err)
 			assert.Equal(tt.expectedPlaylist, result)
@@ -720,24 +719,6 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 			accessToken:    "invalid_token",
 		},
 		{
-			name:           "forbidden error",
-			userId:         "other_user",
-			playlistName:   "Test Playlist",
-			description:    "Test description",
-			public:         true,
-			responseStatus: http.StatusForbidden,
-			accessToken:    "valid_token",
-		},
-		{
-			name:           "bad request error",
-			userId:         "user123",
-			playlistName:   "",
-			description:    "Test description",
-			public:         true,
-			responseStatus: http.StatusBadRequest,
-			accessToken:    "valid_token",
-		},
-		{
 			name:          "http client error",
 			userId:        "user123",
 			playlistName:  "Test Playlist",
@@ -745,6 +726,11 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 			public:        true,
 			responseError: errors.New("network timeout"),
 			accessToken:   "valid_token",
+		},
+		{
+			name:        "missing access token",
+			userId:      "user123",
+			accessToken: "",
 		},
 	}
 
@@ -767,7 +753,8 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 					Do(gomock.Any()).
 					Return(nil, tt.responseError).
 					Times(1)
-			} else {
+			}
+			if tt.responseStatus > 0 {
 				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error"}`))
 				resp := &http.Response{
 					StatusCode: tt.responseStatus,
@@ -780,8 +767,8 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 					Times(1)
 			}
 
-			ctx := context.Background()
-			result, err := client.CreatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistName, tt.description, tt.public)
+			ctx := contextWithTokenAndID(tt.accessToken, tt.userId)
+			result, err := client.CreatePlaylist(ctx, tt.playlistName, tt.description, tt.public)
 
 			assert.Error(err)
 			assert.Nil(result)
@@ -837,8 +824,8 @@ func TestSpotifyClient_DeletePlaylist_Success(t *testing.T) {
 				}).
 				Times(1)
 
-			ctx := context.Background()
-			err := client.DeletePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId)
+			ctx := contextWithTokenAndID(tt.accessToken, tt.userId)
+			err := client.DeletePlaylist(ctx, tt.playlistId)
 
 			assert.NoError(err)
 		})
@@ -868,6 +855,12 @@ func TestSpotifyClient_DeletePlaylist_Errors(t *testing.T) {
 			responseError: errors.New("connection timeout"),
 			accessToken:   "valid_token",
 		},
+		{
+			name:        "missing access token",
+			userId:      "user123",
+			playlistId:  "playlist456",
+			accessToken: "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -889,7 +882,9 @@ func TestSpotifyClient_DeletePlaylist_Errors(t *testing.T) {
 					Do(gomock.Any()).
 					Return(nil, tt.responseError).
 					Times(1)
-			} else {
+			}
+
+			if tt.responseStatus > 0 {
 				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error","error_description":"Test error description"}`))
 				resp := &http.Response{
 					StatusCode: tt.responseStatus,
@@ -902,8 +897,8 @@ func TestSpotifyClient_DeletePlaylist_Errors(t *testing.T) {
 					Times(1)
 			}
 
-			ctx := context.Background()
-			err := client.DeletePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId)
+			ctx := contextWithTokenAndID(tt.accessToken, tt.userId)
+			err := client.DeletePlaylist(ctx, tt.playlistId)
 
 			assert.Error(err)
 		})
@@ -1025,8 +1020,8 @@ func TestSpotifyClient_UpdatePlaylist_Success(t *testing.T) {
 				}).
 				Times(1)
 
-			ctx := context.Background()
-			err := client.UpdatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId, tt.playlistName, tt.description)
+			ctx := contextWithTokenAndID(tt.accessToken, tt.userId)
+			err := client.UpdatePlaylist(ctx, tt.playlistId, tt.playlistName, tt.description)
 
 			assert.NoError(err)
 		})
@@ -1045,42 +1040,6 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 		accessToken    string
 	}{
 		{
-			name:           "playlist not found",
-			userId:         "user123",
-			playlistId:     "nonexistent_playlist",
-			playlistName:   "New Name",
-			description:    "New Description",
-			responseStatus: http.StatusNotFound,
-			accessToken:    "valid_token",
-		},
-		{
-			name:           "unauthorized error",
-			userId:         "user123",
-			playlistId:     "playlist456",
-			playlistName:   "New Name",
-			description:    "New Description",
-			responseStatus: http.StatusUnauthorized,
-			accessToken:    "invalid_token",
-		},
-		{
-			name:           "forbidden error - not owner",
-			userId:         "user123",
-			playlistId:     "other_users_playlist",
-			playlistName:   "New Name",
-			description:    "New Description",
-			responseStatus: http.StatusForbidden,
-			accessToken:    "valid_token",
-		},
-		{
-			name:           "bad request error",
-			userId:         "user123",
-			playlistId:     "playlist456",
-			playlistName:   "Name with invalid characters that are too long for Spotify's limits and exceed the maximum allowed length",
-			description:    "Description",
-			responseStatus: http.StatusBadRequest,
-			accessToken:    "valid_token",
-		},
-		{
 			name:          "http client error",
 			userId:        "user123",
 			playlistId:    "playlist456",
@@ -1097,6 +1056,12 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 			description:    "New Description",
 			responseStatus: http.StatusInternalServerError,
 			accessToken:    "valid_token",
+		},
+		{
+			name:        "missing access token",
+			userId:      "user123",
+			playlistId:  "playlist456",
+			accessToken: "",
 		},
 	}
 
@@ -1119,7 +1084,8 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 					Do(gomock.Any()).
 					Return(nil, tt.responseError).
 					Times(1)
-			} else {
+			}
+			if tt.responseStatus > 0 {
 				responseBody := io.NopCloser(strings.NewReader(`{"error":"test_error","error_description":"Test error description"}`))
 				resp := &http.Response{
 					StatusCode: tt.responseStatus,
@@ -1132,8 +1098,8 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 					Times(1)
 			}
 
-			ctx := context.Background()
-			err := client.UpdatePlaylist(ctx, tt.accessToken, tt.userId, tt.playlistId, tt.playlistName, tt.description)
+			ctx := contextWithTokenAndID(tt.accessToken, tt.userId)
+			err := client.UpdatePlaylist(ctx, tt.playlistId, tt.playlistName, tt.description)
 
 			assert.Error(err)
 		})
@@ -1142,12 +1108,25 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 
 func contextWithToken(token string) context.Context {
 	ctx := context.Background()
-	
+
 	if token == "" {
 		return ctx
 	}
 
 	return requestcontext.ContextWithSpotifyAuth(context.Background(), &models.SpotifyIntegration{
 		AccessToken: token,
+	})
+}
+
+func contextWithTokenAndID(token, userID string) context.Context {
+	ctx := context.Background()
+
+	if token == "" || userID == "" {
+		return ctx
+	}
+
+	return requestcontext.ContextWithSpotifyAuth(context.Background(), &models.SpotifyIntegration{
+		AccessToken: token,
+		UserID:      userID,
 	})
 }

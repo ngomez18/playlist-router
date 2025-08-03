@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	spotifyclient "github.com/ngomez18/playlist-router/internal/clients/spotify"
-	requestcontext "github.com/ngomez18/playlist-router/internal/context"
 	"github.com/ngomez18/playlist-router/internal/models"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 )
@@ -50,18 +49,9 @@ func (bpService *BasePlaylistService) CreateBasePlaylist(ctx context.Context, us
 	if spotifyPlaylistID == "" {
 		bpService.logger.InfoContext(ctx, "spotify playlist ID empty, creating new playlist in Spotify", "name", input.Name)
 
-		// Get user's Spotify integration to access tokens
-		integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
-		if !ok {
-			bpService.logger.ErrorContext(ctx, "failed to get spotify integration", "user_id", userId)
-			return nil, fmt.Errorf("failed to get spotify integration")
-		}
-
 		// Create playlist in Spotify
 		spotifyPlaylist, err := bpService.spotifyClient.CreatePlaylist(
 			ctx,
-			integration.AccessToken,
-			integration.SpotifyID,
 			input.Name,
 			"",    // empty description for now
 			false, // private by default

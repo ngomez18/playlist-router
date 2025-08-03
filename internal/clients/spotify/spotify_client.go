@@ -14,6 +14,7 @@ import (
 	"github.com/ngomez18/playlist-router/internal/clients"
 	"github.com/ngomez18/playlist-router/internal/config"
 	requestcontext "github.com/ngomez18/playlist-router/internal/context"
+	"github.com/ngomez18/playlist-router/internal/models"
 )
 
 const (
@@ -32,9 +33,9 @@ type SpotifyAPI interface {
 	// Playlists
 	GetPlaylist(ctx context.Context, playlistId string) (*SpotifyPlaylist, error)
 	GetAllUserPlaylists(ctx context.Context) ([]*SpotifyPlaylist, error)
-	CreatePlaylist(ctx context.Context, accessToken, userId, name, description string, public bool) (*SpotifyPlaylist, error)
-	DeletePlaylist(ctx context.Context, accessToken, userId, playlistId string) error
-	UpdatePlaylist(ctx context.Context, accessToken, userId, playlistId, name, description string) error
+	CreatePlaylist(ctx context.Context, name, description string, public bool) (*SpotifyPlaylist, error)
+	DeletePlaylist(ctx context.Context, playlistId string) error
+	UpdatePlaylist(ctx context.Context, playlistId, name, description string) error
 
 	// Tracks
 }
@@ -151,7 +152,6 @@ func (c *SpotifyClient) RefreshTokens(ctx context.Context, refreshToken string) 
 	}
 	defer c.responseBodyCloser(ctx, resp)
 
-
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		c.logger.ErrorContext(ctx, "spotify token refresh failed", "status_code", resp.StatusCode, "response_body", string(body))
@@ -211,7 +211,6 @@ func (c *SpotifyClient) responseBodyCloser(ctx context.Context, resp *http.Respo
 }
 
 func (c *SpotifyClient) getAccessToken(ctx context.Context) (string, error) {
-	// Get the user's Spotify integration to get the access token
 	integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
 	if !ok {
 		c.logger.ErrorContext(ctx, "failed to get spotify integration")
@@ -219,4 +218,14 @@ func (c *SpotifyClient) getAccessToken(ctx context.Context) (string, error) {
 	}
 
 	return integration.AccessToken, nil
+}
+
+func (c *SpotifyClient) getIntegrationInfo(ctx context.Context) (*models.SpotifyIntegration, error) {
+	integration, ok := requestcontext.GetSpotifyAuthFromContext(ctx)
+	if !ok {
+		c.logger.ErrorContext(ctx, "failed to get spotify integration")
+		return nil, ErrSpotifyCredentialsNotFound
+	}
+
+	return integration, nil
 }

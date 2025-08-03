@@ -58,8 +58,8 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 			},
 		},
 		{
-			name:   "successful fetch with empty playlists",
-			userID: "user456",
+			name:              "successful fetch with empty playlists",
+			userID:            "user456",
 			spotifyPlaylists:  []*spotifyclient.SpotifyPlaylist{},
 			expectedPlaylists: []*models.SpotifyPlaylist{},
 		},
@@ -119,8 +119,8 @@ func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 		clientErr   error
 	}{
 		{
-			name:   "spotify API network error",
-			userID: "user456",
+			name:      "spotify API network error",
+			userID:    "user456",
 			clientErr: errors.New("network timeout"),
 		},
 	}
