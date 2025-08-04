@@ -11,6 +11,7 @@ go.work
 # Build executables
 *playlist-router
 tmp/
+cmd/test
 
 # React/Node.js
 web/node_modules/

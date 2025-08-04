@@ -48,3 +48,41 @@ type SpotifyPlaylistRequest struct {
 	Description *string `json:"description,omitempty"`
 	Public      *bool   `json:"public,omitempty"`
 }
+
+type SpotifyPlaylistTracksResponse struct {
+	Items  []SpotifyPlaylistTrack `json:"items"`
+	Total  int                    `json:"total"`
+	Limit  int                    `json:"limit"`
+	Offset int                    `json:"offset"`
+	Next   *string                `json:"next"`
+}
+
+type SpotifyPlaylistTrack struct {
+	Track *SpotifyTrack `json:"track"`
+}
+
+type SpotifyTrack struct {
+	ID         string          `json:"id"`
+	Name       string          `json:"name"`
+	DurationMs int             `json:"duration_ms"`
+	Popularity int             `json:"popularity"`
+	Explicit   bool            `json:"explicit"`
+	Artists    []SpotifyArtist `json:"artists"`
+	Album      SpotifyAlbum    `json:"album"`
+	URI        string          `json:"uri"`
+}
+
+type SpotifyArtist struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	Genres     []string `json:"genres"`
+	Popularity int      `json:"popularity"`
+	URI        string   `json:"uri"`
+}
+
+type SpotifyAlbum struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	ReleaseDate string `json:"release_date"`
+	URI         string `json:"uri"`
+}

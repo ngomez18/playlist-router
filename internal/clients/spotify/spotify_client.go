@@ -38,6 +38,10 @@ type SpotifyAPI interface {
 	UpdatePlaylist(ctx context.Context, playlistId, name, description string) error
 
 	// Tracks
+	GetPlaylistTracks(ctx context.Context, playlistID string, limit, offset int) (*SpotifyPlaylistTracksResponse, error)
+
+	// Artists
+	GetSeveralArtists(ctx context.Context, artistIDs []string) ([]*SpotifyArtist, error)
 }
 
 type SpotifyClient struct {

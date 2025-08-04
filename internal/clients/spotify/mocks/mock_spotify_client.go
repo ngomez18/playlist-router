@@ -123,6 +123,36 @@ func (mr *MockSpotifyAPIMockRecorder) GetPlaylist(ctx, playlistId interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaylist", reflect.TypeOf((*MockSpotifyAPI)(nil).GetPlaylist), ctx, playlistId)
 }
 
+// GetPlaylistTracks mocks base method.
+func (m *MockSpotifyAPI) GetPlaylistTracks(ctx context.Context, playlistID string, limit, offset int) (*spotifyclient.SpotifyPlaylistTracksResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPlaylistTracks", ctx, playlistID, limit, offset)
+	ret0, _ := ret[0].(*spotifyclient.SpotifyPlaylistTracksResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPlaylistTracks indicates an expected call of GetPlaylistTracks.
+func (mr *MockSpotifyAPIMockRecorder) GetPlaylistTracks(ctx, playlistID, limit, offset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaylistTracks", reflect.TypeOf((*MockSpotifyAPI)(nil).GetPlaylistTracks), ctx, playlistID, limit, offset)
+}
+
+// GetSeveralArtists mocks base method.
+func (m *MockSpotifyAPI) GetSeveralArtists(ctx context.Context, artistIDs []string) ([]*spotifyclient.SpotifyArtist, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSeveralArtists", ctx, artistIDs)
+	ret0, _ := ret[0].([]*spotifyclient.SpotifyArtist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSeveralArtists indicates an expected call of GetSeveralArtists.
+func (mr *MockSpotifyAPIMockRecorder) GetSeveralArtists(ctx, artistIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSeveralArtists", reflect.TypeOf((*MockSpotifyAPI)(nil).GetSeveralArtists), ctx, artistIDs)
+}
+
 // GetUserProfile mocks base method.
 func (m *MockSpotifyAPI) GetUserProfile(ctx context.Context, accessToken string) (*spotifyclient.SpotifyUserProfile, error) {
 	m.ctrl.T.Helper()
