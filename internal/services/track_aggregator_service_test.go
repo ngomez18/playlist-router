@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -35,14 +36,14 @@ func TestNewTrackAggregatorService(t *testing.T) {
 
 func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 	tests := []struct {
-		name              string
-		userID            string
-		basePlaylistID    string
-		basePlaylist      *models.BasePlaylist
-		tracksResponse    *spotifyclient.SpotifyPlaylistTracksResponse
-		artistsResponse   []*spotifyclient.SpotifyArtist
-		expectedAPICount  int
-		expectedTrackCount int
+		name                string
+		userID              string
+		basePlaylistID      string
+		basePlaylist        *models.BasePlaylist
+		tracksResponse      *spotifyclient.SpotifyPlaylistTracksResponse
+		artistsResponse     []*spotifyclient.SpotifyArtist
+		expectedAPICount    int
+		expectedTrackCount  int
 		expectedArtistCount int
 	}{
 		{
@@ -68,8 +69,9 @@ func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 								{ID: "artist2", Name: "Artist Two"},
 							},
 							Album: spotifyclient.SpotifyAlbum{
-								ID:   "album1",
-								Name: "Album One",
+								ID:          "album1",
+								Name:        "Album One",
+								ReleaseDate: "2020-05-15",
 							},
 						},
 					},
@@ -84,8 +86,9 @@ func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 								{ID: "artist3", Name: "Artist Three"},
 							},
 							Album: spotifyclient.SpotifyAlbum{
-								ID:   "album2",
-								Name: "Album Two",
+								ID:          "album2",
+								Name:        "Album Two",
+								ReleaseDate: "2018",
 							},
 						},
 					},
@@ -157,7 +160,7 @@ func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 			// Assert
 			assert.NoError(err)
 			assert.NotNil(result)
-			assert.Equal(tt.basePlaylist.SpotifyPlaylistID, result.PlaylistID)
+			assert.Equal(tt.basePlaylist.ID, result.PlaylistID)
 			assert.Equal(tt.expectedTrackCount, len(result.Tracks))
 			assert.Equal(tt.expectedArtistCount, len(result.Artists))
 			assert.Equal(tt.expectedAPICount, result.APICallCount)
@@ -171,6 +174,22 @@ func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 			assert.Contains(result.Artists, "artist1")
 			assert.Equal("Artist One", result.Artists["artist1"].Name)
 			assert.Equal([]string{"rock", "pop"}, result.Artists["artist1"].Genres)
+			
+			// Verify pre-processed data for track1
+			track1 := result.Tracks[0]
+			assert.Equal(2020, track1.ReleaseYear)
+			assert.Equal(80, track1.MaxArtistPop) // artist1 has 80, artist2 has 70
+			assert.Contains(track1.AllGenres, "rock")
+			assert.Contains(track1.AllGenres, "pop") 
+			assert.Contains(track1.AllGenres, "jazz")
+			assert.Len(track1.AllGenres, 3) // rock, pop, jazz (normalized)
+			
+			// Verify pre-processed data for track2
+			track2 := result.Tracks[1]
+			assert.Equal(2018, track2.ReleaseYear)
+			assert.Equal(70, track2.MaxArtistPop) // artist2 has 70, artist3 has 60
+			assert.Contains(track2.AllGenres, "jazz")
+			assert.Len(track2.AllGenres, 1) // only jazz (artist3 has no genres)
 		})
 	}
 }
@@ -323,8 +342,136 @@ func TestTrackAggregatorService_EmptyPlaylist(t *testing.T) {
 	// Assert
 	assert.NoError(err)
 	assert.NotNil(result)
-	assert.Equal("spotify456", result.PlaylistID)
+	assert.Equal("base123", result.PlaylistID)
 	assert.Equal(0, len(result.Tracks))
 	assert.Equal(0, len(result.Artists))
 	assert.Equal(1, result.APICallCount) // Only tracks call
+}
+
+func TestTrackAggregatorService_PreprocessingEdgeCases(t *testing.T) {
+	tests := []struct {
+		name               string
+		releaseDate        string
+		expectedYear       int
+		artistGenres       []string
+		artistPopularity   int
+		expectedMaxPop     int
+		expectedGenreCount int
+	}{
+		{
+			name:               "empty release date",
+			releaseDate:        "",
+			expectedYear:       0,
+			artistGenres:       []string{"rock"},
+			artistPopularity:   50,
+			expectedMaxPop:     50,
+			expectedGenreCount: 1,
+		},
+		{
+			name:               "year only release date",
+			releaseDate:        "2019",
+			expectedYear:       2019,
+			artistGenres:       []string{},
+			artistPopularity:   0,
+			expectedMaxPop:     0,
+			expectedGenreCount: 0,
+		},
+		{
+			name:               "invalid release date",
+			releaseDate:        "invalid",
+			expectedYear:       0,
+			artistGenres:       []string{"Pop", "ROCK", "jazz"},
+			artistPopularity:   75,
+			expectedMaxPop:     75,
+			expectedGenreCount: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+			ctx := context.Background()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
+			mockBasePlaylistRepo := repomocks.NewMockBasePlaylistRepository(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+
+			basePlaylist := &models.BasePlaylist{
+				ID:                "base123",
+				UserID:            "user123",
+				SpotifyPlaylistID: "spotify456",
+				Name:              "Test Playlist",
+			}
+
+			tracksResponse := &spotifyclient.SpotifyPlaylistTracksResponse{
+				Items: []spotifyclient.SpotifyPlaylistTrack{
+					{
+						Track: &spotifyclient.SpotifyTrack{
+							ID:         "track1",
+							Name:       "Test Track",
+							URI:        "spotify:track:track1",
+							DurationMs: 180000,
+							Artists:    []spotifyclient.SpotifyArtist{{ID: "artist1"}},
+							Album: spotifyclient.SpotifyAlbum{
+								ID:          "album1",
+								Name:        "Test Album",
+								ReleaseDate: tt.releaseDate,
+							},
+						},
+					},
+				},
+				Next: nil,
+			}
+
+			artistsResponse := []*spotifyclient.SpotifyArtist{
+				{
+					ID:         "artist1",
+					Name:       "Test Artist",
+					Genres:     tt.artistGenres,
+					Popularity: tt.artistPopularity,
+					URI:        "spotify:artist:artist1",
+				},
+			}
+
+			// Setup expectations
+			mockBasePlaylistRepo.EXPECT().
+				GetByID(ctx, "base123", "user123").
+				Return(basePlaylist, nil).
+				Times(1)
+
+			mockSpotifyClient.EXPECT().
+				GetPlaylistTracks(ctx, "spotify456", MAX_TRACKS, 0).
+				Return(tracksResponse, nil).
+				Times(1)
+
+			mockSpotifyClient.EXPECT().
+				GetSeveralArtists(ctx, []string{"artist1"}).
+				Return(artistsResponse, nil).
+				Times(1)
+
+			// Execute
+			service := NewTrackAggregatorService(mockSpotifyClient, mockBasePlaylistRepo, logger)
+			result, err := service.AggregatePlaylistData(ctx, "user123", "base123")
+
+			// Assert
+			assert.NoError(err)
+			assert.NotNil(result)
+			assert.Len(result.Tracks, 1)
+
+			track := result.Tracks[0]
+			assert.Equal(tt.expectedYear, track.ReleaseYear)
+			assert.Equal(tt.expectedMaxPop, track.MaxArtistPop)
+			assert.Len(track.AllGenres, tt.expectedGenreCount)
+
+			// Verify genres are normalized to lowercase
+			if tt.expectedGenreCount > 0 {
+				for _, genre := range track.AllGenres {
+					assert.Equal(strings.ToLower(genre), genre, "genres should be normalized to lowercase")
+				}
+			}
+		})
+	}
 }

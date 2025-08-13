@@ -35,17 +35,17 @@ func (m *MockTrackRouterServicer) EXPECT() *MockTrackRouterServicerMockRecorder 
 	return m.recorder
 }
 
-// RouteTracksForBasePlaylist mocks base method.
-func (m *MockTrackRouterServicer) RouteTracksForBasePlaylist(ctx context.Context, userID, basePlaylistID string) (*models.SyncEvent, error) {
+// RouteTracksToChildren mocks base method.
+func (m *MockTrackRouterServicer) RouteTracksToChildren(ctx context.Context, tracks *models.PlaylistTracksInfo, childPlaylists []*models.ChildPlaylist) (map[string][]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RouteTracksForBasePlaylist", ctx, userID, basePlaylistID)
-	ret0, _ := ret[0].(*models.SyncEvent)
+	ret := m.ctrl.Call(m, "RouteTracksToChildren", ctx, tracks, childPlaylists)
+	ret0, _ := ret[0].(map[string][]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RouteTracksForBasePlaylist indicates an expected call of RouteTracksForBasePlaylist.
-func (mr *MockTrackRouterServicerMockRecorder) RouteTracksForBasePlaylist(ctx, userID, basePlaylistID interface{}) *gomock.Call {
+// RouteTracksToChildren indicates an expected call of RouteTracksToChildren.
+func (mr *MockTrackRouterServicerMockRecorder) RouteTracksToChildren(ctx, tracks, childPlaylists interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RouteTracksForBasePlaylist", reflect.TypeOf((*MockTrackRouterServicer)(nil).RouteTracksForBasePlaylist), ctx, userID, basePlaylistID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RouteTracksToChildren", reflect.TypeOf((*MockTrackRouterServicer)(nil).RouteTracksToChildren), ctx, tracks, childPlaylists)
 }

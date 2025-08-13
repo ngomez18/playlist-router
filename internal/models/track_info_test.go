@@ -8,9 +8,9 @@ import (
 
 func TestPlaylistTracksInfo_GetAllArtists(t *testing.T) {
 	tests := []struct {
-		name           string
-		playlistTracks PlaylistTracksInfo
-		expectedCount  int
+		name            string
+		playlistTracks  PlaylistTracksInfo
+		expectedCount   int
 		expectedArtists []string
 	}{
 		{

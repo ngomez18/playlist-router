@@ -3,6 +3,7 @@ package models
 // PlaylistTracksInfo contains all aggregated data for a playlist
 type PlaylistTracksInfo struct {
 	PlaylistID   string
+	UserID       string
 	Tracks       []TrackInfo
 	Artists      map[string]ArtistInfo
 	APICallCount int
@@ -18,20 +19,25 @@ type TrackInfo struct {
 	Explicit   bool
 	Artists    []string
 	Album      AlbumInfo
+	
+	// Pre-processed data for efficient filtering
+	ReleaseYear   int      `json:"release_year"`
+	AllGenres     []string `json:"all_genres"`     // Normalized genres from all track artists
+	MaxArtistPop  int      `json:"max_artist_popularity"`
 }
 
 type ArtistInfo struct {
 	ID         string
 	Name       string
-	Genres     []string // This is the key data we fetch separately
-	Popularity int      // Also enriched from GetSeveralArtists
+	Genres     []string
+	Popularity int
 	URI        string
 }
 
 type AlbumInfo struct {
 	ID          string
 	Name        string
-	ReleaseDate string // Already available from playlist tracks
+	ReleaseDate string
 	URI         string
 }
 

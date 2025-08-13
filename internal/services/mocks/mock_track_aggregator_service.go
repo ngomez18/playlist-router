@@ -36,16 +36,16 @@ func (m *MockTrackAggregatorServicer) EXPECT() *MockTrackAggregatorServicerMockR
 }
 
 // AggregatePlaylistData mocks base method.
-func (m *MockTrackAggregatorServicer) AggregatePlaylistData(ctx context.Context, basePlaylistID string) (*models.PlaylistTracksInfo, error) {
+func (m *MockTrackAggregatorServicer) AggregatePlaylistData(ctx context.Context, userID, basePlaylistID string) (*models.PlaylistTracksInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AggregatePlaylistData", ctx, basePlaylistID)
+	ret := m.ctrl.Call(m, "AggregatePlaylistData", ctx, userID, basePlaylistID)
 	ret0, _ := ret[0].(*models.PlaylistTracksInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AggregatePlaylistData indicates an expected call of AggregatePlaylistData.
-func (mr *MockTrackAggregatorServicerMockRecorder) AggregatePlaylistData(ctx, basePlaylistID interface{}) *gomock.Call {
+func (mr *MockTrackAggregatorServicerMockRecorder) AggregatePlaylistData(ctx, userID, basePlaylistID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AggregatePlaylistData", reflect.TypeOf((*MockTrackAggregatorServicer)(nil).AggregatePlaylistData), ctx, basePlaylistID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AggregatePlaylistData", reflect.TypeOf((*MockTrackAggregatorServicer)(nil).AggregatePlaylistData), ctx, userID, basePlaylistID)
 }
