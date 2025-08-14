@@ -90,12 +90,15 @@ func TestChildPlaylistService_CreateChildPlaylist_Success(t *testing.T) {
 	).Return(spotifyPlaylist, nil)
 	mockChildRepo.EXPECT().Create(
 		gomock.Any(),
-		userID,
-		basePlaylistID,
-		input.Name,
-		input.Description,
-		spotifyPlaylist.ID,
-		input.FilterRules,
+		repositories.CreateChildPlaylistFields{
+			UserID:            userID,
+			BasePlaylistID:    basePlaylistID,
+			Name:              input.Name,
+			Description:       input.Description,
+			SpotifyPlaylistID: spotifyPlaylist.ID,
+			FilterRules:       input.FilterRules,
+			IsActive:          true,
+		},
 	).Return(expectedChildPlaylist, nil)
 
 	// Execution
@@ -149,7 +152,7 @@ func TestChildPlaylistService_CreateChildPlaylist_RepoError(t *testing.T) {
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	mockBaseRepo.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(&models.BasePlaylist{Name: "Base"}, nil)
 	mockSpotifyClient.EXPECT().CreatePlaylist(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&spotifyclient.SpotifyPlaylist{ID: "sp_id"}, nil)
-	mockChildRepo.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
+	mockChildRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
 	service := createTestService(mockChildRepo, mockBaseRepo, nil, mockSpotifyClient)
 
 	_, err := service.CreateChildPlaylist(context.Background(), "uid", "bpid", &models.CreateChildPlaylistRequest{Name: "Test"})
@@ -417,7 +420,13 @@ func TestChildPlaylistService_UpdateChildPlaylist_Success(t *testing.T) {
 			service := createTestService(mockChildRepo, mockBaseRepo, nil, mockSpotifyClient)
 
 			// Mock expectations
-			mockChildRepo.EXPECT().Update(gomock.Any(), "cp789", "user123", tt.input).Return(tt.updatedChildPlaylist, nil)
+			expectedUpdateFields := repositories.UpdateChildPlaylistFields{
+				Name:        tt.input.Name,
+				Description: tt.input.Description,
+				IsActive:    tt.input.IsActive,
+				FilterRules: tt.input.FilterRules,
+			}
+			mockChildRepo.EXPECT().Update(gomock.Any(), "cp789", "user123", expectedUpdateFields).Return(tt.updatedChildPlaylist, nil)
 
 			if tt.needsBasePlaylistCall {
 				mockBaseRepo.EXPECT().GetByID(gomock.Any(), tt.basePlaylist.ID, "user123").Return(tt.basePlaylist, nil)

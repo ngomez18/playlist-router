@@ -29,12 +29,7 @@ func NewChildPlaylistRepositoryPocketbase(pb *pocketbase.PocketBase) *ChildPlayl
 
 func (cpRepo *ChildPlaylistRepositoryPocketbase) Create(
 	ctx context.Context,
-	userID,
-	basePlaylistID,
-	name,
-	description,
-	spotifyPlaylistID string,
-	filterRules *models.AudioFeatureFilters,
+	fields repositories.CreateChildPlaylistFields,
 ) (*models.ChildPlaylist, error) {
 	collection, err := cpRepo.getCollection(ctx)
 	if err != nil {
@@ -42,18 +37,18 @@ func (cpRepo *ChildPlaylistRepositoryPocketbase) Create(
 	}
 
 	childPlaylist := core.NewRecord(collection)
-	childPlaylist.Set("user_id", userID)
-	childPlaylist.Set("base_playlist_id", basePlaylistID)
-	childPlaylist.Set("name", name)
-	childPlaylist.Set("description", description)
-	childPlaylist.Set("spotify_playlist_id", spotifyPlaylistID)
-	childPlaylist.Set("is_active", true)
+	childPlaylist.Set("user_id", fields.UserID)
+	childPlaylist.Set("base_playlist_id", fields.BasePlaylistID)
+	childPlaylist.Set("name", fields.Name)
+	childPlaylist.Set("description", fields.Description)
+	childPlaylist.Set("spotify_playlist_id", fields.SpotifyPlaylistID)
+	childPlaylist.Set("is_active", fields.IsActive)
 
 	// Serialize filter rules to JSON
-	if filterRules != nil {
-		filterRulesJSON, err := json.Marshal(filterRules)
+	if fields.FilterRules != nil {
+		filterRulesJSON, err := json.Marshal(fields.FilterRules)
 		if err != nil {
-			cpRepo.log.ErrorContext(ctx, "unable to serialize filter rules", "filter_rules", filterRules, "error", err)
+			cpRepo.log.ErrorContext(ctx, "unable to serialize filter rules", "filter_rules", fields.FilterRules, "error", err)
 			return nil, fmt.Errorf(`%w: failed to serialize filter rules: %s`, repositories.ErrDatabaseOperation, err.Error())
 		}
 
@@ -160,7 +155,7 @@ func (cpRepo *ChildPlaylistRepositoryPocketbase) GetByBasePlaylistID(ctx context
 	return childPlaylists, nil
 }
 
-func (cpRepo *ChildPlaylistRepositoryPocketbase) Update(ctx context.Context, id, userID string, req *models.UpdateChildPlaylistRequest) (*models.ChildPlaylist, error) {
+func (cpRepo *ChildPlaylistRepositoryPocketbase) Update(ctx context.Context, id, userID string, fields repositories.UpdateChildPlaylistFields) (*models.ChildPlaylist, error) {
 	collection, err := cpRepo.getCollection(ctx)
 	if err != nil {
 		return nil, err
@@ -183,22 +178,26 @@ func (cpRepo *ChildPlaylistRepositoryPocketbase) Update(ctx context.Context, id,
 	}
 
 	// Update fields if provided
-	if req.Name != nil {
-		record.Set("name", *req.Name)
+	if fields.Name != nil {
+		record.Set("name", *fields.Name)
 	}
 
-	if req.Description != nil {
-		record.Set("description", *req.Description)
+	if fields.Description != nil {
+		record.Set("description", *fields.Description)
 	}
 
-	if req.IsActive != nil {
-		record.Set("is_active", *req.IsActive)
+	if fields.IsActive != nil {
+		record.Set("is_active", *fields.IsActive)
 	}
 
-	if req.FilterRules != nil {
-		filterRulesJSON, err := json.Marshal(req.FilterRules)
+	if fields.SpotifyPlaylistID != nil {
+		record.Set("spotify_playlist_id", *fields.SpotifyPlaylistID)
+	}
+
+	if fields.FilterRules != nil {
+		filterRulesJSON, err := json.Marshal(fields.FilterRules)
 		if err != nil {
-			cpRepo.log.ErrorContext(ctx, "unable to serialize filter rules", "filter_rules", req.FilterRules, "error", err)
+			cpRepo.log.ErrorContext(ctx, "unable to serialize filter rules", "filter_rules", fields.FilterRules, "error", err)
 			return nil, fmt.Errorf(`%w: failed to serialize filter rules: %s`, repositories.ErrDatabaseOperation, err.Error())
 		}
 		record.Set("filter_rules", string(filterRulesJSON))

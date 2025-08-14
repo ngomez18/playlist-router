@@ -71,15 +71,16 @@ func (cpService *ChildPlaylistService) CreateChildPlaylist(ctx context.Context, 
 	cpService.logger.InfoContext(ctx, "successfully created spotify playlist", "spotify_playlist_id", spotifyPlaylist.ID, "name", spotifyPlaylist.Name)
 
 	// Create the child playlist record in our database
-	childPlaylist, err := cpService.childPlaylistRepo.Create(
-		ctx,
-		userID,
-		basePlaylistID,
-		input.Name,
-		input.Description,
-		spotifyPlaylist.ID,
-		input.FilterRules,
-	)
+	fields := repositories.CreateChildPlaylistFields{
+		UserID:            userID,
+		BasePlaylistID:    basePlaylistID,
+		Name:              input.Name,
+		Description:       input.Description,
+		SpotifyPlaylistID: spotifyPlaylist.ID,
+		FilterRules:       input.FilterRules,
+		IsActive:          true,
+	}
+	childPlaylist, err := cpService.childPlaylistRepo.Create(ctx, fields)
 	if err != nil {
 		cpService.logger.ErrorContext(ctx, "failed to create child playlist", "error", err.Error())
 		return nil, fmt.Errorf("failed to create child playlist: %w", err)
@@ -149,7 +150,13 @@ func (cpService *ChildPlaylistService) UpdateChildPlaylist(ctx context.Context, 
 	cpService.logger.InfoContext(ctx, "updating child playlist", "id", id, "user_id", userID, "input", input)
 
 	// Update the child playlist in our database first
-	updatedChildPlaylist, err := cpService.childPlaylistRepo.Update(ctx, id, userID, input)
+	updateFields := repositories.UpdateChildPlaylistFields{
+		Name:        input.Name,
+		Description: input.Description,
+		IsActive:    input.IsActive,
+		FilterRules: input.FilterRules,
+	}
+	updatedChildPlaylist, err := cpService.childPlaylistRepo.Update(ctx, id, userID, updateFields)
 	if err != nil {
 		cpService.logger.ErrorContext(ctx, "failed to update child playlist", "id", id, "user_id", userID, "error", err.Error())
 		return nil, fmt.Errorf("failed to update child playlist: %w", err)

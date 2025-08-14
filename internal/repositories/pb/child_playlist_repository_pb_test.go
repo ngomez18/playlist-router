@@ -63,7 +63,16 @@ func TestChildPlaylistRepositoryPocketbase_Create_Success(t *testing.T) {
 
 			// Execute test
 			ctx := context.Background()
-			playlist, err := repo.Create(ctx, tt.userID, tt.basePlaylistID, tt.playlistName, tt.description, tt.spotifyPlaylistID, tt.filterRules)
+			fields := repositories.CreateChildPlaylistFields{
+				UserID:            tt.userID,
+				BasePlaylistID:    tt.basePlaylistID,
+				Name:              tt.playlistName,
+				Description:       tt.description,
+				SpotifyPlaylistID: tt.spotifyPlaylistID,
+				FilterRules:       tt.filterRules,
+				IsActive:          true,
+			}
+			playlist, err := repo.Create(ctx, fields)
 
 			// Verify success
 			assert.NoError(err)
@@ -155,7 +164,16 @@ func TestChildPlaylistRepositoryPocketbase_Create_ValidationErrors(t *testing.T)
 
 			// Execute test
 			ctx := context.Background()
-			playlist, err := repo.Create(ctx, tt.userID, tt.basePlaylistID, tt.playlistName, tt.description, tt.spotifyPlaylistID, nil)
+			fields := repositories.CreateChildPlaylistFields{
+				UserID:            tt.userID,
+				BasePlaylistID:    tt.basePlaylistID,
+				Name:              tt.playlistName,
+				Description:       tt.description,
+				SpotifyPlaylistID: tt.spotifyPlaylistID,
+				FilterRules:       nil,
+				IsActive:          true,
+			}
+			playlist, err := repo.Create(ctx, fields)
 
 			// Verify error occurred
 			assert.Error(err)
@@ -176,7 +194,16 @@ func TestChildPlaylistRepositoryPocketbase_Delete_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// First create a child playlist to delete
-	playlist, err := repo.Create(ctx, "user123", "base123", "Test Playlist", "Test description", "spotify123", nil)
+	fields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Test Playlist",
+		Description:       "Test description",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       nil,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, fields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
@@ -205,7 +232,16 @@ func TestChildPlaylistRepositoryPocketbase_Delete_UnauthorizedError(t *testing.T
 	ctx := context.Background()
 
 	// First create a playlist owned by user123
-	playlist, err := repo.Create(ctx, "user123", "base123", "Test Playlist", "", "spotify123", nil)
+	fields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Test Playlist",
+		Description:       "",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       nil,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, fields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
@@ -257,7 +293,16 @@ func TestChildPlaylistRepositoryPocketbase_GetByID_Success(t *testing.T) {
 	}
 
 	// First create a playlist to retrieve
-	playlist, err := repo.Create(ctx, "user123", "base123", "Test Playlist", "Test description", "spotify123", filterRules)
+	fields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Test Playlist",
+		Description:       "Test description",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       filterRules,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, fields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
@@ -288,7 +333,16 @@ func TestChildPlaylistRepositoryPocketbase_GetByID_UnauthorizedError(t *testing.
 	ctx := context.Background()
 
 	// First create a playlist owned by user123
-	playlist, err := repo.Create(ctx, "user123", "base123", "Test Playlist", "", "spotify123", nil)
+	fields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Test Playlist",
+		Description:       "",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       nil,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, fields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
@@ -371,17 +425,44 @@ func TestChildPlaylistRepositoryPocketbase_GetByBasePlaylistID_Success(t *testin
 			// Create child playlists for this base playlist
 			createdPlaylists := make([]*models.ChildPlaylist, 0, len(tt.childPlaylistsToCreate))
 			for _, childData := range tt.childPlaylistsToCreate {
-				created, err := repo.Create(ctx, tt.userID, tt.basePlaylistID, childData.name, childData.description, childData.spotifyID, nil)
+				fields := repositories.CreateChildPlaylistFields{
+					UserID:            tt.userID,
+					BasePlaylistID:    tt.basePlaylistID,
+					Name:              childData.name,
+					Description:       childData.description,
+					SpotifyPlaylistID: childData.spotifyID,
+					FilterRules:       nil,
+					IsActive:          true,
+				}
+				created, err := repo.Create(ctx, fields)
 				assert.NoError(err)
 				createdPlaylists = append(createdPlaylists, created)
 			}
 
 			// Create some child playlists for a different base playlist to ensure isolation
-			_, err := repo.Create(ctx, tt.userID, "other_base", "Other Child", "", "spotify999", nil)
+			otherBaseFields := repositories.CreateChildPlaylistFields{
+				UserID:            tt.userID,
+				BasePlaylistID:    "other_base",
+				Name:              "Other Child",
+				Description:       "",
+				SpotifyPlaylistID: "spotify999",
+				FilterRules:       nil,
+				IsActive:          true,
+			}
+			_, err := repo.Create(ctx, otherBaseFields)
 			assert.NoError(err)
 
 			// Create some child playlists for a different user to ensure user isolation
-			_, err = repo.Create(ctx, "other_user", tt.basePlaylistID, "Other User Child", "", "spotify888", nil)
+			otherUserFields := repositories.CreateChildPlaylistFields{
+				UserID:            "other_user",
+				BasePlaylistID:    tt.basePlaylistID,
+				Name:              "Other User Child",
+				Description:       "",
+				SpotifyPlaylistID: "spotify888",
+				FilterRules:       nil,
+				IsActive:          true,
+			}
+			_, err = repo.Create(ctx, otherUserFields)
 			assert.NoError(err)
 
 			// Execute GetByBasePlaylistID
@@ -432,7 +513,16 @@ func TestChildPlaylistRepositoryPocketbase_Update_Success(t *testing.T) {
 	initialFilterRules := &models.AudioFeatureFilters{
 		Popularity: &models.RangeFilter{Min: ptrFloat64(50), Max: ptrFloat64(80)},
 	}
-	playlist, err := repo.Create(ctx, "user123", "base123", "Original Name", "Original description", "spotify123", initialFilterRules)
+	createFields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Original Name",
+		Description:       "Original description",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       initialFilterRules,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, createFields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
@@ -445,7 +535,7 @@ func TestChildPlaylistRepositoryPocketbase_Update_Success(t *testing.T) {
 		Duration:   &models.RangeFilter{Min: ptrFloat64(200000), Max: ptrFloat64(350000)},
 	}
 
-	updateReq := &models.UpdateChildPlaylistRequest{
+	updateFields := repositories.UpdateChildPlaylistFields{
 		Name:        &newName,
 		Description: &newDescription,
 		IsActive:    &newIsActive,
@@ -453,7 +543,7 @@ func TestChildPlaylistRepositoryPocketbase_Update_Success(t *testing.T) {
 	}
 
 	// Execute update
-	updatedPlaylist, err := repo.Update(ctx, playlist.ID, "user123", updateReq)
+	updatedPlaylist, err := repo.Update(ctx, playlist.ID, "user123", updateFields)
 	assert.NoError(err)
 	assert.NotNil(updatedPlaylist)
 
@@ -482,18 +572,27 @@ func TestChildPlaylistRepositoryPocketbase_Update_PartialUpdate(t *testing.T) {
 	ctx := context.Background()
 
 	// Create initial child playlist
-	playlist, err := repo.Create(ctx, "user123", "base123", "Original Name", "Original description", "spotify123", nil)
+	createFields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Original Name",
+		Description:       "Original description",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       nil,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, createFields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
 	// Update only the name
 	newName := "Updated Name Only"
-	updateReq := &models.UpdateChildPlaylistRequest{
+	updateFields := repositories.UpdateChildPlaylistFields{
 		Name: &newName,
 	}
 
 	// Execute update
-	updatedPlaylist, err := repo.Update(ctx, playlist.ID, "user123", updateReq)
+	updatedPlaylist, err := repo.Update(ctx, playlist.ID, "user123", updateFields)
 	assert.NoError(err)
 	assert.NotNil(updatedPlaylist)
 
@@ -514,17 +613,26 @@ func TestChildPlaylistRepositoryPocketbase_Update_UnauthorizedError(t *testing.T
 	ctx := context.Background()
 
 	// Create a playlist owned by user123
-	playlist, err := repo.Create(ctx, "user123", "base123", "Test Playlist", "", "spotify123", nil)
+	createFields := repositories.CreateChildPlaylistFields{
+		UserID:            "user123",
+		BasePlaylistID:    "base123",
+		Name:              "Test Playlist",
+		Description:       "",
+		SpotifyPlaylistID: "spotify123",
+		FilterRules:       nil,
+		IsActive:          true,
+	}
+	playlist, err := repo.Create(ctx, createFields)
 	assert.NoError(err)
 	assert.NotNil(playlist)
 
 	// Try to update with different user ID
 	newName := "Hacked Name"
-	updateReq := &models.UpdateChildPlaylistRequest{
+	updateFields := repositories.UpdateChildPlaylistFields{
 		Name: &newName,
 	}
 
-	updatedPlaylist, err := repo.Update(ctx, playlist.ID, "user456", updateReq)
+	updatedPlaylist, err := repo.Update(ctx, playlist.ID, "user456", updateFields)
 
 	// Verify unauthorized error
 	assert.Error(err)
@@ -544,11 +652,11 @@ func TestChildPlaylistRepositoryPocketbase_Update_NotFoundError(t *testing.T) {
 
 	// Try to update non-existent playlist
 	newName := "New Name"
-	updateReq := &models.UpdateChildPlaylistRequest{
+	updateFields := repositories.UpdateChildPlaylistFields{
 		Name: &newName,
 	}
 
-	updatedPlaylist, err := repo.Update(ctx, "nonexistent123", "user123", updateReq)
+	updatedPlaylist, err := repo.Update(ctx, "nonexistent123", "user123", updateFields)
 
 	// Verify error
 	assert.Error(err)
