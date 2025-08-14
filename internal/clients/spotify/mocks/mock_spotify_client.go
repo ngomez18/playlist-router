@@ -35,6 +35,20 @@ func (m *MockSpotifyAPI) EXPECT() *MockSpotifyAPIMockRecorder {
 	return m.recorder
 }
 
+// AddTracksToPlaylist mocks base method.
+func (m *MockSpotifyAPI) AddTracksToPlaylist(ctx context.Context, playlistID string, trackURIs []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddTracksToPlaylist", ctx, playlistID, trackURIs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddTracksToPlaylist indicates an expected call of AddTracksToPlaylist.
+func (mr *MockSpotifyAPIMockRecorder) AddTracksToPlaylist(ctx, playlistID, trackURIs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTracksToPlaylist", reflect.TypeOf((*MockSpotifyAPI)(nil).AddTracksToPlaylist), ctx, playlistID, trackURIs)
+}
+
 // CreatePlaylist mocks base method.
 func (m *MockSpotifyAPI) CreatePlaylist(ctx context.Context, name, description string, public bool) (*spotifyclient.SpotifyPlaylist, error) {
 	m.ctrl.T.Helper()

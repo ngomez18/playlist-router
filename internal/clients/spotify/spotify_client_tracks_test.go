@@ -361,6 +361,193 @@ func TestSpotifyClient_GetPlaylistTracks_Errors(t *testing.T) {
 	}
 }
 
+func TestSpotifyClient_AddTracksToPlaylist_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistID     string
+		trackURIs      []string
+		accessToken    string
+		responseStatus int
+	}{
+		{
+			name:       "successful tracks addition",
+			playlistID: "playlist123",
+			trackURIs: []string{
+				"spotify:track:track1",
+				"spotify:track:track2",
+				"spotify:track:track3",
+			},
+			accessToken:    "valid_access_token",
+			responseStatus: http.StatusCreated,
+		},
+		{
+			name:           "successful addition with single track",
+			playlistID:     "playlist456",
+			trackURIs:      []string{"spotify:track:single_track"},
+			accessToken:    "valid_access_token",
+			responseStatus: http.StatusCreated,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			authConfig := &config.AuthConfig{}
+
+			client := NewSpotifyClient(authConfig, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Create context with Spotify integration
+			spotifyIntegration := &models.SpotifyIntegration{
+				AccessToken: tt.accessToken,
+				UserID:      "test_user",
+			}
+			ctx := requestcontext.ContextWithSpotifyAuth(context.Background(), spotifyIntegration)
+
+			if tt.responseStatus > 0 {
+				// Create expected URL and request body
+				expectedURL := fmt.Sprintf("https://api.spotify.com/v1/playlists/%s/tracks", tt.playlistID)
+				expectedRequestBody := map[string][]string{
+					"uris": tt.trackURIs,
+				}
+
+				// Mock response
+				mockResponse := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       io.NopCloser(strings.NewReader(`{"snapshot_id": "new_snapshot"}`)),
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					DoAndReturn(func(req *http.Request) (*http.Response, error) {
+						assert.Equal("POST", req.Method)
+						assert.Equal(expectedURL, req.URL.String())
+						assert.Equal("Bearer "+tt.accessToken, req.Header.Get("Authorization"))
+						assert.Equal("application/json", req.Header.Get("Content-Type"))
+
+						// Verify request body
+						var requestBody map[string][]string
+						bodyBytes, _ := io.ReadAll(req.Body)
+						err := json.Unmarshal(bodyBytes, &requestBody)
+						assert.NoError(err)
+						assert.Equal(expectedRequestBody, requestBody)
+
+						return mockResponse, nil
+					}).
+					Times(1)
+			}
+
+			// Execute
+			err := client.AddTracksToPlaylist(ctx, tt.playlistID, tt.trackURIs)
+
+			// Assert
+			assert.NoError(err)
+		})
+	}
+}
+
+func TestSpotifyClient_AddTracksToPlaylist_Errors(t *testing.T) {
+	tests := []struct {
+		name           string
+		playlistID     string
+		trackURIs      []string
+		accessToken    string
+		responseStatus int
+		responseBody   string
+		httpError      error
+		expectedError  string
+	}{
+		{
+			name:       "playlist not found",
+			playlistID: "nonexistent_playlist",
+			trackURIs: []string{
+				"spotify:track:track1",
+				"spotify:track:track2",
+			},
+			accessToken:    "valid_access_token",
+			responseStatus: http.StatusNotFound,
+			responseBody:   `{"error":{"status":404,"message":"No such playlist"}}`,
+			expectedError:  "spotify add tracks failed (status 404)",
+		},
+		{
+			name:      "http client error",
+			playlistID: "playlist123",
+			trackURIs: []string{
+				"spotify:track:track1",
+			},
+			accessToken:   "valid_access_token",
+			httpError:     errors.New("connection timeout"),
+			expectedError: "failed to add tracks to playlist",
+		},
+		{
+			name:      "missing access token",
+			playlistID: "playlist123",
+			trackURIs: []string{
+				"spotify:track:track1",
+			},
+			expectedError: "spotify credentials not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
+			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			authConfig := &config.AuthConfig{}
+
+			client := NewSpotifyClient(authConfig, logger)
+			client.HttpClient = mockHTTPClient
+
+			// Create context
+			var ctx context.Context
+			if tt.accessToken != "" {
+				spotifyIntegration := &models.SpotifyIntegration{
+					AccessToken: tt.accessToken,
+					UserID:      "test_user",
+				}
+				ctx = requestcontext.ContextWithSpotifyAuth(context.Background(), spotifyIntegration)
+			} else {
+				ctx = context.Background()
+			}
+
+			if tt.responseStatus > 0 {
+				mockResponse := &http.Response{
+					StatusCode: tt.responseStatus,
+					Body:       io.NopCloser(strings.NewReader(tt.responseBody)),
+				}
+
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(mockResponse, tt.httpError).
+					Times(1)
+			} else if tt.httpError != nil {
+				mockHTTPClient.EXPECT().
+					Do(gomock.Any()).
+					Return(nil, tt.httpError).
+					Times(1)
+			}
+
+			// Execute
+			err := client.AddTracksToPlaylist(ctx, tt.playlistID, tt.trackURIs)
+
+			// Assert
+			assert.Error(err)
+			assert.Contains(err.Error(), tt.expectedError)
+		})
+	}
+}
+
 // Helper function to create string pointer
 func stringPointer(s string) *string {
 	return &s

@@ -39,6 +39,7 @@ type SpotifyAPI interface {
 
 	// Tracks
 	GetPlaylistTracks(ctx context.Context, playlistID string, limit, offset int) (*SpotifyPlaylistTracksResponse, error)
+	AddTracksToPlaylist(ctx context.Context, playlistID string, trackURIs []string) error
 
 	// Artists
 	GetSeveralArtists(ctx context.Context, artistIDs []string) ([]*SpotifyArtist, error)
