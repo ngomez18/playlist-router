@@ -141,6 +141,7 @@ func (taService *TrackAggregatorService) preprocessTracksForFiltering(playlistDa
 		// Collect all genres from track's artists
 		genreSet := make(map[string]bool)
 		maxArtistPop := 0
+		artistNames := make([]string, 0, len(track.Artists))
 		
 		for _, artistID := range track.Artists {
 			if artist, exists := playlistData.Artists[artistID]; exists {
@@ -153,6 +154,9 @@ func (taService *TrackAggregatorService) preprocessTracksForFiltering(playlistDa
 				if artist.Popularity > maxArtistPop {
 					maxArtistPop = artist.Popularity
 				}
+				
+				// Collect artist names
+				artistNames = append(artistNames, artist.Name)
 			}
 		}
 		
@@ -163,6 +167,7 @@ func (taService *TrackAggregatorService) preprocessTracksForFiltering(playlistDa
 		}
 		
 		track.MaxArtistPop = maxArtistPop
+		track.ArtistNames = artistNames
 	}
 }
 

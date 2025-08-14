@@ -2,20 +2,68 @@ package services
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/ngomez18/playlist-router/internal/filters"
 	"github.com/ngomez18/playlist-router/internal/models"
 )
 
 //go:generate mockgen -source=track_router_service.go -destination=mocks/mock_track_router_service.go -package=mocks
 
 type TrackRouterServicer interface {
-	// RouteTracksForBasePlaylist performs the complete track routing process for a base playlist
-	// This includes:
-	// 1. Creating a sync event to track the operation
-	// 2. Fetching tracks from the base playlist via Spotify API
-	// 3. Getting track metadata (artists, audio features, etc.)
-	// 4. Applying filters for each child playlist to determine matching tracks
-	// 5. Updating child playlists with matching tracks
-	// 6. Completing the sync event with success/failure status
-	RouteTracksForBasePlaylist(ctx context.Context, userID, basePlaylistID string) (*models.SyncEvent, error)
+	RouteTracksToChildren(ctx context.Context, tracks *models.PlaylistTracksInfo, childPlaylists []*models.ChildPlaylist) (map[string][]string, error)
+}
+
+type TrackRouterService struct {
+	logger *slog.Logger
+}
+
+func NewTrackRouterService(logger *slog.Logger) *TrackRouterService {
+	return &TrackRouterService{
+		logger: logger.With("component", "TrackRouterService"),
+	}
+}
+
+func (r *TrackRouterService) RouteTracksToChildren(ctx context.Context, tracks *models.PlaylistTracksInfo, childPlaylists []*models.ChildPlaylist) (map[string][]string, error) {
+	r.logger.InfoContext(ctx, "routing tracks to child playlists",
+		"total_tracks", len(tracks.Tracks),
+		"child_playlists", len(childPlaylists),
+		"base_playlist", tracks.PlaylistID,
+	)
+
+	filterEngines := map[string]filters.FilterEngine{}
+
+	for _, child := range childPlaylists {
+		if !child.IsActive {
+			continue
+		}
+
+		filterEngines[child.SpotifyPlaylistID] = *filters.NewFilterEngine(child)
+	}
+
+	routing := make(map[string][]string)
+
+	for _, track := range tracks.Tracks {
+		for childPlaylistId, filterEngine := range filterEngines {
+			if filterEngine.MatchTrack(track) {
+				routing[childPlaylistId] = append(routing[childPlaylistId], track.ID)
+			}
+		}
+	}
+
+	totalRouted := 0
+	for playlistID, trackIDs := range routing {
+		totalRouted += len(trackIDs)
+		r.logger.InfoContext(ctx, "routing result",
+			"child_playlist_id", playlistID,
+			"matched_tracks", len(trackIDs),
+		)
+	}
+
+	r.logger.InfoContext(ctx, "routing completed",
+		"total_tracks_routed", totalRouted,
+		"child_playlists_with_matches", len(routing),
+	)
+
+	return routing, nil
 }
