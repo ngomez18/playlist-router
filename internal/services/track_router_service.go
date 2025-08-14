@@ -46,7 +46,7 @@ func (r *TrackRouterService) RouteTracksToChildren(ctx context.Context, tracks *
 	for _, track := range tracks.Tracks {
 		for childPlaylistId, filterEngine := range filterEngines {
 			if filterEngine.MatchTrack(track) {
-				routing[childPlaylistId] = append(routing[childPlaylistId], track.ID)
+				routing[childPlaylistId] = append(routing[childPlaylistId], track.URI)
 			}
 		}
 	}

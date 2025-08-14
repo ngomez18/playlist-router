@@ -516,6 +516,64 @@ func TestChildPlaylistService_UpdateChildPlaylist_SpotifyError(t *testing.T) {
 	assert.Contains(err.Error(), "failed to update spotify playlist")
 }
 
+func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_Success(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Setup mocks
+	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
+	var mockBaseRepo *repoMocks.MockBasePlaylistRepository
+	var mockSpotifyClient *spotifyMocks.MockSpotifyAPI
+
+	service := createTestService(mockChildRepo, mockBaseRepo, nil, mockSpotifyClient)
+
+	// Mock expectations
+	updatedChildPlaylist := &models.ChildPlaylist{
+		ID: "cp789",
+		UserID: "user123",
+		SpotifyPlaylistID: "new-spotify-id",
+	}
+	expectedUpdateFields := repositories.UpdateChildPlaylistFields{
+		SpotifyPlaylistID: stringToPointer("new-spotify-id"),
+	}
+	mockChildRepo.EXPECT().Update(gomock.Any(), "cp789", "user123", expectedUpdateFields).Return(updatedChildPlaylist, nil)
+
+	// Execute
+	result, err := service.UpdateChildPlaylistSpotifyID(context.Background(), "cp789", "user123", "new-spotify-id")
+
+	// Assert
+	assert.NoError(err)
+	assert.Equal(updatedChildPlaylist, result)
+}
+
+
+func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_RepoError(t *testing.T) {
+	assert := assert.New(t)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Setup mocks
+	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
+	var mockBaseRepo *repoMocks.MockBasePlaylistRepository
+	var mockSpotifyClient *spotifyMocks.MockSpotifyAPI
+
+	service := createTestService(mockChildRepo, mockBaseRepo, nil, mockSpotifyClient)
+
+	// Mock expectations
+	expectedUpdateFields := repositories.UpdateChildPlaylistFields{
+		SpotifyPlaylistID: stringToPointer("new-spotify-id"),
+	}
+	mockChildRepo.EXPECT().Update(gomock.Any(), "cp789", "user123", expectedUpdateFields).Return(nil, errors.New("db error"))
+
+	// Execute
+	_, err := service.UpdateChildPlaylistSpotifyID(context.Background(), "cp789", "user123", "new-spotify-id")
+
+	// Assert
+	assert.Error(err)
+	assert.Contains(err.Error(), "failed to update child playlist")
+}
+
 // Helper functions for common test setups
 func createTestService(
 	childRepo repositories.ChildPlaylistRepository,

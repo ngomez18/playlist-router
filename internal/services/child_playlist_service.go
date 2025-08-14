@@ -18,6 +18,7 @@ type ChildPlaylistServicer interface {
 	GetChildPlaylist(ctx context.Context, id, userID string) (*models.ChildPlaylist, error)
 	GetChildPlaylistsByBasePlaylistID(ctx context.Context, basePlaylistID, userID string) ([]*models.ChildPlaylist, error)
 	UpdateChildPlaylist(ctx context.Context, id, userID string, input *models.UpdateChildPlaylistRequest) (*models.ChildPlaylist, error)
+	UpdateChildPlaylistSpotifyID(ctx context.Context, id, userID, spotifyID string) (*models.ChildPlaylist, error)
 }
 
 type ChildPlaylistService struct {
@@ -201,6 +202,21 @@ func (cpService *ChildPlaylistService) UpdateChildPlaylist(ctx context.Context, 
 			"name", spotifyUpdate.name,
 			"description", spotifyUpdate.description,
 		)
+	}
+
+	cpService.logger.InfoContext(ctx, "child playlist updated successfully", "child_playlist", updatedChildPlaylist)
+	return updatedChildPlaylist, nil
+}
+
+func (cpService *ChildPlaylistService) UpdateChildPlaylistSpotifyID(ctx context.Context, id, userID, spotifyID string) (*models.ChildPlaylist, error) {
+	cpService.logger.InfoContext(ctx, "updating child playlist spotify id", "id", id, "user_id", userID, "spotify_id", spotifyID)
+
+	updateFields := repositories.UpdateChildPlaylistFields{SpotifyPlaylistID: &spotifyID}
+
+	updatedChildPlaylist, err := cpService.childPlaylistRepo.Update(ctx, id, userID, updateFields)
+	if err != nil {
+		cpService.logger.ErrorContext(ctx, "failed to update child playlist", "id", id, "user_id", userID, "error", err.Error())
+		return nil, fmt.Errorf("failed to update child playlist: %w", err)
 	}
 
 	cpService.logger.InfoContext(ctx, "child playlist updated successfully", "child_playlist", updatedChildPlaylist)

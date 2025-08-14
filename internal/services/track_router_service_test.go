@@ -33,7 +33,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 			tracks: &models.PlaylistTracksInfo{
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
-					{ID: "track1", DurationMs: 180000},
+					{URI: "track1", DurationMs: 180000},
 				},
 			},
 			childPlaylists: []*models.ChildPlaylist{
@@ -53,7 +53,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						ID:         "track1",
+						URI:         "track1",
 						DurationMs: 180000,
 						Popularity: 70,
 						Explicit:   false,
@@ -84,7 +84,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						ID:         "track1",
+						URI:         "track1",
 						DurationMs: 180000,
 						Popularity: 80,
 						AllGenres:  []string{"rock", "pop"},
@@ -121,7 +121,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						ID:         "track1",
+						URI:         "track1",
 						DurationMs: 90000, // Too short
 						Popularity: 30,    // Too low
 					},
@@ -147,19 +147,19 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						ID:         "track1",
+						URI:         "track1",
 						DurationMs: 180000,
 						Popularity: 80,
 						AllGenres:  []string{"rock"},
 					},
 					{
-						ID:         "track2",
+						URI:         "track2",
 						DurationMs: 90000, // Too short
 						Popularity: 90,
 						AllGenres:  []string{"rock"},
 					},
 					{
-						ID:         "track3",
+						URI:         "track3",
 						DurationMs: 200000,
 						Popularity: 75,
 						AllGenres:  []string{"jazz"}, // Wrong genre
@@ -187,8 +187,8 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 			tracks: &models.PlaylistTracksInfo{
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
-					{ID: "track1", DurationMs: 180000},
-					{ID: "track2", DurationMs: 90000},
+					{URI: "track1", DurationMs: 180000},
+					{URI: "track2", DurationMs: 90000},
 				},
 			},
 			childPlaylists: []*models.ChildPlaylist{
@@ -259,7 +259,7 @@ func TestTrackRouterService_RouteTracksToChildren_EmptyInputs(t *testing.T) {
 		tracks := &models.PlaylistTracksInfo{
 			PlaylistID: "base123",
 			Tracks: []models.TrackInfo{
-				{ID: "track1", DurationMs: 180000},
+				{URI: "track1", DurationMs: 180000},
 			},
 		}
 		childPlaylists := []*models.ChildPlaylist{}
@@ -281,7 +281,7 @@ func TestTrackRouterService_RouteTracksToChildren_ComplexFilters(t *testing.T) {
 		PlaylistID: "base123",
 		Tracks: []models.TrackInfo{
 			{
-				ID:           "track1",
+				URI:           "track1",
 				Name:         "Love Song",
 				DurationMs:   180000,
 				Popularity:   80,

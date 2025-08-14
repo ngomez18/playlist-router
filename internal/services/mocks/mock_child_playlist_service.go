@@ -108,3 +108,18 @@ func (mr *MockChildPlaylistServicerMockRecorder) UpdateChildPlaylist(ctx, id, us
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChildPlaylist", reflect.TypeOf((*MockChildPlaylistServicer)(nil).UpdateChildPlaylist), ctx, id, userID, input)
 }
+
+// UpdateChildPlaylistSpotifyID mocks base method.
+func (m *MockChildPlaylistServicer) UpdateChildPlaylistSpotifyID(ctx context.Context, id, userID, spotifyID string) (*models.ChildPlaylist, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateChildPlaylistSpotifyID", ctx, id, userID, spotifyID)
+	ret0, _ := ret[0].(*models.ChildPlaylist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateChildPlaylistSpotifyID indicates an expected call of UpdateChildPlaylistSpotifyID.
+func (mr *MockChildPlaylistServicerMockRecorder) UpdateChildPlaylistSpotifyID(ctx, id, userID, spotifyID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateChildPlaylistSpotifyID", reflect.TypeOf((*MockChildPlaylistServicer)(nil).UpdateChildPlaylistSpotifyID), ctx, id, userID, spotifyID)
+}
