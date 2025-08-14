@@ -174,6 +174,7 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	basePlaylist.GET("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID)))
 	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
 	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
+	basePlaylist.POST("/{basePlaylistID}/sync", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.syncController.SyncBasePlaylist))))
 
 	// Child Playlist routes for a specific base playlist
 	basePlaylist.POST("/{basePlaylistID}/child_playlist", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Create))))
@@ -184,9 +185,6 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	childPlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.childPlaylistController.GetByID)))
 	childPlaylist.PUT("/{id}", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Update))))
 	childPlaylist.DELETE("/{id}", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Delete))))
-
-	// Sync routes
-	basePlaylist.POST("/{basePlaylistID}/sync", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.syncController.SyncBasePlaylist))))
 
 	// Spotify routes (protected)
 	spotify := api.Group("/spotify")

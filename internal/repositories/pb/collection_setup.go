@@ -21,6 +21,10 @@ func InitCollections(app *pocketbase.PocketBase) error {
 		return err
 	}
 
+	if err := createSyncEventCollection(app); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -217,6 +221,83 @@ func createChildPlaylistCollection(app *pocketbase.PocketBase) error {
 		Name:     "created",
 		OnCreate: true,
 	})
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "updated",
+		OnCreate: true,
+		OnUpdate: true,
+	})
+
+	return app.Save(collection)
+}
+
+
+// createSyncEventCollection creates the sync_events collection
+func createSyncEventCollection(app *pocketbase.PocketBase) error {
+	// Check if sync_events collection exists
+	_, err := app.FindCollectionByNameOrId(string(CollectionSyncEvent))
+	if err == nil {
+		// Collection already exists
+		return nil
+	}
+
+	basePlaylistCollection, err := app.FindCollectionByNameOrId(string(CollectionBasePlaylist))
+	if err != nil {
+		return fmt.Errorf("base_playlists collection must exist before creating sync_events: %w", err)
+	}
+
+	// Create sync_events collection
+	collection := core.NewBaseCollection(string(CollectionSyncEvent))
+
+	// Add fields
+	collection.Fields.Add(&core.RelationField{
+		Name:          "user_id",
+		Required:      true,
+		MaxSelect:     1,
+		CollectionId:  "_pb_users_auth_",
+		CascadeDelete: true,
+	})
+
+	collection.Fields.Add(&core.RelationField{
+		Name:          "base_playlist_id",
+		Required:      true,
+		MaxSelect:     1,
+		CollectionId:  basePlaylistCollection.Id,
+		CascadeDelete: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name: "child_playlist_ids",
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name: "status",
+	})
+
+	collection.Fields.Add(&core.DateField{
+		Name: "started_at",
+	})
+
+	collection.Fields.Add(&core.DateField{
+		Name: "completed_at",
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name: "error_message",
+	})
+
+	collection.Fields.Add(&core.NumberField{
+		Name: "tracks_processed",
+	})
+
+	collection.Fields.Add(&core.NumberField{
+		Name: "total_api_requests",
+	})
+
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "created",
+		OnCreate: true,
+	})
+
 	collection.Fields.Add(&core.AutodateField{
 		Name:     "updated",
 		OnCreate: true,

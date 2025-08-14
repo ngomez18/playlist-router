@@ -1128,5 +1128,6 @@ func contextWithTokenAndID(token, userID string) context.Context {
 	return requestcontext.ContextWithSpotifyAuth(context.Background(), &models.SpotifyIntegration{
 		AccessToken: token,
 		UserID:      userID,
+		SpotifyID:   userID,
 	})
 }

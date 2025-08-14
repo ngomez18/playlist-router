@@ -135,10 +135,11 @@ func (c *SpotifyClient) CreatePlaylist(ctx context.Context, name, description st
 
 	accessToken := integration.AccessToken
 	userId := integration.UserID
+	spotifyUserId := integration.SpotifyID
 
 	c.logger.InfoContext(ctx, "creating playlist in spotify", "user_id", userId, "name", name)
 
-	path := fmt.Sprintf("users/%s/playlists", userId)
+	path := fmt.Sprintf("users/%s/playlists", spotifyUserId)
 	url := fmt.Sprintf("%s%s", c.apiBaseUrl, path)
 
 	requestBody := SpotifyPlaylistRequest{
