@@ -1,4 +1,4 @@
-import type { ChildPlaylist } from '../../types/playlist'
+import type { ChildPlaylist, RangeFilter, SetFilter } from '../../types/playlist'
 import { Card, CardBody, CardTitle, CardActions } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
@@ -81,7 +81,7 @@ export function ChildPlaylistCard({
                             // Handle object values (ranges and sets)
                             if (typeof value === "object" && value !== null) {
                               if ("min" in value || "max" in value) {
-                                const range = value as any;
+                                const range = value as RangeFilter;
                                 let minVal =
                                   range.min !== undefined ? range.min : "N/A";
                                 let maxVal =
@@ -90,11 +90,11 @@ export function ChildPlaylistCard({
                                 // Convert duration from ms to seconds for display
                                 if (key === "duration_ms") {
                                   minVal =
-                                    minVal !== "N/A"
+                                    minVal !== "N/A" && typeof minVal === "number"
                                       ? Math.round(minVal / 1000) + "s"
                                       : "N/A";
                                   maxVal =
-                                    maxVal !== "N/A"
+                                    maxVal !== "N/A" && typeof maxVal === "number"
                                       ? Math.round(maxVal / 1000) + "s"
                                       : "N/A";
                                 }
@@ -104,7 +104,7 @@ export function ChildPlaylistCard({
                               
                               // Handle set filters (include/exclude)
                               if ("include" in value || "exclude" in value) {
-                                const set = value as any;
+                                const set = value as SetFilter;
                                 const parts = [];
                                 if (set.include && set.include.length > 0) {
                                   parts.push(`+${set.include.join(", ")}`);

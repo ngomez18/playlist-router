@@ -58,17 +58,17 @@ export function EditChildPlaylistForm({
         if (value !== undefined && value !== null) {
           if (typeof value === 'boolean') {
             // Boolean filters like 'explicit' should be preserved (including false values)
-            cleanedFilters[key as keyof MetadataFilters] = value as any
+            (cleanedFilters as Record<string, boolean>)[key] = value
           } else if (value && typeof value === 'object') {
             if ('min' in value || 'max' in value) {
               const range = value as RangeFilter
               if (range.min !== undefined || range.max !== undefined) {
-                cleanedFilters[key as keyof MetadataFilters] = range as any
+                (cleanedFilters as Record<string, RangeFilter>)[key] = range
               }
             } else if ('include' in value || 'exclude' in value) {
               const set = value as SetFilter
               if ((set.include && set.include.length > 0) || (set.exclude && set.exclude.length > 0)) {
-                cleanedFilters[key as keyof MetadataFilters] = set as any
+                (cleanedFilters as Record<string, SetFilter>)[key] = set
               }
             }
           }
@@ -148,26 +148,6 @@ export function EditChildPlaylistForm({
     return value.toString()
   }
 
-  const handleSetFilterChange = (filterKey: keyof MetadataFilters, type: 'include' | 'exclude', value: string) => {
-    const values = value.split(',').map(v => v.trim()).filter(v => v.length > 0)
-    
-    setFormData(prev => ({
-      ...prev,
-      filter_rules: {
-        ...prev.filter_rules,
-        [filterKey]: {
-          ...(prev.filter_rules?.[filterKey] as SetFilter || {}),
-          [type]: values.length > 0 ? values : undefined
-        }
-      }
-    }))
-  }
-
-  const getSetFilterValue = (filterKey: keyof MetadataFilters, type: 'include' | 'exclude'): string => {
-    const filter = formData.filter_rules?.[filterKey] as SetFilter
-    const values = filter?.[type]
-    return values ? values.join(', ') : ''
-  }
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => ({
