@@ -242,10 +242,83 @@ func SetupSpotifyIntegrationsCollection(t *testing.T, app *pocketbase.PocketBase
 	}
 }
 
+// SetupSyncEventCollection creates the sync_events collection for testing
+func SetupSyncEventCollection(t *testing.T, app *pocketbase.PocketBase) {
+	t.Helper()
+
+	_, err := app.FindCollectionByNameOrId(string(CollectionSyncEvent))
+	if err == nil {
+		return // Collection already exists
+	}
+
+	collection := core.NewBaseCollection(string(CollectionSyncEvent))
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "user_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "base_playlist_id",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "child_playlist_ids",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "status",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.DateField{
+		Name:     "started_at",
+		Required: true,
+	})
+
+	collection.Fields.Add(&core.DateField{
+		Name:     "completed_at",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.TextField{
+		Name:     "error_message",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.NumberField{
+		Name:     "tracks_processed",
+		Required: false,
+	})
+
+	collection.Fields.Add(&core.NumberField{
+		Name:     "total_api_requests",
+		Required: false,
+	})
+
+	// Standard timestamp fields
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "created",
+		OnCreate: true,
+	})
+	collection.Fields.Add(&core.AutodateField{
+		Name:     "updated",
+		OnCreate: true,
+		OnUpdate: true,
+	})
+
+	if err := app.Save(collection); err != nil {
+		t.Fatalf("failed to create sync_events collection: %v", err)
+	}
+}
+
 // SetupAllCollections sets up all collections needed for testing
 func SetupAllCollections(t *testing.T, app *pocketbase.PocketBase) {
 	t.Helper()
 	SetupBasePlaylistCollection(t, app)
 	SetupSpotifyIntegrationsCollection(t, app)
 	SetupChildPlaylistCollection(t, app)
+	SetupSyncEventCollection(t, app)
 }

@@ -122,6 +122,7 @@ make dev     # Run with hot reload (air)
 - When asked for your thoughts on something, try to be as critical as possible. Don't blindly accept suggestions, always weigh the pros and cons
 - When asked to plan large features or changes, generate a markdown file in the docs/ directory with the final result of the discussion
 - Be concise. Provide only the necessary information
+- **I don't like unnecessary comments. Only really difficult to understand parts of our code should be commented, no need to add comments explaining very simple pieces of code or things that are properly named and self-explanatory**
 
 ### MANDATORY: Use Makefile Commands
 **ALWAYS use Makefile commands instead of direct Go commands:**

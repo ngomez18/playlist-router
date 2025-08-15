@@ -10,6 +10,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	models "github.com/ngomez18/playlist-router/internal/models"
+	repositories "github.com/ngomez18/playlist-router/internal/repositories"
 )
 
 // MockChildPlaylistRepository is a mock of ChildPlaylistRepository interface.
@@ -36,18 +37,18 @@ func (m *MockChildPlaylistRepository) EXPECT() *MockChildPlaylistRepositoryMockR
 }
 
 // Create mocks base method.
-func (m *MockChildPlaylistRepository) Create(ctx context.Context, userID, basePlaylistID, name, description, spotifyPlaylistID string, filterRules *models.AudioFeatureFilters) (*models.ChildPlaylist, error) {
+func (m *MockChildPlaylistRepository) Create(ctx context.Context, fields repositories.CreateChildPlaylistFields) (*models.ChildPlaylist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, userID, basePlaylistID, name, description, spotifyPlaylistID, filterRules)
+	ret := m.ctrl.Call(m, "Create", ctx, fields)
 	ret0, _ := ret[0].(*models.ChildPlaylist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Create indicates an expected call of Create.
-func (mr *MockChildPlaylistRepositoryMockRecorder) Create(ctx, userID, basePlaylistID, name, description, spotifyPlaylistID, filterRules interface{}) *gomock.Call {
+func (mr *MockChildPlaylistRepositoryMockRecorder) Create(ctx, fields interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockChildPlaylistRepository)(nil).Create), ctx, userID, basePlaylistID, name, description, spotifyPlaylistID, filterRules)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockChildPlaylistRepository)(nil).Create), ctx, fields)
 }
 
 // Delete mocks base method.
@@ -95,16 +96,16 @@ func (mr *MockChildPlaylistRepositoryMockRecorder) GetByID(ctx, id, userID inter
 }
 
 // Update mocks base method.
-func (m *MockChildPlaylistRepository) Update(ctx context.Context, id, userID string, req *models.UpdateChildPlaylistRequest) (*models.ChildPlaylist, error) {
+func (m *MockChildPlaylistRepository) Update(ctx context.Context, id, userID string, fields repositories.UpdateChildPlaylistFields) (*models.ChildPlaylist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", ctx, id, userID, req)
+	ret := m.ctrl.Call(m, "Update", ctx, id, userID, fields)
 	ret0, _ := ret[0].(*models.ChildPlaylist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Update indicates an expected call of Update.
-func (mr *MockChildPlaylistRepositoryMockRecorder) Update(ctx, id, userID, req interface{}) *gomock.Call {
+func (mr *MockChildPlaylistRepositoryMockRecorder) Update(ctx, id, userID, fields interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChildPlaylistRepository)(nil).Update), ctx, id, userID, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockChildPlaylistRepository)(nil).Update), ctx, id, userID, fields)
 }

@@ -9,10 +9,10 @@ interface NavbarProps {
 
 export function Navbar({ user, onLogout, onNavigateHome }: NavbarProps) {
   return (
-    <div className="navbar bg-base-200">
+    <div className="navbar bg-base-300 min-h-[4rem] px-6">
       <div className="flex-1">
         <button 
-          className="btn btn-ghost text-xl"
+          className="btn btn-ghost text-2xl font-bold"
           onClick={onNavigateHome}
         >
           PlaylistSync

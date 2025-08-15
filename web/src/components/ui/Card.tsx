@@ -6,8 +6,11 @@ interface CardProps {
 }
 
 export function Card({ children, className = '' }: CardProps) {
+  const hasBgClass = className.includes('bg-')
+  const cardClassName = `card shadow-xl ${className} ${!hasBgClass ? 'bg-base-200' : ''}`
+
   return (
-    <div className={`card bg-base-200 shadow-xl ${className}`}>
+    <div className={cardClassName}>
       {children}
     </div>
   )

@@ -19,4 +19,7 @@ var (
 
 	// Spotify integration errors
 	ErrSpotifyIntegrationNotFound = errors.New("spotify integration not found")
+
+	// Sync event errors
+	ErrSyncEventNotFound = errors.New("sync event not found")
 )

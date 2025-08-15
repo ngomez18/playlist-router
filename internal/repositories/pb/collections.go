@@ -15,6 +15,7 @@ var (
 	CollectionBasePlaylist       Collection = "base_playlists"
 	CollectionChildPlaylist      Collection = "child_playlists"
 	CollectionSpotifyIntegration Collection = "spotify_integrations"
+	CollectionSyncEvent          Collection = "sync_events"
 )
 
 func GetCollection(ctx context.Context, app *pocketbase.PocketBase, collectionName Collection) (*core.Collection, error) {

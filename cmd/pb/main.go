@@ -8,6 +8,7 @@ import (
 	"github.com/ngomez18/playlist-router/internal/config"
 	"github.com/ngomez18/playlist-router/internal/controllers"
 	"github.com/ngomez18/playlist-router/internal/middleware"
+	"github.com/ngomez18/playlist-router/internal/orchestrators"
 	"github.com/ngomez18/playlist-router/internal/repositories"
 	"github.com/ngomez18/playlist-router/internal/repositories/pb"
 	"github.com/ngomez18/playlist-router/internal/services"
@@ -18,11 +19,12 @@ import (
 )
 
 type AppDependencies struct {
-	config       *config.Config
-	repositories Repositories
-	services     Services
-	controllers  Controllers
-	middleware   Middleware
+	config        *config.Config
+	repositories  Repositories
+	services      Services
+	orchestrators Orchestrators
+	controllers   Controllers
+	middleware    Middleware
 }
 
 type Repositories struct {
@@ -30,6 +32,7 @@ type Repositories struct {
 	childPlaylistRepository      repositories.ChildPlaylistRepository
 	userRepository               repositories.UserRepository
 	spotifyIntegrationRepository repositories.SpotifyIntegrationRepository
+	syncEventRepository          repositories.SyncEventRepository
 }
 
 type Services struct {
@@ -39,6 +42,9 @@ type Services struct {
 	childPlaylistService      services.ChildPlaylistServicer
 	spotifyIntegrationService services.SpotifyIntegrationServicer
 	spotifyApiService         services.SpotifyAPIServicer
+	syncEventService          services.SyncEventServicer
+	trackAggregatorService    services.TrackAggregatorServicer
+	trackRouterService        services.TrackRouterServicer
 }
 
 type Controllers struct {
@@ -46,6 +52,11 @@ type Controllers struct {
 	childPlaylistController controllers.ChildPlaylistController
 	authController          controllers.AuthController
 	spotifyController       controllers.SpotifyController
+	syncController          controllers.SyncController
+}
+
+type Orchestrators struct {
+	syncOrchestrator orchestrators.SyncOrchestrator
 }
 
 type Middleware struct {
@@ -93,10 +104,12 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		childPlaylistRepository:      pb.NewChildPlaylistRepositoryPocketbase(app),
 		userRepository:               pb.NewUserRepositoryPocketbase(app),
 		spotifyIntegrationRepository: pb.NewSpotifyIntegrationRepositoryPocketbase(app),
+		syncEventRepository:          pb.NewSyncEventRepositoryPocketbase(app),
 	}
 
 	userService := services.NewUserService(repositories.userRepository, logger)
 	spotifyIntegrationService := services.NewSpotifyIntegrationService(repositories.spotifyIntegrationRepository, logger)
+	syncEventService := services.NewSyncEventService(repositories.syncEventRepository, logger)
 
 	serviceInstances := Services{
 		authService:               services.NewAuthService(userService, spotifyIntegrationService, spotifyClient, logger),
@@ -105,6 +118,21 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		childPlaylistService:      services.NewChildPlaylistService(repositories.childPlaylistRepository, repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
 		spotifyIntegrationService: spotifyIntegrationService,
 		spotifyApiService:         services.NewSpotifyAPIService(spotifyClient, logger),
+		syncEventService:          syncEventService,
+		trackAggregatorService:    services.NewTrackAggregatorService(spotifyClient, repositories.basePlaylistRepository, logger),
+		trackRouterService:        services.NewTrackRouterService(logger),
+	}
+
+	orchestratorInstances := Orchestrators{
+		syncOrchestrator: orchestrators.NewDefaultSyncOrchestrator(
+			serviceInstances.trackAggregatorService,
+			serviceInstances.trackRouterService,
+			serviceInstances.childPlaylistService,
+			serviceInstances.basePlaylistService,
+			serviceInstances.syncEventService,
+			spotifyClient,
+			logger,
+		),
 	}
 
 	controllers := Controllers{
@@ -112,6 +140,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		childPlaylistController: *controllers.NewChildPlaylistController(serviceInstances.childPlaylistService),
 		authController:          *controllers.NewAuthController(serviceInstances.authService, cfg),
 		spotifyController:       *controllers.NewSpotifyController(serviceInstances.spotifyApiService),
+		syncController:          *controllers.NewSyncController(orchestratorInstances.syncOrchestrator),
 	}
 
 	middleware := Middleware{
@@ -120,11 +149,12 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	}
 
 	return AppDependencies{
-		config:       cfg,
-		repositories: repositories,
-		services:     serviceInstances,
-		controllers:  controllers,
-		middleware:   middleware,
+		config:        cfg,
+		repositories:  repositories,
+		services:      serviceInstances,
+		orchestrators: orchestratorInstances,
+		controllers:   controllers,
+		middleware:    middleware,
 	}
 }
 
@@ -145,6 +175,7 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	basePlaylist.GET("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID)))
 	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
 	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
+	basePlaylist.POST("/{basePlaylistID}/sync", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.syncController.SyncBasePlaylist))))
 
 	// Child Playlist routes for a specific base playlist
 	basePlaylist.POST("/{basePlaylistID}/child_playlist", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.childPlaylistController.Create))))
