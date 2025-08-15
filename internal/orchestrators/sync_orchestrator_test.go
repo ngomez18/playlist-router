@@ -24,6 +24,7 @@ func TestNewDefaultSyncOrchestrator(t *testing.T) {
 	mockTrackAggregator := servicemocks.NewMockTrackAggregatorServicer(ctrl)
 	mockTrackRouter := servicemocks.NewMockTrackRouterServicer(ctrl)
 	mockChildPlaylistService := servicemocks.NewMockChildPlaylistServicer(ctrl)
+	mockBasePlaylistService := servicemocks.NewMockBasePlaylistServicer(ctrl)
 	mockSyncEventService := servicemocks.NewMockSyncEventServicer(ctrl)
 	mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
 	logger := createTestLogger()
@@ -32,6 +33,7 @@ func TestNewDefaultSyncOrchestrator(t *testing.T) {
 		mockTrackAggregator,
 		mockTrackRouter,
 		mockChildPlaylistService,
+		mockBasePlaylistService,
 		mockSyncEventService,
 		mockSpotifyClient,
 		logger,
@@ -102,6 +104,11 @@ func TestDefaultSyncOrchestrator_SyncBasePlaylist_Success(t *testing.T) {
 	// Mock expectations
 	mocks.syncEventService.EXPECT().HasActiveSyncForBasePlaylist(gomock.Any(), userID, basePlaylistID).Return(false, nil)
 	mocks.syncEventService.EXPECT().CreateSyncEvent(gomock.Any(), gomock.Any()).Return(createdSyncEvent, nil)
+	mocks.basePlaylistService.EXPECT().GetBasePlaylist(gomock.Any(), basePlaylistID, userID).Return(&models.BasePlaylist{
+		ID:     basePlaylistID,
+		UserID: userID,
+		Name:   "Test Base Playlist",
+	}, nil)
 	mocks.childPlaylistService.EXPECT().GetChildPlaylistsByBasePlaylistID(gomock.Any(), basePlaylistID, userID).Return(childPlaylists, nil)
 	mocks.trackAggregator.EXPECT().AggregatePlaylistData(gomock.Any(), userID, basePlaylistID).Return(trackData, nil)
 	mocks.trackRouter.EXPECT().RouteTracksToChildren(gomock.Any(), trackData, childPlaylists).Return(routing, nil)
@@ -110,11 +117,11 @@ func TestDefaultSyncOrchestrator_SyncBasePlaylist_Success(t *testing.T) {
 	mocks.spotifyClient.EXPECT().DeletePlaylist(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 	mocks.spotifyClient.EXPECT().CreatePlaylist(gomock.Any(), gomock.Any(), gomock.Any(), false).DoAndReturn(
 		func(ctx context.Context, name, desc string, private bool) (*spotifyclient.SpotifyPlaylist, error) {
-			// Return different IDs based on the name to ensure correct mapping
+			// Return different IDs based on the formatted name to ensure correct mapping
 			switch name {
-			case "Child 1":
+			case "[Test Base Playlist] > Child 1":
 				return &spotifyclient.SpotifyPlaylist{ID: "new_spotify1", Name: name}, nil
-			case "Child 2":
+			case "[Test Base Playlist] > Child 2":
 				return &spotifyclient.SpotifyPlaylist{ID: "new_spotify2", Name: name}, nil
 			default:
 				return &spotifyclient.SpotifyPlaylist{ID: "unknown", Name: name}, nil
@@ -180,6 +187,11 @@ func TestDefaultSyncOrchestrator_SyncBasePlaylist_NoChildPlaylists(t *testing.T)
 
 	mocks.syncEventService.EXPECT().HasActiveSyncForBasePlaylist(gomock.Any(), userID, basePlaylistID).Return(false, nil)
 	mocks.syncEventService.EXPECT().CreateSyncEvent(gomock.Any(), gomock.Any()).Return(createdSyncEvent, nil)
+	mocks.basePlaylistService.EXPECT().GetBasePlaylist(gomock.Any(), basePlaylistID, userID).Return(&models.BasePlaylist{
+		ID:     basePlaylistID,
+		UserID: userID,
+		Name:   "Test Base Playlist",
+	}, nil)
 	mocks.childPlaylistService.EXPECT().GetChildPlaylistsByBasePlaylistID(gomock.Any(), basePlaylistID, userID).Return([]*models.ChildPlaylist{}, nil)
 	mocks.syncEventService.EXPECT().UpdateSyncEvent(gomock.Any(), createdSyncEvent.ID, gomock.Any()).Return(createdSyncEvent, nil)
 
@@ -214,6 +226,11 @@ func TestDefaultSyncOrchestrator_SyncBasePlaylist_TrackAggregationError(t *testi
 
 	mocks.syncEventService.EXPECT().HasActiveSyncForBasePlaylist(gomock.Any(), userID, basePlaylistID).Return(false, nil)
 	mocks.syncEventService.EXPECT().CreateSyncEvent(gomock.Any(), gomock.Any()).Return(createdSyncEvent, nil)
+	mocks.basePlaylistService.EXPECT().GetBasePlaylist(gomock.Any(), basePlaylistID, userID).Return(&models.BasePlaylist{
+		ID:     basePlaylistID,
+		UserID: userID,
+		Name:   "Test Base Playlist",
+	}, nil)
 	mocks.childPlaylistService.EXPECT().GetChildPlaylistsByBasePlaylistID(gomock.Any(), basePlaylistID, userID).Return(childPlaylists, nil)
 	mocks.trackAggregator.EXPECT().AggregatePlaylistData(gomock.Any(), userID, basePlaylistID).Return(nil, errors.New("aggregation failed"))
 	mocks.syncEventService.EXPECT().UpdateSyncEvent(gomock.Any(), createdSyncEvent.ID, gomock.Any()).Return(createdSyncEvent, nil)
@@ -231,6 +248,12 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	basePlaylist := &models.BasePlaylist{
+		ID:     "base1",
+		UserID: "user123",
+		Name:   "Base Playlist",
+	}
+
 	childPlaylist := models.ChildPlaylist{
 		ID:                "child1",
 		UserID:           "user123",
@@ -241,9 +264,14 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_Success(t *testing.T) {
 
 	trackURIs := []string{"spotify:track:1", "spotify:track:2"}
 	syncEvent := &models.SyncEvent{ID: "sync123"}
+	
+	// Expected formatted names
+	expectedName := models.BuildChildPlaylistName(basePlaylist.Name, childPlaylist.Name)
+	expectedDescription := models.BuildChildPlaylistDescription(childPlaylist.Description)
+	
 	newPlaylist := &spotifyclient.SpotifyPlaylist{
 		ID:   "new_spotify1",
-		Name: "Child Playlist",
+		Name: expectedName,
 	}
 
 	mocks := createMockServices(ctrl)
@@ -251,12 +279,12 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_Success(t *testing.T) {
 
 	// Mock expectations
 	mocks.spotifyClient.EXPECT().DeletePlaylist(gomock.Any(), "old_spotify1").Return(nil)
-	mocks.spotifyClient.EXPECT().CreatePlaylist(gomock.Any(), childPlaylist.Name, childPlaylist.Description, false).Return(newPlaylist, nil)
+	mocks.spotifyClient.EXPECT().CreatePlaylist(gomock.Any(), expectedName, expectedDescription, false).Return(newPlaylist, nil)
 	mocks.childPlaylistService.EXPECT().UpdateChildPlaylistSpotifyID(gomock.Any(), childPlaylist.ID, childPlaylist.UserID, newPlaylist.ID).Return(&childPlaylist, nil)
 	mocks.spotifyClient.EXPECT().AddTracksToPlaylist(gomock.Any(), newPlaylist.ID, trackURIs).Return(nil)
 
 	// Execute
-	apiRequestCount, err := orchestrator.syncChildPlaylist(context.Background(), childPlaylist, "old_spotify1", trackURIs, syncEvent)
+	apiRequestCount, err := orchestrator.syncChildPlaylist(context.Background(), basePlaylist, childPlaylist, "old_spotify1", trackURIs, syncEvent)
 
 	// Assert
 	assert.NoError(err)
@@ -267,6 +295,12 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_DeletePlaylistError(t *testin
 	assert := require.New(t)
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+
+	basePlaylist := &models.BasePlaylist{
+		ID:     "base1",
+		UserID: "user123",
+		Name:   "Base Playlist",
+	}
 
 	childPlaylist := models.ChildPlaylist{
 		ID:                "child1",
@@ -281,7 +315,7 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_DeletePlaylistError(t *testin
 
 	mocks.spotifyClient.EXPECT().DeletePlaylist(gomock.Any(), "old_spotify1").Return(errors.New("delete failed"))
 
-	apiRequestCount, err := orchestrator.syncChildPlaylist(context.Background(), childPlaylist, "old_spotify1", trackURIs, syncEvent)
+	apiRequestCount, err := orchestrator.syncChildPlaylist(context.Background(), basePlaylist, childPlaylist, "old_spotify1", trackURIs, syncEvent)
 
 	assert.Error(err)
 	assert.Equal(0, apiRequestCount)
@@ -353,6 +387,7 @@ type mockServices struct {
 	trackAggregator      *servicemocks.MockTrackAggregatorServicer
 	trackRouter          *servicemocks.MockTrackRouterServicer
 	childPlaylistService *servicemocks.MockChildPlaylistServicer
+	basePlaylistService  *servicemocks.MockBasePlaylistServicer
 	syncEventService     *servicemocks.MockSyncEventServicer
 	spotifyClient        *clientmocks.MockSpotifyAPI
 }
@@ -362,6 +397,7 @@ func createMockServices(ctrl *gomock.Controller) mockServices {
 		trackAggregator:      servicemocks.NewMockTrackAggregatorServicer(ctrl),
 		trackRouter:          servicemocks.NewMockTrackRouterServicer(ctrl),
 		childPlaylistService: servicemocks.NewMockChildPlaylistServicer(ctrl),
+		basePlaylistService:  servicemocks.NewMockBasePlaylistServicer(ctrl),
 		syncEventService:     servicemocks.NewMockSyncEventServicer(ctrl),
 		spotifyClient:        clientmocks.NewMockSpotifyAPI(ctrl),
 	}
@@ -372,6 +408,7 @@ func createTestOrchestrator(mocks mockServices) *DefaultSyncOrchestrator {
 		mocks.trackAggregator,
 		mocks.trackRouter,
 		mocks.childPlaylistService,
+		mocks.basePlaylistService,
 		mocks.syncEventService,
 		mocks.spotifyClient,
 		createTestLogger(),

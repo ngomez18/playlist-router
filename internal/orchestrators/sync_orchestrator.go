@@ -25,6 +25,7 @@ type DefaultSyncOrchestrator struct {
 	trackAggregator      services.TrackAggregatorServicer
 	trackRouter          services.TrackRouterServicer
 	childPlaylistService services.ChildPlaylistServicer
+	basePlaylistService  services.BasePlaylistServicer
 	syncEventService     services.SyncEventServicer
 	spotifyClient        spotifyclient.SpotifyAPI
 
@@ -35,6 +36,7 @@ func NewDefaultSyncOrchestrator(
 	trackAggregator services.TrackAggregatorServicer,
 	trackRouter services.TrackRouterServicer,
 	childPlaylistService services.ChildPlaylistServicer,
+	basePlaylistService services.BasePlaylistServicer,
 	syncEventService services.SyncEventServicer,
 	spotifyClient spotifyclient.SpotifyAPI,
 	logger *slog.Logger,
@@ -43,6 +45,7 @@ func NewDefaultSyncOrchestrator(
 		trackAggregator:      trackAggregator,
 		trackRouter:          trackRouter,
 		childPlaylistService: childPlaylistService,
+		basePlaylistService:  basePlaylistService,
 		syncEventService:     syncEventService,
 		spotifyClient:        spotifyClient,
 		logger:               logger.With("component", "DefaultSyncOrchestrator"),
@@ -87,8 +90,16 @@ func (s *DefaultSyncOrchestrator) SyncBasePlaylist(ctx context.Context, userID, 
 }
 
 func (s *DefaultSyncOrchestrator) executeSyncFlow(ctx context.Context, syncEvent *models.SyncEvent) error {
+	// Get base playlist
+	s.logger.InfoContext(ctx, "step 1: fetching base playlist", "sync_event_id", syncEvent.ID)
+
+	basePlaylist, err := s.basePlaylistService.GetBasePlaylist(ctx, syncEvent.BasePlaylistID, syncEvent.UserID)
+	if err != nil {
+		return fmt.Errorf("failed to get base playlist: %w", err)
+	}
+
 	// Get child playlists
-	s.logger.InfoContext(ctx, "step 1: fetching child playlists", "sync_event_id", syncEvent.ID)
+	s.logger.InfoContext(ctx, "step 2: fetching child playlists", "sync_event_id", syncEvent.ID)
 
 	childPlaylists, err := s.childPlaylistService.GetChildPlaylistsByBasePlaylistID(ctx, syncEvent.BasePlaylistID, syncEvent.UserID)
 	if err != nil {
@@ -112,7 +123,7 @@ func (s *DefaultSyncOrchestrator) executeSyncFlow(ctx context.Context, syncEvent
 	)
 
 	// Aggregate track data
-	s.logger.InfoContext(ctx, "step 2: aggregating track data", "sync_event_id", syncEvent.ID)
+	s.logger.InfoContext(ctx, "step 3: aggregating track data", "sync_event_id", syncEvent.ID)
 
 	trackData, err := s.trackAggregator.AggregatePlaylistData(ctx, syncEvent.UserID, syncEvent.BasePlaylistID)
 	if err != nil {
@@ -129,7 +140,7 @@ func (s *DefaultSyncOrchestrator) executeSyncFlow(ctx context.Context, syncEvent
 	)
 
 	// Route tracks to child playlists
-	s.logger.InfoContext(ctx, "step 3: routing tracks", "sync_event_id", syncEvent.ID)
+	s.logger.InfoContext(ctx, "step 4: routing tracks", "sync_event_id", syncEvent.ID)
 
 	routing, err := s.trackRouter.RouteTracksToChildren(ctx, trackData, childPlaylists)
 	if err != nil {
@@ -148,9 +159,9 @@ func (s *DefaultSyncOrchestrator) executeSyncFlow(ctx context.Context, syncEvent
 	)
 
 	// Update Spotify playlists (delete/recreate)
-	s.logger.InfoContext(ctx, "step 4: updating spotify playlists", "sync_event_id", syncEvent.ID)
+	s.logger.InfoContext(ctx, "step 5: updating spotify playlists", "sync_event_id", syncEvent.ID)
 
-	if err := s.updateSpotifyPlaylists(ctx, syncEvent, childPlaylists, routing); err != nil {
+	if err := s.updateSpotifyPlaylists(ctx, syncEvent, basePlaylist, childPlaylists, routing); err != nil {
 		return fmt.Errorf("failed to update spotify playlists: %w", err)
 	}
 
@@ -161,6 +172,7 @@ func (s *DefaultSyncOrchestrator) executeSyncFlow(ctx context.Context, syncEvent
 func (s *DefaultSyncOrchestrator) updateSpotifyPlaylists(
 	ctx context.Context,
 	syncEvent *models.SyncEvent,
+	basePlaylist *models.BasePlaylist,
 	childPlaylists []*models.ChildPlaylist,
 	routing map[string][]string,
 ) error {
@@ -179,7 +191,7 @@ func (s *DefaultSyncOrchestrator) updateSpotifyPlaylists(
 			continue
 		}
 
-		apiRequestCount, err := s.syncChildPlaylist(ctx, *childPlaylist, spotifyPlaylistID, trackURIs, syncEvent)
+		apiRequestCount, err := s.syncChildPlaylist(ctx, basePlaylist, *childPlaylist, spotifyPlaylistID, trackURIs, syncEvent)
 		if err != nil {
 			return err
 		}
@@ -192,6 +204,7 @@ func (s *DefaultSyncOrchestrator) updateSpotifyPlaylists(
 
 func (s *DefaultSyncOrchestrator) syncChildPlaylist(
 	ctx context.Context,
+	basePlaylist *models.BasePlaylist,
 	childPlaylist models.ChildPlaylist,
 	spotifyPlaylistID string,
 	trackURIs []string,
@@ -211,9 +224,13 @@ func (s *DefaultSyncOrchestrator) syncChildPlaylist(
 	}
 	apiRequestCount++
 
-	newPlaylist, err := s.spotifyClient.CreatePlaylist(ctx, childPlaylist.Name, childPlaylist.Description, false)
+	// Build properly formatted playlist name and description
+	formattedName := models.BuildChildPlaylistName(basePlaylist.Name, childPlaylist.Name)
+	formattedDescription := models.BuildChildPlaylistDescription(childPlaylist.Description)
+
+	newPlaylist, err := s.spotifyClient.CreatePlaylist(ctx, formattedName, formattedDescription, false)
 	if err != nil {
-		return apiRequestCount, fmt.Errorf("failed to create new playlist for %s: %w", childPlaylist.Name, err)
+		return apiRequestCount, fmt.Errorf("failed to create new playlist for %s: %w", formattedName, err)
 	}
 	apiRequestCount++
 

@@ -36,5 +36,5 @@ func BuildChildPlaylistName(basePlaylistName, childPlaylistName string) string {
 }
 
 func BuildChildPlaylistDescription(description string) string {
-	return fmt.Sprintf("[PLAYLIST GENERATED AND MANAGEED BY PlaylistRouter] %s", description)
+	return fmt.Sprintf("[PLAYLIST GENERATED AND MANAGED BY PlaylistRouter] %s", description)
 }

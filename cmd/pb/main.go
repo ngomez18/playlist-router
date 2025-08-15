@@ -128,6 +128,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 			serviceInstances.trackAggregatorService,
 			serviceInstances.trackRouterService,
 			serviceInstances.childPlaylistService,
+			serviceInstances.basePlaylistService,
 			serviceInstances.syncEventService,
 			spotifyClient,
 			logger,
