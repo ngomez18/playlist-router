@@ -110,7 +110,7 @@ frontend-build:
 run-prod: build-all
 	@echo "Starting production server with integrated frontend..."
 	@echo "Server will be available at http://localhost:8090"
-	./playlist-router serve
+	FRONTEND_URL=http://localhost:8090 ./playlist-router serve
 
 # Full stack development
 dev-full:

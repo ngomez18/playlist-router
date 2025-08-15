@@ -22,9 +22,7 @@ type Config struct {
 
 // Load loads configuration from .env file and environment variables
 func Load() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
+	_ = godotenv.Load()
 
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {
