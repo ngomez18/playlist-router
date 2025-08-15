@@ -130,6 +130,13 @@ class ApiClient {
     })
   }
 
+  // Sync endpoints
+  async syncBasePlaylist(basePlaylistId: string): Promise<any> {
+    return this.request<any>(`/api/base_playlist/${basePlaylistId}/sync`, {
+      method: 'POST',
+    })
+  }
+
   // Spotify endpoints
   async getSpotifyPlaylists(): Promise<SpotifyPlaylist[]> {
     return this.request<SpotifyPlaylist[]>('/api/spotify/playlists')

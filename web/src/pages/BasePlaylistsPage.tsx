@@ -5,7 +5,7 @@ import { CreateBasePlaylistForm } from '../features/playlists/CreateBasePlaylist
 import { ChildPlaylistList } from '../features/playlists/ChildPlaylistList'
 import { CreateChildPlaylistForm } from '../features/playlists/CreateChildPlaylistForm'
 import { EditChildPlaylistForm } from '../features/playlists/EditChildPlaylistForm'
-import { TrashIcon, ArrowLeftIcon, ChevronRightIcon, ChevronDownIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { TrashIcon, ArrowLeftIcon, ChevronRightIcon, ChevronDownIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 import { Button, Card, CardBody, CardTitle, CardActions, Alert, LoadingSpinner } from '../components/ui'
 import type { BasePlaylist, ChildPlaylist } from '../types/playlist'
 
@@ -55,6 +55,22 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
     },
     onError: () => {
       setSuccessMessage('Failed to delete child playlist')
+      setTimeout(() => setSuccessMessage(null), 5000)
+    }
+  })
+
+  const syncMutation = useMutation({
+    mutationFn: (basePlaylistId: string) => apiClient.syncBasePlaylist(basePlaylistId),
+    onSuccess: () => {
+      setSuccessMessage('Playlist synced successfully!')
+      setTimeout(() => setSuccessMessage(null), 5000)
+    },
+    onError: (error) => {
+      if (error.message.includes('409')) {
+        setSuccessMessage('Sync already in progress for this playlist')
+      } else {
+        setSuccessMessage('Failed to sync playlist')
+      }
       setTimeout(() => setSuccessMessage(null), 5000)
     }
   })
@@ -118,6 +134,12 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
 
   const handleEditChildCancel = () => {
     setEditingChildPlaylist(null)
+  }
+
+  const handleSync = (basePlaylistId: string) => {
+    if (confirm('Are you sure you want to sync this playlist? This will distribute new songs to child playlists.')) {
+      syncMutation.mutate(basePlaylistId)
+    }
   }
 
   if (showCreateForm) {
@@ -235,10 +257,24 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
                         </div>
                         <CardActions>
                           <Button 
+                            onClick={() => handleSync(playlist.id)}
+                            variant="outline"
+                            size="sm"
+                            disabled={syncMutation.isPending || deleteMutation.isPending}
+                            className="btn-primary"
+                          >
+                            {syncMutation.isPending && syncMutation.variables === playlist.id ? (
+                              <span className="loading loading-spinner loading-sm"></span>
+                            ) : (
+                              <ArrowPathIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button 
                             onClick={() => handleDelete(playlist)}
                             variant="outline"
                             size="sm"
-                            disabled={deleteMutation.isPending}
+                            disabled={deleteMutation.isPending || syncMutation.isPending}
+                            className="btn-error"
                           >
                             {deleteMutation.isPending ? '...' : <TrashIcon className="h-4 w-4" />}
                           </Button>
@@ -264,7 +300,7 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
                           </div>
                           <ChildPlaylistList
                             childPlaylists={childPlaylists || []}
-                            loading={childLoading}
+                            loading={childLoading || (syncMutation.isPending && syncMutation.variables === playlist.id)}
                             error={childError?.message}
                             onEdit={handleChildEdit}
                             onDelete={handleChildDelete}

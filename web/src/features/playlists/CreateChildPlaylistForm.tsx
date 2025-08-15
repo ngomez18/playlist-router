@@ -39,20 +39,25 @@ export function CreateChildPlaylistForm({
     e.preventDefault()
     if (!formData.name.trim()) return
     
-    // Clean up filter rules - remove empty ranges and sets
+    // Clean up filter rules - remove empty ranges and sets, but preserve boolean values
     const cleanedFilters: MetadataFilters = {}
     if (formData.filter_rules) {
       Object.entries(formData.filter_rules).forEach(([key, value]) => {
-        if (value && typeof value === 'object') {
-          if ('min' in value || 'max' in value) {
-            const range = value as RangeFilter
-            if (range.min !== undefined || range.max !== undefined) {
-              cleanedFilters[key as keyof MetadataFilters] = range as any
-            }
-          } else if ('include' in value || 'exclude' in value) {
-            const set = value as SetFilter
-            if ((set.include && set.include.length > 0) || (set.exclude && set.exclude.length > 0)) {
-              cleanedFilters[key as keyof MetadataFilters] = set as any
+        if (value !== undefined && value !== null) {
+          if (typeof value === 'boolean') {
+            // Boolean filters like 'explicit' should be preserved
+            cleanedFilters[key as keyof MetadataFilters] = value as any
+          } else if (value && typeof value === 'object') {
+            if ('min' in value || 'max' in value) {
+              const range = value as RangeFilter
+              if (range.min !== undefined || range.max !== undefined) {
+                cleanedFilters[key as keyof MetadataFilters] = range as any
+              }
+            } else if ('include' in value || 'exclude' in value) {
+              const set = value as SetFilter
+              if ((set.include && set.include.length > 0) || (set.exclude && set.exclude.length > 0)) {
+                cleanedFilters[key as keyof MetadataFilters] = set as any
+              }
             }
           }
         }
@@ -308,24 +313,24 @@ export function CreateChildPlaylistForm({
                 <div className="collapse-content space-y-4">
                   
                   {/* Genres */}
-                  <div className="form-control">
-                    <span className="label-text text-xs mb-1 block">Genres</span>
+                  <div className="form-control opacity-50">
+                    <span className="label-text text-xs mb-1 block">Genres (Coming Soon)</span>
                     <div className="grid grid-cols-1 gap-2">
                       <Input
                         type="text"
                         placeholder="Include genres (e.g., rock, pop, jazz) - comma separated"
-                        value={getSetFilterValue('genres', 'include')}
-                        onChange={(e) => handleSetFilterChange('genres', 'include', e.target.value)}
+                        value=""
+                        onChange={() => {}}
                         className="input-bordered input-sm"
-                        disabled={createMutation.isPending}
+                        disabled={true}
                       />
                       <Input
                         type="text"
                         placeholder="Exclude genres - comma separated"
-                        value={getSetFilterValue('genres', 'exclude')}
-                        onChange={(e) => handleSetFilterChange('genres', 'exclude', e.target.value)}
+                        value=""
+                        onChange={() => {}}
                         className="input-bordered input-sm"
-                        disabled={createMutation.isPending}
+                        disabled={true}
                       />
                     </div>
                   </div>
@@ -399,47 +404,47 @@ export function CreateChildPlaylistForm({
                 <div className="collapse-content space-y-4">
                   
                   {/* Track Keywords */}
-                  <div className="form-control">
-                    <span className="label-text text-xs mb-1 block">Track Name Keywords</span>
+                  <div className="form-control opacity-50">
+                    <span className="label-text text-xs mb-1 block">Track Name Keywords (Coming Soon)</span>
                     <div className="grid grid-cols-1 gap-2">
                       <Input
                         type="text"
                         placeholder="Include keywords (e.g., love, dance, party) - comma separated"
-                        value={getSetFilterValue('track_keywords', 'include')}
-                        onChange={(e) => handleSetFilterChange('track_keywords', 'include', e.target.value)}
+                        value=""
+                        onChange={() => {}}
                         className="input-bordered input-sm"
-                        disabled={createMutation.isPending}
+                        disabled={true}
                       />
                       <Input
                         type="text"
                         placeholder="Exclude keywords - comma separated"
-                        value={getSetFilterValue('track_keywords', 'exclude')}
-                        onChange={(e) => handleSetFilterChange('track_keywords', 'exclude', e.target.value)}
+                        value=""
+                        onChange={() => {}}
                         className="input-bordered input-sm"
-                        disabled={createMutation.isPending}
+                        disabled={true}
                       />
                     </div>
                   </div>
 
                   {/* Artist Keywords */}
-                  <div className="form-control">
-                    <span className="label-text text-xs mb-1 block">Artist Name Keywords</span>
+                  <div className="form-control opacity-50">
+                    <span className="label-text text-xs mb-1 block">Artist Name Keywords (Coming Soon)</span>
                     <div className="grid grid-cols-1 gap-2">
                       <Input
                         type="text"
                         placeholder="Include keywords (e.g., band, DJ, feat) - comma separated"
-                        value={getSetFilterValue('artist_keywords', 'include')}
-                        onChange={(e) => handleSetFilterChange('artist_keywords', 'include', e.target.value)}
+                        value=""
+                        onChange={() => {}}
                         className="input-bordered input-sm"
-                        disabled={createMutation.isPending}
+                        disabled={true}
                       />
                       <Input
                         type="text"
                         placeholder="Exclude keywords - comma separated"
-                        value={getSetFilterValue('artist_keywords', 'exclude')}
-                        onChange={(e) => handleSetFilterChange('artist_keywords', 'exclude', e.target.value)}
+                        value=""
+                        onChange={() => {}}
                         className="input-bordered input-sm"
-                        disabled={createMutation.isPending}
+                        disabled={true}
                       />
                     </div>
                   </div>
