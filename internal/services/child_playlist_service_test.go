@@ -348,7 +348,7 @@ func TestChildPlaylistService_UpdateChildPlaylist_Success(t *testing.T) {
 			needsBasePlaylistCall: true,
 			needsSpotifyCall:      true,
 			expectedSpotifyName:   "[Base Playlist Name] > Updated Child Name",
-			expectedSpotifyDesc:   "[PLAYLIST GENERATED AND MANAGEED BY PlaylistRouter] Updated description",
+			expectedSpotifyDesc:   "[PLAYLIST GENERATED AND MANAGED BY PlaylistRouter] Updated description",
 		},
 		{
 			name: "update name only",
@@ -383,7 +383,7 @@ func TestChildPlaylistService_UpdateChildPlaylist_Success(t *testing.T) {
 			needsBasePlaylistCall: false,
 			needsSpotifyCall:      true,
 			expectedSpotifyName:   "",
-			expectedSpotifyDesc:   "[PLAYLIST GENERATED AND MANAGEED BY PlaylistRouter] Updated Description Only",
+			expectedSpotifyDesc:   "[PLAYLIST GENERATED AND MANAGED BY PlaylistRouter] Updated Description Only",
 		},
 		{
 			name: "update IsActive only (no Spotify update)",
@@ -530,8 +530,8 @@ func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_Success(t *testing.T)
 
 	// Mock expectations
 	updatedChildPlaylist := &models.ChildPlaylist{
-		ID: "cp789",
-		UserID: "user123",
+		ID:                "cp789",
+		UserID:            "user123",
 		SpotifyPlaylistID: "new-spotify-id",
 	}
 	expectedUpdateFields := repositories.UpdateChildPlaylistFields{
@@ -546,7 +546,6 @@ func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_Success(t *testing.T)
 	assert.NoError(err)
 	assert.Equal(updatedChildPlaylist, result)
 }
-
 
 func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_RepoError(t *testing.T) {
 	assert := assert.New(t)

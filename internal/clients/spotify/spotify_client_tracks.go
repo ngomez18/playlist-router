@@ -64,8 +64,8 @@ func (c *SpotifyClient) AddTracksToPlaylist(ctx context.Context, playlistID stri
 		return err
 	}
 
-	c.logger.InfoContext(ctx, "adding tracks to playlist", 
-		"playlist_id", playlistID, 
+	c.logger.InfoContext(ctx, "adding tracks to playlist",
+		"playlist_id", playlistID,
 		"track_count", len(trackURIs),
 	)
 
@@ -100,16 +100,16 @@ func (c *SpotifyClient) AddTracksToPlaylist(ctx context.Context, playlistID stri
 
 	if resp.StatusCode != http.StatusCreated {
 		body, _ := io.ReadAll(resp.Body)
-		c.logger.ErrorContext(ctx, "spotify add tracks failed", 
-			"status_code", resp.StatusCode, 
+		c.logger.ErrorContext(ctx, "spotify add tracks failed",
+			"status_code", resp.StatusCode,
 			"response_body", string(body),
 			"playlist_id", playlistID,
 		)
 		return fmt.Errorf("spotify add tracks failed (status %d): %s", resp.StatusCode, string(body))
 	}
 
-	c.logger.InfoContext(ctx, "successfully added tracks to playlist", 
-		"playlist_id", playlistID, 
+	c.logger.InfoContext(ctx, "successfully added tracks to playlist",
+		"playlist_id", playlistID,
 		"tracks_added", len(trackURIs),
 	)
 	return nil

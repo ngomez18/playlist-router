@@ -174,16 +174,16 @@ func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 			assert.Contains(result.Artists, "artist1")
 			assert.Equal("Artist One", result.Artists["artist1"].Name)
 			assert.Equal([]string{"rock", "pop"}, result.Artists["artist1"].Genres)
-			
+
 			// Verify pre-processed data for track1
 			track1 := result.Tracks[0]
 			assert.Equal(2020, track1.ReleaseYear)
 			assert.Equal(80, track1.MaxArtistPop) // artist1 has 80, artist2 has 70
 			assert.Contains(track1.AllGenres, "rock")
-			assert.Contains(track1.AllGenres, "pop") 
+			assert.Contains(track1.AllGenres, "pop")
 			assert.Contains(track1.AllGenres, "jazz")
 			assert.Len(track1.AllGenres, 3) // rock, pop, jazz (normalized)
-			
+
 			// Verify pre-processed data for track2
 			track2 := result.Tracks[1]
 			assert.Equal(2018, track2.ReleaseYear)

@@ -3,6 +3,10 @@
 ## Overview
 Deploy PlaylistRouter as a single Docker container on Fly.io, serving both the Go backend API and React frontend as static files.
 
+**✅ Status: DEPLOYED**  
+**🌐 Live URL:** https://playlist-router.fly.dev  
+**📊 Health Check:** https://playlist-router.fly.dev/health
+
 ## Architecture
 - **Single Binary**: Go application serving both API and frontend
 - **Static Assets**: React build embedded in Go binary
@@ -37,28 +41,78 @@ Deploy PlaylistRouter as a single Docker container on Fly.io, serving both the G
 
 ### Step 1: Create Dockerfile
 ```dockerfile
-# Multi-stage build
+# Multi-stage Docker build for PlaylistRouter
+# Stage 1: Build frontend with Node.js
 FROM node:18-alpine AS frontend-builder
+
 WORKDIR /app/web
+
+# Copy package files and install dependencies
 COPY web/package*.json ./
 RUN npm ci
+
+# Copy frontend source and build for production
 COPY web/ ./
 RUN npm run build
 
-FROM golang:1.21-alpine AS backend-builder
+# Stage 2: Build Go application
+FROM golang:1.24-alpine AS backend-builder
+
 WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Copy Go modules files first for better caching
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-COPY --from=frontend-builder /app/web/dist ./web/dist
-RUN CGO_ENABLED=0 GOOS=linux go build -o playlist-router ./cmd/pb
 
+# Copy only Go source code (exclude web/, docs/, etc.)
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+# Copy built frontend directly to the embedded location
+RUN mkdir -p internal/static/dist
+COPY --from=frontend-builder /app/web/dist/ ./internal/static/dist/
+
+# Build the Go application
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags='-w -s' \
+    -o playlist-router ./cmd/pb
+
+# Stage 3: Final runtime image
 FROM alpine:latest
+
+# Install runtime dependencies
 RUN apk --no-cache add ca-certificates tzdata
-WORKDIR /root/
+
+# Create non-root user
+RUN adduser -D -s /bin/sh appuser
+
+# Create app and data directories with proper permissions
+RUN mkdir -p /app /data && chown -R appuser:appuser /app /data
+
+WORKDIR /app
+
+# Copy the binary from builder stage
 COPY --from=backend-builder /app/playlist-router .
-EXPOSE 8090
-CMD ["./playlist-router", "serve", "--http=0.0.0.0:8090"]
+RUN chown appuser:appuser playlist-router && chmod +x playlist-router
+
+# Change to non-root user
+USER appuser
+
+# Set environment variables
+ENV PORT=8080
+
+# Expose port (will be overridden by PORT env var)
+EXPOSE $PORT
+
+# Health check (uses localhost since we're inside the container)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/health || exit 1
+
+# Start the application using PORT environment variable and data directory
+CMD sh -c "./playlist-router serve --http=0.0.0.0:$PORT --dir=/data"
 ```
 
 ### Step 2: Configure fly.toml
@@ -70,11 +124,12 @@ primary_region = "iad"
   dockerfile = "Dockerfile"
 
 [env]
-  PORT = "8090"
-  PB_DATA_DIR = "/data"
+  PORT = "8080"
+  APP_ENV = "production"
+  LOG_LEVEL = "info"
 
 [[services]]
-  internal_port = 8090
+  internal_port = 8080
   protocol = "tcp"
 
   [[services.ports]]
@@ -89,6 +144,11 @@ primary_region = "iad"
 [mounts]
   source = "data"
   destination = "/data"
+
+[[vm]]
+  memory = 512
+  cpu_kind = "shared"
+  cpus = 1
 ```
 
 ### Step 3: Environment Setup
@@ -107,11 +167,11 @@ fly volumes create data --size 1 --region iad
 ### Step 5: Frontend Build Integration
 Update `internal/static/static.go` to embed built frontend:
 ```go
-//go:embed web/dist/*
-var frontendFS embed.FS
+//go:embed all:dist
+var embeddedFiles embed.FS
 
 func GetFrontendFS() (fs.FS, error) {
-    return fs.Sub(frontendFS, "web/dist")
+    return fs.Sub(embeddedFiles, "dist")
 }
 ```
 
@@ -157,12 +217,13 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
 ```
 
 ### 3. PocketBase Configuration
-Ensure PocketBase serves from correct data directory:
-```go
-app := pocketbase.NewWithConfig(pocketbase.Config{
-    DataDir: os.Getenv("PB_DATA_DIR"),
-})
+Ensure PocketBase serves from correct data directory using explicit flag:
+```dockerfile
+# In Dockerfile CMD
+CMD sh -c "./playlist-router serve --http=0.0.0.0:$PORT --dir=/data"
 ```
+
+This ensures PocketBase uses the mounted volume at `/data` instead of creating `pb_data/` in the container.
 
 ## Monitoring & Observability
 
@@ -253,21 +314,57 @@ cp /data/data.db /data/backup-$(date +%Y%m%d).db
 
 8. **Environment Separation**: Production only for now
 
-## Next Steps
+## Deployment Status
 
-1. Set up fly.io account and CLI
-2. Configure Spotify OAuth for playlist-router.fly.dev domain  
-3. Create Dockerfile and fly.toml
-4. Update static file embedding for frontend
-5. Configure PocketBase rate limiting
-6. Test build process locally
-7. Deploy to fly.io
-8. Set up weekly backup procedures
+### ✅ Completed
+- [x] Multi-stage Docker build (Node.js + Go)
+- [x] fly.io app created and configured
+- [x] Persistent volume for SQLite database (1GB)
+- [x] Production secrets management
+- [x] HTTPS and custom domain setup
+- [x] Static asset serving with embedded frontend
+- [x] Health check endpoint (`/health`)
+- [x] Spotify OAuth configured for production domain
 
-## Estimated Timeline
-- Initial setup and configuration: 2-3 hours
-- Testing and debugging: 1-2 hours
-- Production deployment: 1 hour
-- Monitoring setup: 1 hour
+### 🔄 Next Steps (Operational Improvements)
 
-**Total: 5-7 hours**
+#### High Priority
+- [ ] Set up database backup automation
+- [ ] Configure structured logging with levels
+- [ ] Add error monitoring and alerting
+- [ ] Document rollback procedures
+
+#### Medium Priority  
+- [ ] Implement rate limiting per user
+- [ ] Add security headers and CORS configuration
+- [ ] Set up staging environment
+- [ ] Create CI/CD pipeline for automated deployments
+
+#### Low Priority
+- [ ] Add metrics collection and dashboards
+- [ ] Configure auto-scaling policies
+- [ ] Implement blue-green deployment strategy
+
+## Deployment Timeline (Completed)
+
+### Initial Deployment ✅
+- **Setup and configuration**: ~3 hours
+- **Docker multi-stage build**: ~1 hour  
+- **Asset serving fixes**: ~2 hours
+- **Testing and debugging**: ~2 hours
+- **Production deployment**: ~1 hour
+
+**Total Time Invested: ~9 hours**
+
+### Lessons Learned
+1. **Frontend environment variables**: Vite's handling of `VITE_API_BASE_URL` can break builds - be careful with empty strings
+2. **Static asset serving**: Docker `COPY` with `/*` doesn't copy subdirectories - use `/` instead  
+3. **Environment separation**: `.dockerignore` is cleaner than manual file deletion for excluding dev configs
+4. **Port standardization**: Use 8080 for containers (industry standard) vs 8090 for local dev
+5. **PocketBase data directory**: Use explicit `--dir=/data` flag instead of `PB_DATA_DIR` env var for clarity and proper volume mounting
+
+### Future Deployments
+With the current setup, future deployments are simple:
+```bash
+fly deploy  # ~2-3 minutes
+```

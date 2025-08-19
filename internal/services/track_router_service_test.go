@@ -22,11 +22,11 @@ func TestNewTrackRouterService(t *testing.T) {
 
 func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 	tests := []struct {
-		name             string
-		tracks           *models.PlaylistTracksInfo
-		childPlaylists   []*models.ChildPlaylist
-		expectedRouting  map[string][]string
-		expectedMatches  int
+		name            string
+		tracks          *models.PlaylistTracksInfo
+		childPlaylists  []*models.ChildPlaylist
+		expectedRouting map[string][]string
+		expectedMatches int
 	}{
 		{
 			name: "no active child playlists",
@@ -53,7 +53,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						URI:         "track1",
+						URI:        "track1",
 						DurationMs: 180000,
 						Popularity: 70,
 						Explicit:   false,
@@ -84,7 +84,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						URI:         "track1",
+						URI:        "track1",
 						DurationMs: 180000,
 						Popularity: 80,
 						AllGenres:  []string{"rock", "pop"},
@@ -121,7 +121,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						URI:         "track1",
+						URI:        "track1",
 						DurationMs: 90000, // Too short
 						Popularity: 30,    // Too low
 					},
@@ -147,19 +147,19 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 				PlaylistID: "base123",
 				Tracks: []models.TrackInfo{
 					{
-						URI:         "track1",
+						URI:        "track1",
 						DurationMs: 180000,
 						Popularity: 80,
 						AllGenres:  []string{"rock"},
 					},
 					{
-						URI:         "track2",
+						URI:        "track2",
 						DurationMs: 90000, // Too short
 						Popularity: 90,
 						AllGenres:  []string{"rock"},
 					},
 					{
-						URI:         "track3",
+						URI:        "track3",
 						DurationMs: 200000,
 						Popularity: 75,
 						AllGenres:  []string{"jazz"}, // Wrong genre
@@ -281,7 +281,7 @@ func TestTrackRouterService_RouteTracksToChildren_ComplexFilters(t *testing.T) {
 		PlaylistID: "base123",
 		Tracks: []models.TrackInfo{
 			{
-				URI:           "track1",
+				URI:          "track1",
 				Name:         "Love Song",
 				DurationMs:   180000,
 				Popularity:   80,

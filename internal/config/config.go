@@ -8,11 +8,8 @@ import (
 )
 
 type Config struct {
-	// PocketBase
-	PBDev  bool   `env:"PB_DEV" envDefault:"true"`
-	PBPort string `env:"PB_PORT" envDefault:"8090"`
-
 	// Application
+	Port     string `env:"PORT" envDefault:"8090"`
 	AppEnv   string `env:"APP_ENV" envDefault:"dev"`
 	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
 

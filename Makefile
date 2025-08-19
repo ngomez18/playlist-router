@@ -1,7 +1,8 @@
-# PlaylistSync Makefile
+# PlaylistRouter Makefile
 .PHONY: build build-em run run-dev dev clean lint fix test deps mocks help
 .PHONY: frontend-install frontend-dev frontend-build
 .PHONY: build-all run-prod
+.PHONY: docker-build docker-run docker-test deploy deploy-logs deploy-status deploy-all
 
 # Default target
 help:
@@ -28,6 +29,12 @@ help:
 	@echo "  build-all     - Build both frontend and backend for production"
 	@echo "  run-prod 	   - Build everything and run in production mode" 
 	@echo "  dev-full      - Start both backend and frontend in development mode"
+	@echo ""
+	@echo "Docker & Deployment:"
+	@echo "  docker-build  - Build Docker image locally"
+	@echo "  docker-run    - Run Docker container locally on port 8080"
+	@echo "  deploy        - Deploy to fly.io"
+	@echo ""
 	@echo "  help          - Show this help message"
 
 # Build the application
@@ -110,7 +117,7 @@ frontend-build:
 run-prod: build-all
 	@echo "Starting production server with integrated frontend..."
 	@echo "Server will be available at http://localhost:8090"
-	FRONTEND_URL=http://localhost:8090 ./playlist-router serve
+	PORT=8090 FRONTEND_URL=http://localhost:8090 ./playlist-router serve
 
 # Full stack development
 dev-full:
@@ -119,3 +126,18 @@ dev-full:
 	@echo "Frontend will be available at http://localhost:5173"
 	@echo "Press Ctrl+C to stop both servers"
 	@make -j2 dev frontend-dev
+
+# Docker commands
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t playlist-router .
+
+docker-run: docker-build
+	@echo "Running Docker container on port 8080..."
+	@echo "Server will be available at http://localhost:8080"
+	docker run --rm -p 8080:8080 --name playlist-router-local playlist-router
+
+# Deployment commands
+deploy:
+	@echo "Deploying to fly.io..."
+	fly deploy

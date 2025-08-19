@@ -30,6 +30,7 @@ Thumbs.db
 web/node_modules/
 web/dist/
 web/.next/
+web/.env
 
 # Go build cache
 .cache/

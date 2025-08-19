@@ -40,10 +40,13 @@ func createBasePlaylistCollection(app *pocketbase.PocketBase) error {
 	// Create base_playlists collection
 	collection := core.NewBaseCollection(string(CollectionBasePlaylist))
 
-	// Add fields
-	collection.Fields.Add(&core.TextField{
-		Name:     "user_id",
-		Required: true,
+	// Add fields - user_id as relation to users collection
+	collection.Fields.Add(&core.RelationField{
+		Name:          "user_id",
+		Required:      true,
+		MaxSelect:     1,
+		CollectionId:  "_pb_users_auth_",
+		CascadeDelete: true,
 	})
 
 	collection.Fields.Add(&core.TextField{
@@ -71,6 +74,11 @@ func createBasePlaylistCollection(app *pocketbase.PocketBase) error {
 		OnCreate: true,
 		OnUpdate: true,
 	})
+
+	// Create unique index on user_id + spotify_playlist_id to prevent duplicate imports
+	collection.Indexes = []string{
+		"CREATE UNIQUE INDEX idx_base_playlists_user_spotify ON base_playlists (user_id, spotify_playlist_id)",
+	}
 
 	return app.Save(collection)
 }
@@ -176,10 +184,13 @@ func createChildPlaylistCollection(app *pocketbase.PocketBase) error {
 	// Create child_playlists collection
 	collection := core.NewBaseCollection(string(CollectionChildPlaylist))
 
-	// Add fields
-	collection.Fields.Add(&core.TextField{
-		Name:     "user_id",
-		Required: true,
+	// Add fields - user_id as relation to users collection
+	collection.Fields.Add(&core.RelationField{
+		Name:          "user_id",
+		Required:      true,
+		MaxSelect:     1,
+		CollectionId:  "_pb_users_auth_",
+		CascadeDelete: true,
 	})
 
 	// Foreign key to base_playlists collection
@@ -227,9 +238,13 @@ func createChildPlaylistCollection(app *pocketbase.PocketBase) error {
 		OnUpdate: true,
 	})
 
+	// Create unique index on base_playlist_id + spotify_playlist_id to prevent duplicate child playlists
+	collection.Indexes = []string{
+		"CREATE UNIQUE INDEX idx_child_playlists_base_spotify ON child_playlists (base_playlist_id, spotify_playlist_id)",
+	}
+
 	return app.Save(collection)
 }
-
 
 // createSyncEventCollection creates the sync_events collection
 func createSyncEventCollection(app *pocketbase.PocketBase) error {
@@ -270,11 +285,13 @@ func createSyncEventCollection(app *pocketbase.PocketBase) error {
 	})
 
 	collection.Fields.Add(&core.TextField{
-		Name: "status",
+		Name:     "status",
+		Required: true,
 	})
 
 	collection.Fields.Add(&core.DateField{
-		Name: "started_at",
+		Name:     "started_at",
+		Required: true,
 	})
 
 	collection.Fields.Add(&core.DateField{

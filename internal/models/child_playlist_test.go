@@ -106,7 +106,7 @@ func TestBuildChildPlaylistDescription(t *testing.T) {
 			assert.NotEmpty(result, "Result should never be empty")
 
 			// Verify expected content is present
-			expectedDescription := fmt.Sprintf("[PLAYLIST GENERATED AND MANAGEED BY PlaylistRouter] %s", tt.inputDescription)
+			expectedDescription := fmt.Sprintf("[PLAYLIST GENERATED AND MANAGED BY PlaylistRouter] %s", tt.inputDescription)
 			assert.Equal(expectedDescription, result)
 
 		})

@@ -195,7 +195,7 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	// Health check endpoint
 	e.Router.GET("/health", apis.WrapStdHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})))
 
 	// Serve static files (must be after API routes)

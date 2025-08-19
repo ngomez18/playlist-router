@@ -1,4 +1,4 @@
-# PlaylistSync
+# PlaylistRouter
 
 A Spotify playlist management tool that automatically distributes songs from "base" playlists to multiple themed "child" playlists based on configured rules.
 

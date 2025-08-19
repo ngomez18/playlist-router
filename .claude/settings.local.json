@@ -29,7 +29,8 @@
       "WebFetch(domain:metabrainz.org)",
       "WebFetch(domain:data.metabrainz.org)",
       "Bash(go generate:*)",
-      "Bash(docker build:*)"
+      "Bash(docker build:*)",
+      "WebFetch(domain:playlist-router.fly.dev)"
     ],
     "deny": []
   }

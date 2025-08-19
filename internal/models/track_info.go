@@ -19,12 +19,12 @@ type TrackInfo struct {
 	Explicit   bool
 	Artists    []string
 	Album      AlbumInfo
-	
+
 	// Pre-processed data for efficient filtering
-	ReleaseYear    int      `json:"release_year"`
-	AllGenres      []string `json:"all_genres"`      // Normalized genres from all track artists
-	MaxArtistPop   int      `json:"max_artist_popularity"`
-	ArtistNames    []string `json:"artist_names"`    // Artist names for keyword matching
+	ReleaseYear  int      `json:"release_year"`
+	AllGenres    []string `json:"all_genres"` // Normalized genres from all track artists
+	MaxArtistPop int      `json:"max_artist_popularity"`
+	ArtistNames  []string `json:"artist_names"` // Artist names for keyword matching
 }
 
 type ArtistInfo struct {

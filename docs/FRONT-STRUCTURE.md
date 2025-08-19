@@ -1,32 +1,57 @@
-# Frontend Structure
+# PlaylistRouter Frontend Structure - Current Implementation
 
-## Directory Organization
+## Overview
+**Status:** ✅ Implemented and deployed  
+**Framework:** React 18 + TypeScript + Vite  
+**UI Library:** Chakra UI with dark theme  
+**State Management:** React Query + Context API  
+
+## Directory Organization (Current)
 
 ```
-src/
+web/src/
 ├── components/           # Reusable UI components
-│   ├── ui/              # Basic UI components (Button, Card, Avatar, etc.)
-│   ├── auth/            # Auth-specific components (LoginForm, UserMenu)
-│   └── layout/          # Layout components (Navbar, DashboardLayout)
-├── pages/               # Route-level page components
-│   ├── AuthPage.tsx     # Login/landing page with OAuth callback handling
-│   ├── DashboardPage.tsx # Main authenticated dashboard
-│   └── HomePage.tsx     # Root page component (router logic)
+│   ├── layout/          # Layout components
+│   │   ├── Layout.tsx   # Main app layout with navigation
+│   │   └── Navbar.tsx   # Navigation bar component
+│   └── ui/              # Basic UI components
 ├── features/            # Feature-specific components & logic
-│   └── dashboard/       # Dashboard-specific components
+│   ├── auth/            # Authentication components
+│   │   └── LoginPage.tsx # Spotify OAuth login page
+│   ├── dashboard/       # Dashboard components
+│   │   └── DashboardPage.tsx # Main dashboard view
+│   └── playlists/       # Playlist management components
+│       ├── BasePlaylistCard.tsx      # Base playlist display
+│       ├── ChildPlaylistCard.tsx     # Child playlist display
+│       ├── CreateChildPlaylistForm.tsx # Child playlist creation
+│       ├── EditChildPlaylistForm.tsx   # Child playlist editing
+│       └── PlaylistFilters.tsx       # Audio feature filters
 ├── hooks/               # Custom React hooks
+│   └── useAuth.ts       # Authentication hook
 ├── lib/                 # Utilities and API clients
-├── contexts/            # React contexts for global state
-└── types/               # TypeScript type definitions
+│   ├── api.ts          # API client with auth
+│   └── audio-features.ts # Audio feature utilities
+├── types/              # TypeScript type definitions
+│   ├── auth.ts         # Auth-related types
+│   ├── playlist.ts     # Playlist and filter types
+│   └── spotify.ts      # Spotify API types
+├── providers/          # React context providers
+│   └── AuthProvider.tsx # Auth context provider
+├── App.tsx             # Root component with routing
+└── main.tsx           # Application entry point
 ```
 
-## Component Philosophy
+## Component Architecture
 
-### UI Components (`components/ui/`)
-- **Reusable, generic components**
-- **No business logic** - just UI presentation
-- **Consistent API** with props for customization
-- **DaisyUI integration** with Tailwind classes
+### Layout Components (`components/layout/`)
+- **Layout.tsx** - Main app wrapper with sidebar navigation
+- **Navbar.tsx** - Top navigation with user menu and logout
+- **Responsive design** - Mobile-first with collapsible sidebar
+
+### Feature Components (`features/`)
+- **Organized by domain** - auth, dashboard, playlists
+- **Self-contained** - Each feature manages its own state and logic
+- **Reusable patterns** - Form handling, API integration
 
 ### Auth Components (`components/auth/`)
 - **Authentication-specific UI**

@@ -51,7 +51,7 @@ func TestSyncController_SyncBasePlaylist_Success(t *testing.T) {
 	// Create request
 	req := httptest.NewRequest("POST", "/api/base_playlist/"+basePlaylistID+"/sync", nil)
 	req.SetPathValue("basePlaylistID", basePlaylistID)
-	
+
 	// Add user to context
 	ctx := requestcontext.ContextWithUser(req.Context(), user)
 	req = req.WithContext(ctx)
@@ -100,7 +100,7 @@ func TestSyncController_SyncBasePlaylist_MissingBasePlaylistID(t *testing.T) {
 	user := &models.User{ID: "user123"}
 	req := httptest.NewRequest("POST", "/api/base_playlist//sync", nil)
 	// Don't set basePlaylistID path value to simulate missing ID
-	
+
 	ctx := requestcontext.ContextWithUser(req.Context(), user)
 	req = req.WithContext(ctx)
 
@@ -127,7 +127,7 @@ func TestSyncController_SyncBasePlaylist_SyncInProgress(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/api/base_playlist/"+basePlaylistID+"/sync", nil)
 	req.SetPathValue("basePlaylistID", basePlaylistID)
-	
+
 	ctx := requestcontext.ContextWithUser(req.Context(), user)
 	req = req.WithContext(ctx)
 
@@ -154,7 +154,7 @@ func TestSyncController_SyncBasePlaylist_OrchestratorError(t *testing.T) {
 
 	req := httptest.NewRequest("POST", "/api/base_playlist/"+basePlaylistID+"/sync", nil)
 	req.SetPathValue("basePlaylistID", basePlaylistID)
-	
+
 	ctx := requestcontext.ContextWithUser(req.Context(), user)
 	req = req.WithContext(ctx)
 

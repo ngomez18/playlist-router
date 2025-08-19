@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PlaylistSync is a Spotify playlist management tool that automatically distributes songs from "base" playlists to multiple themed "child" playlists based on configured rules. The application targets Spotify Premium subscribers who maintain multiple playlists.
+PlaylistRouter is a Spotify playlist management tool that automatically distributes songs from "base" playlists to multiple themed "child" playlists based on configured rules. The application targets Spotify Premium subscribers who maintain multiple playlists.
 
 ## Planned Architecture
 

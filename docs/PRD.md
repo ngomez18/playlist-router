@@ -1,11 +1,12 @@
-# PlaylistSync - Product Requirement Document
+# PlaylistRouter - Product Requirement Document
 
 ## Overview
 
-**Product Name:** PlaylistSync  
+**Product Name:** PlaylistRouter  
 **Version:** 1.0  
-**Date:** July 2025  
+**Date:** August 2025  
 **Team:** Solo developer with AI assistance
+**Current Status:** Deployed MVP at https://playlist-router.fly.dev
 
 ## Problem Statement
 
@@ -19,6 +20,8 @@ Music lovers struggle to maintain multiple themed playlists (genres, eras, moods
 
 Create a streamlined tool that automatically distributes songs from user's "base" playlists to multiple themed child playlists based on pre-configured rules, making playlist management effortless and consistent.
 
+**Current Implementation Status:** Core MVP deployed with authentication, playlist management, and manual sync functionality.
+
 ## Target Users
 
 **Primary:** Spotify Premium subscribers who maintain multiple playlists (3+ playlists, add 5+ songs weekly)
@@ -28,11 +31,11 @@ Create a streamlined tool that automatically distributes songs from user's "base
 
 ## Core User Journey
 
-1. User connects Spotify account to PlaylistSync
+1. User connects Spotify account to PlaylistRouter
 2. User creates or designates multiple "base" playlists in Spotify
 3. For each base playlist, user creates child playlists with custom filtering rules
 4. User adds songs to their base playlists (normal Spotify workflow)
-5. PlaylistSync automatically detects new songs and distributes them to matching child playlists
+5. PlaylistRouter automatically detects new songs and distributes them to matching child playlists
 6. All playlists stay synchronized in user's Spotify account
 
 ## Functional Requirements
@@ -56,13 +59,13 @@ Create a streamlined tool that automatically distributes songs from user's "base
 - **COULD:** Artist and song exclusion filters (text input with validation)
 
 ### User Interface
-- **MUST:** Dark theme, modern minimalistic design using Chakra UI
-- **MUST:** Desktop-first, mobile-friendly responsive design
-- **MUST:** Multi-step wizard for child playlist creation on mobile devices
-- **MUST:** Collapsible sections for organizing audio feature filters
-- **MUST:** Dashboard showing all base playlists and their children with sync status
-- **SHOULD:** Visual representation of base playlist and child relationships
-- **SHOULD:** Search functionality for playlists
+- **✅ IMPLEMENTED:** Dark theme, modern minimalistic design using Chakra UI
+- **✅ IMPLEMENTED:** Desktop-first, mobile-friendly responsive design
+- **✅ IMPLEMENTED:** Multi-step wizard for child playlist creation on mobile devices
+- **✅ IMPLEMENTED:** Collapsible sections for organizing audio feature filters
+- **✅ IMPLEMENTED:** Dashboard showing all base playlists and their children with sync status
+- **COULD:** Visual representation of base playlist and child relationships
+- **COULD:** Search functionality for playlists
 - **COULD:** Advanced playlist analytics and visualizations (premium feature)
 
 ### Sync Engine
@@ -74,12 +77,14 @@ Create a streamlined tool that automatically distributes songs from user's "base
 - **SHOULD:** Error handling for failed syncs with retry mechanism
 
 ### Pricing & Limits
-- **MUST:** Free tier: 10 song distributions per month
-- **MUST:** Basic tier ($0.99/month): Unlimited distributions, 2 base playlists, 5 children each
-- **MUST:** Premium tier ($4.99/month): Unlimited distributions and playlists
-- **MUST:** Usage tracking and limit enforcement
-- **MUST:** Upgrade prompts when approaching limits
-- **SHOULD:** Usage analytics for users to track their sync activity
+- **FUTURE:** Free tier: 10 song distributions per month
+- **FUTURE:** Basic tier ($0.99/month): Unlimited distributions, 2 base playlists, 5 children each
+- **FUTURE:** Premium tier ($4.99/month): Unlimited distributions and playlists
+- **FUTURE:** Usage tracking and limit enforcement
+- **FUTURE:** Upgrade prompts when approaching limits
+- **FUTURE:** Usage analytics for users to track their sync activity
+
+**Current Status:** No pricing implemented - free for all users during MVP phase.
 
 **Pricing Research Note:** Most playlist/music organization tools are priced at $1-3/month. The $0.99 Basic tier is competitively positioned, while $4.99 Premium is at the higher end but justified by unlimited features.
 
@@ -240,6 +245,6 @@ Create a streamlined tool that automatically distributes songs from user's "base
 
 ## Conclusion
 
-PlaylistSync addresses playlist management complexity by introducing a multi-base playlist workflow with comprehensive filtering capabilities. The technical architecture balances rapid development with future scalability, while the tiered pricing model ensures sustainable growth among Spotify Premium subscribers. 
+PlaylistRouter addresses playlist management complexity by introducing a multi-base playlist workflow with comprehensive filtering capabilities. The technical architecture balances rapid development with future scalability, while the tiered pricing model ensures sustainable growth among Spotify Premium subscribers. 
 
 Key strategic focus areas include targeting the Premium user segment exclusively, maintaining cost-effective infrastructure through unified deployment, and differentiating from free alternatives through advanced automation features. The phased implementation allows for iterative improvement based on user feedback while building toward a robust, profitable platform serving the most engaged segment of Spotify's user base.

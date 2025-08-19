@@ -11,7 +11,7 @@ func TestNewFilterEngine(t *testing.T) {
 	t.Run("nil filter rules", func(t *testing.T) {
 		playlist := &models.ChildPlaylist{FilterRules: nil}
 		engine := NewFilterEngine(playlist)
-		
+
 		assert.NotNil(t, engine)
 		assert.Empty(t, engine.filters)
 	})
@@ -24,7 +24,7 @@ func TestNewFilterEngine(t *testing.T) {
 			},
 		}
 		engine := NewFilterEngine(playlist)
-		
+
 		assert.NotNil(t, engine)
 		assert.Len(t, engine.filters, 8) // All filter types are created
 	})
@@ -34,7 +34,7 @@ func TestFilterEngine_MatchTrack(t *testing.T) {
 	t.Run("empty filter engine matches all", func(t *testing.T) {
 		engine := &FilterEngine{filters: []Filter{}}
 		track := models.TrackInfo{DurationMs: 180000}
-		
+
 		assert.True(t, engine.MatchTrack(track))
 	})
 
@@ -47,13 +47,13 @@ func TestFilterEngine_MatchTrack(t *testing.T) {
 			},
 		}
 		engine := NewFilterEngine(playlist)
-		
+
 		track := models.TrackInfo{
 			DurationMs: 180000,
 			Popularity: 70,
 			Explicit:   false,
 		}
-		
+
 		assert.True(t, engine.MatchTrack(track))
 	})
 
@@ -65,12 +65,12 @@ func TestFilterEngine_MatchTrack(t *testing.T) {
 			},
 		}
 		engine := NewFilterEngine(playlist)
-		
+
 		track := models.TrackInfo{
 			DurationMs: 180000,
 			Popularity: 50, // Below minimum
 		}
-		
+
 		assert.False(t, engine.MatchTrack(track))
 	})
 
@@ -84,21 +84,21 @@ func TestFilterEngine_MatchTrack(t *testing.T) {
 			},
 		}
 		engine := NewFilterEngine(playlist)
-		
+
 		passingTrack := models.TrackInfo{
 			DurationMs:  200000,
 			AllGenres:   []string{"rock", "alternative"},
 			ReleaseYear: 2010,
 			Explicit:    false,
 		}
-		
+
 		failingTrack := models.TrackInfo{
 			DurationMs:  200000,
 			AllGenres:   []string{"jazz", "blues"}, // No rock/pop
 			ReleaseYear: 2010,
 			Explicit:    false,
 		}
-		
+
 		assert.True(t, engine.MatchTrack(passingTrack))
 		assert.False(t, engine.MatchTrack(failingTrack))
 	})

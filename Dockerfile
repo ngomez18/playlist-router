@@ -8,7 +8,7 @@ WORKDIR /app/web
 COPY web/package*.json ./
 RUN npm ci
 
-# Copy frontend source and build
+# Copy frontend source and build for production
 COPY web/ ./
 RUN npm run build
 
@@ -30,7 +30,7 @@ COPY internal/ ./internal/
 
 # Copy built frontend directly to the embedded location
 RUN mkdir -p internal/static/dist
-COPY --from=frontend-builder /app/web/dist/* ./internal/static/dist/
+COPY --from=frontend-builder /app/web/dist/ ./internal/static/dist/
 
 # Build the Go application
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
@@ -59,15 +59,14 @@ RUN chown appuser:appuser playlist-router && chmod +x playlist-router
 USER appuser
 
 # Set environment variables
-ENV PB_DATA_DIR=/data
-ENV PORT=8090
+ENV PORT=8080
 
-# Expose port
-EXPOSE 8090
+# Expose port (will be overridden by PORT env var)
+EXPOSE $PORT
 
-# Health check
+# Health check (uses localhost since we're inside the container)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8090/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:$PORT/health || exit 1
 
-# Start the application
-CMD ["./playlist-router", "serve", "--http=0.0.0.0:8090", "--publicUrl=http://127.0.0.1:8090"]
+# Start the application using PORT environment variable and data directory
+CMD sh -c "./playlist-router serve --http=0.0.0.0:$PORT --dir=/data"
