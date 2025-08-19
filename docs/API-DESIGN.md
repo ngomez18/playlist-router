@@ -1,199 +1,17 @@
-# PlaylistSync API Specification
+# PlaylistRouter API Specification
 
 ## Overview
 
-This document outlines the complete API design for PlaylistSync, organized by implementation priority and functionality. The API follows RESTful principles and is designed for a PocketBase backend with Go.
+This document outlines the complete API design for PlaylistRouter, organized by current implementation status and future planned functionality. The API follows RESTful principles and is built with Go, PocketBase, and serves a React frontend.
 
-**Base URL:** `https://api.playlistsync.com`  
+**Base URL:** `https://playlist-router.fly.dev`  
 **Authentication:** JWT tokens via PocketBase  
-**Content-Type:** `application/json`
+**Content-Type:** `application/json`  
+**Status:** ✅ Core functionality deployed and operational
 
 ---
 
-## 1. Core CRUD Operations (Phase 1 Priority)
-
-### Base Playlists Management
-
-#### List Base Playlists
-```http
-GET /api/collections/base_playlists/records
-Authorization: Bearer <jwt_token>
-```
-
-**Response:**
-```json
-{
-  "page": 1,
-  "perPage": 30,
-  "totalItems": 5,
-  "totalPages": 1,
-  "items": [
-    {
-      "id": "bp_123456",
-      "user": "user_789",
-      "name": "My Daily Mix",
-      "spotify_playlist_id": "37i9dQZF1E4",
-      "is_active": true,
-      "last_synced": "2025-07-22T10:30:00Z",
-      "sync_status": "success",
-      "created": "2025-07-20T09:00:00Z",
-      "updated": "2025-07-22T10:30:00Z"
-    }
-  ]
-}
-```
-
-#### Get Single Base Playlist
-```http
-GET /api/collections/base_playlists/records/{id}
-Authorization: Bearer <jwt_token>
-```
-
-#### Create Base Playlist
-```http
-POST /api/collections/base_playlists/records
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "name": "My Daily Mix",
-  "spotify_playlist_id": "37i9dQZF1E4",
-  "is_active": true
-}
-```
-
-**Response:**
-```json
-{
-  "id": "bp_123456",
-  "user": "user_789", // Auto-populated from JWT
-  "name": "My Daily Mix",
-  "spotify_playlist_id": "37i9dQZF1E4",
-  "is_active": true,
-  "sync_status": "never_synced",
-  "created": "2025-07-22T11:00:00Z",
-  "updated": "2025-07-22T11:00:00Z"
-}
-```
-
-#### Update Base Playlist
-```http
-PATCH /api/collections/base_playlists/records/{id}
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "name": "Updated Daily Mix",
-  "is_active": false
-}
-```
-
-#### Delete Base Playlist
-```http
-DELETE /api/collections/base_playlists/records/{id}
-Authorization: Bearer <jwt_token>
-```
-
-**Note:** This should cascade delete all associated child playlists.
-
----
-
-### Child Playlists Management
-
-#### List Child Playlists for Base Playlist
-```http
-GET /api/collections/child_playlists/records?filter=base_playlist="{base_playlist_id}"
-Authorization: Bearer <jwt_token>
-```
-
-#### Get Single Child Playlist
-```http
-GET /api/collections/child_playlists/records/{id}
-Authorization: Bearer <jwt_token>
-```
-
-#### Create Child Playlist
-```http
-POST /api/collections/child_playlists/records
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "base_playlist": "bp_123456",
-  "name": "High Energy Tracks",
-  "spotify_playlist_id": "new_playlist_id",
-  "filter_rules": {
-    "audio_features": {
-      "energy": { "min": 0.7, "max": 1.0 },
-      "danceability": { "min": 0.6 }
-    },
-    "metadata": {
-      "year_range": { "min": 2020 }
-    }
-  },
-  "exclusion_rules": {
-    "artists": ["Artist Name to Exclude"],
-    "spotify_artist_ids": ["spotify_artist_id"]
-  },
-  "is_active": true
-}
-```
-
-**Response:**
-```json
-{
-  "id": "cp_789012",
-  "user": "user_789",
-  "base_playlist": "bp_123456",
-  "name": "High Energy Tracks",
-  "spotify_playlist_id": "new_playlist_id",
-  "filter_rules": {
-    "audio_features": {
-      "energy": { "min": 0.7, "max": 1.0 },
-      "danceability": { "min": 0.6 }
-    },
-    "metadata": {
-      "year_range": { "min": 2020 }
-    }
-  },
-  "exclusion_rules": {
-    "artists": ["Artist Name to Exclude"],
-    "spotify_artist_ids": ["spotify_artist_id"]
-  },
-  "is_active": true,
-  "sync_status": "never_synced",
-  "songs_count": 0,
-  "created": "2025-07-22T11:00:00Z",
-  "updated": "2025-07-22T11:00:00Z"
-}
-```
-
-#### Update Child Playlist
-```http
-PATCH /api/collections/child_playlists/records/{id}
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "name": "Updated High Energy",
-  "filter_rules": {
-    "audio_features": {
-      "energy": { "min": 0.8, "max": 1.0 }
-    }
-  },
-  "is_active": false
-}
-```
-
-#### Delete Child Playlist
-```http
-DELETE /api/collections/child_playlists/records/{id}
-Authorization: Bearer <jwt_token>
-```
-
----
-
-## 2. Authentication & User Management (Phase 2 Priority)
+## 1. Authentication (✅ IMPLEMENTED)
 
 ### Spotify OAuth Authentication
 
@@ -203,204 +21,201 @@ GET /auth/spotify/login
 ```
 
 **Response:** Redirects to Spotify OAuth authorization URL with required scopes:
-- `user-read-email`
-- `playlist-read-private` 
-- `playlist-modify-public`
-- `playlist-modify-private`
+- `user-read-email` - Read user profile
+- `playlist-read-private` - Read private playlists
+- `playlist-modify-public` - Modify public playlists
+- `playlist-modify-private` - Modify private playlists
 
 #### Spotify OAuth Callback
 ```http
 GET /auth/spotify/callback?code=<auth_code>&state=<state>
 ```
 
+**Response:** Redirects to frontend with authentication success/failure
+
+#### Validate Token
+```http
+GET /auth/validate
+Authorization: Bearer <jwt_token>
+```
+
 **Response:**
 ```json
 {
+  "valid": true,
   "user": {
-    "id": "user_789",
-    "email": "user@example.com", 
-    "name": "John Doe",
-    "spotify_id": "spotify_user_123"
+    "id": "user_123",
+    "email": "user@example.com"
+  }
+}
+```
+
+---
+
+## 2. Base Playlist Management (✅ IMPLEMENTED)
+
+### List User's Base Playlists
+```http
+GET /api/base_playlist
+Authorization: Bearer <jwt_token>
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "bp_123456",
+    "user_id": "user_789",
+    "name": "My Daily Mix",
+    "spotify_playlist_id": "37i9dQZF1E4",
+    "is_active": true,
+    "created": "2025-08-20T09:00:00Z",
+    "updated": "2025-08-20T10:30:00Z"
+  }
+]
+```
+
+### Get Single Base Playlist
+```http
+GET /api/base_playlist/{id}
+Authorization: Bearer <jwt_token>
+```
+
+### Create Base Playlist
+```http
+POST /api/base_playlist
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "name": "My Daily Mix",
+  "spotify_playlist_id": "37i9dQZF1E4"
+}
+```
+
+**Response:**
+```json
+{
+  "id": "bp_123456",
+  "user_id": "user_789",
+  "name": "My Daily Mix", 
+  "spotify_playlist_id": "37i9dQZF1E4",
+  "is_active": true,
+  "created": "2025-08-20T11:00:00Z",
+  "updated": "2025-08-20T11:00:00Z"
+}
+```
+
+### Delete Base Playlist
+```http
+DELETE /api/base_playlist/{id}
+Authorization: Bearer <jwt_token>
+```
+
+**Note:** Cascade deletes all associated child playlists from both database and Spotify.
+
+## 3. Child Playlist Management (✅ IMPLEMENTED)
+
+### List Child Playlists for Base Playlist
+```http
+GET /api/base_playlist/{basePlaylistID}/child_playlist
+Authorization: Bearer <jwt_token>
+```
+
+### Get Single Child Playlist
+```http
+GET /api/child_playlist/{id}
+Authorization: Bearer <jwt_token>
+```
+
+### Create Child Playlist
+```http
+POST /api/base_playlist/{basePlaylistID}/child_playlist
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "name": "High Energy Tracks",
+  "description": "Songs with high energy for workouts",
+  "filter_rules": {
+    "energy": { "min": 0.7, "max": 1.0 },
+    "danceability": { "min": 0.6 },
+    "tempo": { "min": 120, "max": 180 }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "id": "cp_789012", 
+  "user_id": "user_789",
+  "base_playlist_id": "bp_123456",
+  "name": "High Energy Tracks",
+  "description": "Songs with high energy for workouts",
+  "spotify_playlist_id": "3cEYpjA9oz9GiPac4AsH4n",
+  "filter_rules": {
+    "energy": { "min": 0.7, "max": 1.0 },
+    "danceability": { "min": 0.6 },
+    "tempo": { "min": 120, "max": 180 }
   },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refresh_token": ""
+  "is_active": true,
+  "created": "2025-08-20T11:00:00Z",
+  "updated": "2025-08-20T11:00:00Z"
 }
 ```
 
-#### Refresh Token
+### Update Child Playlist
 ```http
-POST /api/collections/users/auth-refresh
-Authorization: Bearer <jwt_token>
-```
-
-#### User Profile
-```http
-GET /api/collections/users/records/{id}
-Authorization: Bearer <jwt_token>
-```
-
----
-
-### Spotify Integration Management
-
-#### Get User's Spotify Integration
-```http
-GET /api/collections/spotify_integrations/records?filter=user="{user_id}"
-Authorization: Bearer <jwt_token>
-```
-
-**Response:**
-```json
-{
-  "page": 1,
-  "perPage": 30,
-  "totalItems": 1,
-  "totalPages": 1,
-  "items": [
-    {
-      "id": "si_123456",
-      "user": "user_789",
-      "spotify_id": "spotify_user_123",
-      "display_name": "John Doe",
-      "token_type": "Bearer",
-      "expires_at": "2025-07-22T12:00:00Z",
-      "scope": "user-read-email playlist-read-private playlist-modify-public playlist-modify-private",
-      "is_active": true,
-      "created": "2025-07-20T09:00:00Z",
-      "updated": "2025-07-22T10:00:00Z"
-    }
-  ]
-}
-```
-
-**Note:** `access_token` and `refresh_token` are never exposed in API responses for security.
-
-#### Update Spotify Integration Tokens
-```http
-PATCH /api/collections/spotify_integrations/records/{id}
+PUT /api/child_playlist/{id}
 Authorization: Bearer <jwt_token>
 Content-Type: application/json
 
 {
-  "access_token": "new_encrypted_token",
-  "expires_at": "2025-07-22T13:00:00Z"
-}
-```
-
-#### Delete Spotify Integration
-```http
-DELETE /api/collections/spotify_integrations/records/{id}
-Authorization: Bearer <jwt_token>
-```
-
----
-
-## 3. Sync Operations (Phase 2 Priority)
-
-### Manual Sync Triggers
-
-#### Trigger Full Sync
-```http
-POST /api/sync/trigger
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "type": "full"
-}
-```
-
-#### Trigger Base Playlist Sync
-```http
-POST /api/sync/trigger
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "type": "base_playlist",
-  "base_playlist_id": "bp_123456"
-}
-```
-
-#### Trigger Single Child Playlist Sync
-```http
-POST /api/sync/trigger
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "type": "child_playlist",
-  "child_playlist_id": "cp_789012"
-}
-```
-
-**Response:**
-```json
-{
-  "sync_id": "sync_345678",
-  "status": "queued",
-  "message": "Sync operation queued successfully",
-  "estimated_completion": "2025-07-22T11:05:00Z"
-}
-```
-
-### Sync Status & History
-
-#### Get Current Sync Status
-```http
-GET /api/sync/status
-Authorization: Bearer <jwt_token>
-```
-
-**Response:**
-```json
-{
-  "current_sync": {
-    "sync_id": "sync_345678",
-    "status": "in_progress",
-    "started_at": "2025-07-22T11:00:00Z",
-    "progress": {
-      "processed": 15,
-      "total": 50,
-      "current_playlist": "High Energy Tracks"
-    }
+  "name": "Updated High Energy",
+  "description": "Updated description",
+  "filter_rules": {
+    "energy": { "min": 0.8, "max": 1.0 }
   },
-  "last_full_sync": "2025-07-22T10:30:00Z",
-  "next_auto_sync": "2025-07-22T11:15:00Z"
+  "is_active": false
 }
 ```
 
-#### Get Sync History
+### Delete Child Playlist
 ```http
-GET /api/sync/history?limit=10
+DELETE /api/child_playlist/{id}
+Authorization: Bearer <jwt_token>
+```
+
+**Note:** Deletes both from database and Spotify.
+
+## 4. Sync Operations (✅ IMPLEMENTED)
+
+### Trigger Base Playlist Sync
+```http
+POST /api/base_playlist/{basePlaylistID}/sync
 Authorization: Bearer <jwt_token>
 ```
 
 **Response:**
 ```json
 {
-  "syncs": [
-    {
-      "sync_id": "sync_345678",
-      "type": "full",
-      "status": "completed",
-      "started_at": "2025-07-22T10:30:00Z",
-      "completed_at": "2025-07-22T10:32:00Z",
-      "songs_processed": 47,
-      "songs_distributed": 38,
-      "errors": 0
-    }
-  ]
+  "id": "sync_345678",
+  "user_id": "user_789",
+  "base_playlist_id": "bp_123456", 
+  "child_playlist_ids": ["cp_789012", "cp_789013"],
+  "status": "in_progress",
+  "started_at": "2025-08-20T11:00:00Z",
+  "tracks_processed": 0,
+  "total_api_requests": 0,
+  "created": "2025-08-20T11:00:00Z",
+  "updated": "2025-08-20T11:00:00Z"
 }
 ```
 
----
+## 5. Spotify Integration (✅ IMPLEMENTED)
 
-## 4. Spotify Integration (Phase 2 Priority)
-
-### Spotify Data Endpoints
-
-#### Get User's Spotify Playlists
+### Get User's Spotify Playlists
 ```http
 GET /api/spotify/playlists
 Authorization: Bearer <jwt_token>
@@ -412,21 +227,106 @@ Authorization: Bearer <jwt_token>
   "playlists": [
     {
       "id": "37i9dQZF1E4",
-      "name": "Daily Mix 1",
-      "tracks_total": 50,
+      "name": "Daily Mix 1", 
+      "tracks": {
+        "total": 50
+      },
       "public": false,
       "collaborative": false,
-      "owner": "spotify_user_123"
+      "owner": {
+        "id": "spotify_user_123"
+      },
+      "images": [
+        {
+          "url": "https://i.scdn.co/image/ab67616d0000b273...",
+          "height": 640,
+          "width": 640
+        }
+      ]
     }
   ]
 }
 ```
 
-#### Get Playlist Tracks
+---
+
+## 6. Health Check (✅ IMPLEMENTED)
+
+### Health Check Endpoint
 ```http
-GET /api/spotify/playlists/{playlist_id}/tracks
+GET /health
+```
+
+**Response:**
+```
+OK
+```
+
+## 7. Filter Types Reference
+
+### Audio Feature Filters
+All audio features support range filtering with optional min/max values:
+
+```typescript
+interface AudioFeatureFilters {
+  energy?: RangeFilter;        // 0.0 - 1.0
+  danceability?: RangeFilter;  // 0.0 - 1.0
+  valence?: RangeFilter;       // 0.0 - 1.0 (happiness)
+  tempo?: RangeFilter;         // BPM (typically 50-200)
+  acousticness?: RangeFilter;  // 0.0 - 1.0
+  instrumentalness?: RangeFilter; // 0.0 - 1.0
+  liveness?: RangeFilter;      // 0.0 - 1.0
+  speechiness?: RangeFilter;   // 0.0 - 1.0
+  loudness?: RangeFilter;      // dB (typically -60 to 0)
+  key?: SetFilter;             // 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+  mode?: SetFilter;            // 0 (minor) or 1 (major)
+  time_signature?: SetFilter;  // 3, 4, 5, 6, 7
+}
+
+interface RangeFilter {
+  min?: number;
+  max?: number;
+}
+
+interface SetFilter {
+  values: (string | number)[];
+}
+```
+
+## 8. Future Planned Features (🔮 NOT YET IMPLEMENTED)
+
+### Advanced Sync Operations
+
+#### Trigger Full Sync (All Base Playlists)
+```http
+POST /api/sync/trigger
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "type": "full"
+}
+```
+
+#### Get Sync History
+```http
+GET /api/sync/history?limit=10
 Authorization: Bearer <jwt_token>
 ```
+
+#### Automated Sync Configuration
+```http
+POST /api/sync/schedule
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "interval": "15m",  // 15 minutes
+  "enabled": true
+}
+```
+
+### Advanced Spotify Integration
 
 #### Get Track Audio Features
 ```http
@@ -434,51 +334,29 @@ GET /api/spotify/tracks/{track_id}/audio-features
 Authorization: Bearer <jwt_token>
 ```
 
-**Response:**
+#### Advanced Filtering Support
 ```json
 {
-  "danceability": 0.735,
-  "energy": 0.578,
-  "key": 5,
-  "loudness": -11.84,
-  "mode": 0,
-  "speechiness": 0.0461,
-  "acousticness": 0.514,
-  "instrumentalness": 0.0902,
-  "liveness": 0.159,
-  "valence": 0.624,
-  "tempo": 98.002,
-  "duration_ms": 255349,
-  "time_signature": 4
+  "filter_rules": {
+    "energy": { "min": 0.7, "max": 1.0 },
+    "genres": ["rock", "indie"],
+    "release_year": { "min": 2020, "max": 2025 },
+    "popularity": { "min": 50 },
+    "artist_exclusions": ["Artist Name"],
+    "track_exclusions": ["Track Name"]
+  }
 }
 ```
 
-#### Create Spotify Playlist
+### Subscription Management (Planned)
+
+#### Get Current Subscription Status
 ```http
-POST /api/spotify/playlists
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "name": "High Energy Tracks",
-  "description": "Auto-generated by PlaylistSync",
-  "public": false
-}
-```
-
----
-
-## 5. Subscription Management (Phase 3 Priority)
-
-### Subscription Endpoints
-
-#### Get Current Subscription
-```http
-GET /api/collections/subscriptions/records?filter=user="{user_id}"&filter=status="active"
+GET /api/subscription/current
 Authorization: Bearer <jwt_token>
 ```
 
-#### Get Usage Stats
+#### Get Usage Statistics
 ```http
 GET /api/usage/current
 Authorization: Bearer <jwt_token>
@@ -488,176 +366,108 @@ Authorization: Bearer <jwt_token>
 ```json
 {
   "current_tier": "free",
-  "current_period": {
-    "start": "2025-07-01T00:00:00Z",
-    "end": "2025-07-31T23:59:59Z"
-  },
   "usage": {
     "syncs_this_month": 7,
     "sync_limit": 10,
-    "base_playlists_count": 0,
-    "base_playlists_limit": 0,
-    "child_playlists_count": 0
+    "base_playlists_count": 2,
+    "base_playlists_limit": 0
   },
   "limits_by_tier": {
-    "free": { "monthly_syncs": 10, "base_playlists": 0, "child_playlists": 0 },
-    "basic": { "monthly_syncs": "unlimited", "base_playlists": 2, "child_playlists_per_base": 5 },
-    "premium": { "monthly_syncs": "unlimited", "base_playlists": "unlimited", "child_playlists_per_base": "unlimited" }
+    "free": { "monthly_syncs": 10, "base_playlists": 0 },
+    "basic": { "monthly_syncs": "unlimited", "base_playlists": 2 },
+    "premium": { "monthly_syncs": "unlimited", "base_playlists": "unlimited" }
   }
 }
 ```
 
-### Stripe Integration (Webhook Endpoints)
+### Analytics & Insights (Planned)
 
-#### Stripe Webhook Handler
-```http
-POST /api/webhooks/stripe
-Content-Type: application/json
-Stripe-Signature: <webhook_signature>
-
-{
-  "type": "customer.subscription.created",
-  "data": {
-    "object": {
-      "id": "sub_1234567890",
-      "customer": "cus_1234567890",
-      "status": "active",
-      "current_period_start": 1690000000,
-      "current_period_end": 1692678400
-    }
-  }
-}
-```
-
----
-
-## 6. Analytics & Metrics (Phase 4 Priority)
-
-### User Analytics
-
-#### Get Dashboard Stats
+#### Dashboard Analytics
 ```http
 GET /api/analytics/dashboard
 Authorization: Bearer <jwt_token>
 ```
 
-**Response:**
-```json
-{
-  "overview": {
-    "total_base_playlists": 3,
-    "total_child_playlists": 8,
-    "total_songs_distributed": 247,
-    "last_sync": "2025-07-22T10:30:00Z"
-  },
-  "sync_activity": {
-    "syncs_this_week": 12,
-    "syncs_this_month": 45,
-    "average_songs_per_sync": 15.2
-  },
-  "playlist_performance": [
-    {
-      "child_playlist_name": "High Energy Tracks",
-      "songs_added_this_week": 8,
-      "total_songs": 42
-    }
-  ]
-}
-```
-
-#### Get Detailed Analytics
+#### Playlist Performance Metrics
 ```http
-GET /api/analytics/detailed?period=30d
+GET /api/analytics/playlist/{id}/stats
 Authorization: Bearer <jwt_token>
 ```
 
----
-
-## Error Handling
+## 9. Error Handling
 
 ### Standard Error Response Format
 ```json
 {
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "The provided playlist ID is invalid",
-    "details": {
-      "field": "spotify_playlist_id",
-      "value": "invalid_id"
-    },
-    "timestamp": "2025-07-22T11:00:00Z"
-  }
+  "error": "Error message description",
+  "details": "Additional error details if available"
 }
 ```
 
-### Common Error Codes
-- `VALIDATION_ERROR` (400) - Invalid input data
-- `UNAUTHORIZED` (401) - Missing or invalid authentication
-- `FORBIDDEN` (403) - Insufficient permissions or tier limits
-- `NOT_FOUND` (404) - Resource doesn't exist
-- `RATE_LIMIT_EXCEEDED` (429) - Too many requests
-- `SPOTIFY_API_ERROR` (502) - Spotify integration issues
-- `SYNC_IN_PROGRESS` (409) - Another sync operation is running
+### Common HTTP Status Codes
+- `200` - Success
+- `400` - Bad Request (validation errors)
+- `401` - Unauthorized (invalid/missing auth token)
+- `403` - Forbidden (insufficient permissions)
+- `404` - Not Found (resource doesn't exist)
+- `500` - Internal Server Error
 
----
+## 10. Implementation Status
 
-## Implementation Priority
+### ✅ Completed Features (Deployed)
+- **Authentication**: Spotify OAuth flow with JWT tokens
+- **User Management**: User creation and management with PocketBase
+- **Base Playlists**: Full CRUD operations (create, read, delete)
+- **Child Playlists**: Full CRUD operations with audio feature filtering
+- **Manual Sync**: Trigger sync operations for base playlists
+- **Spotify Integration**: List user playlists, create/delete playlists
+- **Frontend**: React app with Chakra UI served as static assets
+- **Deployment**: Production deployment on fly.io with persistent database
+- **Health Monitoring**: Health check endpoint for monitoring
 
-### Phase 1: Core CRUD ✅ COMPLETED
-- ✅ Base playlist CRUD operations (Create, Read, Delete)
-- ✅ Framework-agnostic HTTP abstraction
-- ✅ Comprehensive unit and integration tests
-- ✅ PocketBase collection setup and repository pattern
-- ⏳ Child playlist CRUD operations (TODO)
+### 🔮 Future Features (Planned)
+- **Advanced Filtering**: Genres, release years, popularity, artist/track exclusions
+- **Automated Sync**: Scheduled automatic sync operations
+- **Sync History**: Detailed sync operation tracking and history
+- **Usage Analytics**: Dashboard with playlist performance metrics
+- **Subscription Tiers**: Free/Basic/Premium with usage limits
+- **Billing Integration**: Stripe integration for subscription management
+- **Advanced Spotify Features**: Track audio features endpoint, batch operations
+- **Performance Optimizations**: Caching, pagination, rate limiting
+- **Mobile Optimizations**: Enhanced mobile experience
+- **Social Features**: Playlist sharing and templates
 
-### Phase 2: Authentication & Integration ⏳ IN PROGRESS  
-- ✅ Spotify OAuth flow (login/callback handlers)
-- ✅ User and SpotifyIntegration models
-- ✅ SpotifyClient with HTTP mocking
-- ⏳ JWT authentication middleware (TODO)
-- ⏳ Complete createOrUpdateUser implementation (TODO)
-- ⏳ Spotify API integration endpoints (TODO)
-
-### Phase 3: Sync Operations (TODO)
-- Manual sync triggers
-- Automated sync operations  
-- Sync status and history
-- Background processing
-
-### Phase 4: Business Logic (TODO)
-- Subscription management
-- Usage tracking and limits
-- Stripe webhook integration
-- Tier enforcement
-
-### Phase 5: Analytics & Polish (TODO)
-- User analytics endpoints
-- Performance monitoring
-- Advanced error handling
-- Rate limiting implementation
+### 🚧 Known Limitations (Current MVP)
+- **Manual Sync Only**: No automated sync scheduling
+- **Basic Filtering**: Only audio features supported (no genres, years, etc.)
+- **No Usage Tracking**: Unlimited usage during MVP phase
+- **Limited Analytics**: No detailed performance metrics
+- **Basic Error Handling**: Simple error responses
+- **No Batch Operations**: Single playlist operations only
 
 ---
 
 ## Development Notes
 
-### PocketBase Integration
-- Leverage PocketBase's built-in CRUD operations for basic endpoints
-- Use PocketBase relations for foreign keys (users ↔ spotify_integrations, base_playlists)
-- Implement custom authentication handlers for Spotify OAuth flow
-- Use repository pattern with PocketBase as the data layer
-- PocketBase automatically handles field encryption for sensitive token data
+### Current Architecture
+- **Single Go Binary**: Serves both API and React frontend
+- **PocketBase Backend**: SQLite database with built-in auth and CRUD
+- **Spotify Web API**: Direct integration for playlist operations
+- **JWT Authentication**: Token-based auth with automatic refresh
+- **Docker Deployment**: Multi-stage build deployed on fly.io
 
-### Security Considerations
-- All endpoints require JWT authentication except Spotify OAuth flow
-- Implement user isolation through PocketBase access rules  
-- PocketBase automatically encrypts sensitive fields (tokens)
-- One-to-one user/Spotify account relationship prevents conflicts
-- Validate Spotify playlist ownership before operations
-- Rate limit per-user API calls
+### Security
+- All API endpoints except health check require authentication
+- User isolation enforced through middleware and database relations
+- Spotify tokens securely stored and auto-refreshed
+- CORS configured for production domain only
+- HTTPS enforced with automatic redirects
 
-### Performance Optimizations
-- Implement pagination for all list endpoints (default 30 items)
-- Cache Spotify API responses where appropriate
-- Use database indexes for frequent query patterns
-- Batch operations for sync processes
-- Implement request queuing for sync operations
+### Performance
+- Endpoints typically respond in < 500ms
+- Spotify API rate limits respected (100 requests/minute)
+- Database queries optimized with proper indexing
+- Frontend assets served from embedded storage
+- Health checks for monitoring and reliability
+
+This API serves as the foundation for the PlaylistRouter MVP and will be extended with additional features in future releases based on user feedback and usage patterns.

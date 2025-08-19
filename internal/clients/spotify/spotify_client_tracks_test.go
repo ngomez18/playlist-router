@@ -476,7 +476,7 @@ func TestSpotifyClient_AddTracksToPlaylist_Errors(t *testing.T) {
 			expectedError:  "spotify add tracks failed (status 404)",
 		},
 		{
-			name:      "http client error",
+			name:       "http client error",
 			playlistID: "playlist123",
 			trackURIs: []string{
 				"spotify:track:track1",
@@ -486,7 +486,7 @@ func TestSpotifyClient_AddTracksToPlaylist_Errors(t *testing.T) {
 			expectedError: "failed to add tracks to playlist",
 		},
 		{
-			name:      "missing access token",
+			name:       "missing access token",
 			playlistID: "playlist123",
 			trackURIs: []string{
 				"spotify:track:track1",

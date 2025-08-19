@@ -15,7 +15,7 @@ export function Navbar({ user, onLogout, onNavigateHome }: NavbarProps) {
           className="btn btn-ghost text-2xl font-bold"
           onClick={onNavigateHome}
         >
-          PlaylistSync
+          PlaylistRouter
         </button>
       </div>
       <div className="flex-none gap-2">

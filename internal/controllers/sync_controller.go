@@ -39,7 +39,7 @@ func (c *SyncController) SyncBasePlaylist(w http.ResponseWriter, r *http.Request
 			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}
-		
+
 		http.Error(w, "failed to sync base playlist: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

@@ -134,38 +134,38 @@ func (taService *TrackAggregatorService) getAllPlaylistArtists(ctx context.Conte
 func (taService *TrackAggregatorService) preprocessTracksForFiltering(playlistData *models.PlaylistTracksInfo) {
 	for i := range playlistData.Tracks {
 		track := &playlistData.Tracks[i]
-		
+
 		// Extract release year from album release date
 		track.ReleaseYear = taService.parseReleaseYear(track.Album.ReleaseDate)
-		
+
 		// Collect all genres from track's artists
 		genreSet := make(map[string]bool)
 		maxArtistPop := 0
 		artistNames := make([]string, 0, len(track.Artists))
-		
+
 		for _, artistID := range track.Artists {
 			if artist, exists := playlistData.Artists[artistID]; exists {
 				// Collect normalized genres
 				for _, genre := range artist.Genres {
 					genreSet[strings.ToLower(genre)] = true
 				}
-				
+
 				// Track max artist popularity
 				if artist.Popularity > maxArtistPop {
 					maxArtistPop = artist.Popularity
 				}
-				
+
 				// Collect artist names
 				artistNames = append(artistNames, artist.Name)
 			}
 		}
-		
+
 		// Convert genre set to slice
 		track.AllGenres = make([]string, 0, len(genreSet))
 		for genre := range genreSet {
 			track.AllGenres = append(track.AllGenres, genre)
 		}
-		
+
 		track.MaxArtistPop = maxArtistPop
 		track.ArtistNames = artistNames
 	}
@@ -175,13 +175,13 @@ func (taService *TrackAggregatorService) parseReleaseYear(releaseDate string) in
 	if releaseDate == "" {
 		return 0
 	}
-	
+
 	if len(releaseDate) >= 4 {
 		yearStr := releaseDate[:4]
 		if year, err := strconv.Atoi(yearStr); err == nil {
 			return year
 		}
 	}
-	
+
 	return 0
 }

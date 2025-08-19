@@ -8,7 +8,7 @@ export function LoginForm({ loginUrl }: LoginFormProps) {
   return (
     <div className="min-h-screen bg-base-100 flex items-center justify-center">
       <div className="text-center max-w-md">
-        <h1 className="text-5xl font-bold mb-6">PlaylistSync</h1>
+        <h1 className="text-5xl font-bold mb-6">PlaylistRouter</h1>
         <p className="text-lg mb-8">
           Automatically distribute songs from a base playlist to multiple themed
           child playlists based on configured rules.

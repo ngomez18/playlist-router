@@ -66,3 +66,17 @@ export interface UpdateChildPlaylistRequest {
   filter_rules?: MetadataFilters
   is_active?: boolean
 }
+
+// Sync Event Types
+export interface SyncEvent {
+  id: string
+  user_id: string
+  base_playlist_id: string
+  child_playlist_ids?: string[]
+  status: 'in_progress' | 'completed' | 'failed'
+  tracks_processed?: number
+  total_api_requests?: number
+  started_at: string
+  completed_at?: string
+  error_message?: string
+}

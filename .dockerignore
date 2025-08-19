@@ -1,0 +1,48 @@
+# Git and documentation
+.git
+.gitignore
+README.md
+docs/
+CLAUDE.md
+
+# Build artifacts
+playlist-router
+tmp/
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files (secrets should not be in image)
+.env
+.env.local
+.env.production
+
+# Node.js (will be copied in specific stage)
+web/node_modules/
+web/dist/
+web/.next/
+web/.env
+
+# Go build cache
+.cache/
+vendor/
+
+# Test files
+*_test.go
+**/*_test.go
+
+# Development tools
+air
+.air.toml
+
+# Fly.io
+fly.toml

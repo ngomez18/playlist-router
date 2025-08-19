@@ -1,23 +1,30 @@
-# PlaylistSync Database Schema - PocketBase Collections
+# PlaylistRouter Database Schema - PocketBase Collections
 
 ## Overview
 
-This document defines the complete database schema for PlaylistSync using PocketBase collections. The design leverages PocketBase's built-in features while maintaining clean separation of concerns across authentication, billing, integrations, and playlist management.
+This document defines the complete database schema for PlaylistRouter using PocketBase collections. The design leverages PocketBase's built-in features while maintaining clean separation of concerns across authentication, integrations, and playlist management.
+
+**Current Implementation Status:** Core collections implemented and deployed. Subscription/billing collections planned for future releases.
 
 ## Collection Architecture
 
+**✅ Implemented Collections:**
 ```
 ┌─────────────────┐
 │ users (built-in)│
 └─────────┬───────┘
           │
-          ├── subscriptions (1:many)
-          ├── spotify_integrations (1:1)
-          ├── base_playlists (1:many)
-          └── child_playlists (1:many)
+          ├── spotify_integrations (1:1) ✅
+          ├── base_playlists (1:many) ✅
+          ├── child_playlists (1:many) ✅
+          └── sync_events (1:many) ✅
                     │
                     └── base_playlists (many:1)
 ```
+
+**🔮 Future Collections:**
+- subscriptions (billing/usage tracking)
+- usage_logs (detailed analytics)
 
 ---
 
@@ -55,10 +62,11 @@ deleteRule: "id = @request.auth.id"
 
 ---
 
-## 2. Subscriptions Collection
+## 2. Subscriptions Collection (FUTURE)
 
 **Collection Name:** `subscriptions`  
-**Purpose:** Manage user subscription tiers and billing integration with Stripe
+**Purpose:** Manage user subscription tiers and billing integration with Stripe  
+**Status:** 🔮 Planned for future release
 
 ### Schema
 ```typescript
@@ -106,10 +114,58 @@ deleteRule: ""    // Backend only
 
 ---
 
-## 3. Spotify Integrations Collection
+## 3. Sync Events Collection (IMPLEMENTED)
+
+**Collection Name:** `sync_events`  
+**Purpose:** Track sync operations and their results for auditing and debugging  
+**Status:** ✅ Implemented and deployed
+
+### Schema
+```typescript
+interface SyncEvent {
+  id: string;                    // Auto-generated UUID
+  user_id: string;               // Relation to users.id (required)
+  base_playlist_id: string;      // Relation to base_playlists.id (required)
+  child_playlist_ids?: string[]; // JSON array of affected child playlist IDs
+  status: 'in_progress' | 'completed' | 'failed'; // Required
+  started_at: Date;              // Required
+  completed_at?: Date;           // Completion timestamp
+  error_message?: string;        // Error details if failed
+  tracks_processed: number;      // Number of tracks processed
+  total_api_requests: number;    // API calls made during sync
+  created: Date;                 // Auto-generated
+  updated: Date;                 // Auto-updated
+}
+```
+
+### Field Validations
+- `status`: Must be one of the defined enum values
+- `started_at`: Required timestamp
+- `tracks_processed`: Default 0
+- `total_api_requests`: Default 0
+
+### Access Rules
+```javascript
+listRule: "user_id = @request.auth.id"
+viewRule: "user_id = @request.auth.id"
+createRule: ""    // Backend only
+updateRule: ""    // Backend only
+deleteRule: ""    // Backend only
+```
+
+### Indexes
+- `user_id` (for user sync history lookup)
+- `base_playlist_id` (for playlist sync history)
+- `status` (for monitoring sync operations)
+- `started_at` (for chronological ordering)
+
+---
+
+## 4. Spotify Integrations Collection (IMPLEMENTED)
 
 **Collection Name:** `spotify_integrations`  
-**Purpose:** Store Spotify OAuth tokens and user linking (one-to-one relationship with users)
+**Purpose:** Store Spotify OAuth tokens and user linking (one-to-one relationship with users)  
+**Status:** ✅ Implemented and deployed
 
 ### Schema
 ```typescript
@@ -160,30 +216,32 @@ deleteRule: "user = @request.auth.id"
 
 ---
 
-## 4. Base Playlists Collection
+## 5. Base Playlists Collection (IMPLEMENTED)
 
 **Collection Name:** `base_playlists`  
-**Purpose:** Track user's primary playlists that serve as sources for distribution
+**Purpose:** Track user's primary playlists that serve as sources for distribution  
+**Status:** ✅ Implemented and deployed
 
 ### Schema
 ```typescript
 interface BasePlaylist {
   id: string;                  // Auto-generated UUID
-  user: string;                // Relation to users.id (required)
+  user_id: string;             // Relation to users.id (required)
   
   // Playlist Details
   name: string;                // User-friendly name (required)
   spotify_playlist_id: string; // Spotify playlist ID (required)
   
-  // Status & Sync
+  // Status
   is_active: boolean;          // Default: true
-  last_synced?: Date;          // Last successful sync timestamp
-  sync_status: 'never_synced' | 'syncing' | 'success' | 'error'; // Default: never_synced
   
   // Timestamps
   created: Date;               // Auto-generated
   updated: Date;               // Auto-updated
 }
+```
+
+**Note:** Sync status is now tracked in the separate `sync_events` collection for better auditing.
 ```
 
 ### Field Validations
@@ -192,123 +250,114 @@ interface BasePlaylist {
 
 ### Access Rules
 ```javascript
-listRule: "user = @request.auth.id"
-viewRule: "user = @request.auth.id"
-createRule: "user = @request.auth.id"
-updateRule: "user = @request.auth.id"
-deleteRule: "user = @request.auth.id"
+listRule: "user_id = @request.auth.id"
+viewRule: "user_id = @request.auth.id"
+createRule: "user_id = @request.auth.id"
+updateRule: "user_id = @request.auth.id"
+deleteRule: "user_id = @request.auth.id"
 ```
 
 ### Indexes
-- `user` (for user playlist lookup)
-- `user + spotify_playlist_id` (unique combination)
+- `user_id` (for user playlist lookup)
+- `user_id + spotify_playlist_id` (unique combination)
 - `is_active` (for active playlists)
-- `sync_status` (for sync operations)
 
 ---
 
-## 5. Child Playlists Collection
+## 6. Child Playlists Collection (IMPLEMENTED)
 
 **Collection Name:** `child_playlists`  
-**Purpose:** Store filtered playlists with rules for automatic song distribution
+**Purpose:** Store filtered playlists with rules for automatic song distribution  
+**Status:** ✅ Implemented and deployed
 
 ### Schema
 ```typescript
 interface ChildPlaylist {
   id: string;                  // Auto-generated UUID
-  user: string;                // Relation to users.id (required)
-  base_playlist: string;       // Relation to base_playlists.id (required)
+  user_id: string;             // Relation to users.id (required)
+  base_playlist_id: string;    // Relation to base_playlists.id (required)
   
   // Playlist Details
   name: string;                // User-friendly name (required)
+  description?: string;        // Optional description
   spotify_playlist_id: string; // Spotify playlist ID (required)
   
   // Filtering Rules
-  filter_rules: FilterRules;   // JSON object with comprehensive filtering
-  exclusion_rules: ExclusionRules; // JSON object for artist/song exclusions
+  filter_rules?: AudioFeatureFilters; // JSON object with audio feature filtering
   
-  // Status & Sync
+  // Status
   is_active: boolean;          // Default: true
-  last_synced?: Date;          // Last successful sync timestamp
-  sync_status: 'never_synced' | 'syncing' | 'success' | 'error'; // Default: never_synced
-  songs_count: number;         // Current number of songs, default: 0
   
   // Timestamps
   created: Date;               // Auto-generated
   updated: Date;               // Auto-updated
 }
 
-// Supporting Types
-interface FilterRules {
-  audio_features?: {
-    energy?: { min?: number; max?: number };
-    danceability?: { min?: number; max?: number };
-    valence?: { min?: number; max?: number };
-    tempo?: { min?: number; max?: number };
-    acousticness?: { min?: number; max?: number };
-    instrumentalness?: { min?: number; max?: number };
-    liveness?: { min?: number; max?: number };
-    speechiness?: { min?: number; max?: number };
-    loudness?: { min?: number; max?: number };
-    key?: number[];
-    mode?: (0 | 1)[];
-    time_signature?: number[];
-  };
-  metadata?: {
-    genres?: string[];
-    year_range?: { min?: number; max?: number };
-    popularity?: { min?: number; max?: number };
-    duration_ms?: { min?: number; max?: number };
-  };
+// Supporting Types (matches current implementation)
+interface AudioFeatureFilters {
+  energy?: RangeFilter;
+  danceability?: RangeFilter;
+  valence?: RangeFilter;
+  tempo?: RangeFilter;
+  acousticness?: RangeFilter;
+  instrumentalness?: RangeFilter;
+  liveness?: RangeFilter;
+  speechiness?: RangeFilter;
+  loudness?: RangeFilter;
+  key?: SetFilter;
+  mode?: SetFilter;
+  time_signature?: SetFilter;
 }
 
-interface ExclusionRules {
-  artists?: string[];          // Artist names to exclude
-  songs?: string[];            // Song titles to exclude
-  spotify_artist_ids?: string[]; // Spotify artist IDs to exclude
-  spotify_track_ids?: string[];  // Spotify track IDs to exclude
+interface RangeFilter {
+  min?: number;
+  max?: number;
+}
+
+interface SetFilter {
+  values: (string | number)[];
 }
 ```
 
 ### Field Validations
 - `spotify_playlist_id`: Unique per user
 - `name`: 1-100 characters
-- `filter_rules`: Valid JSON conforming to FilterRules interface
-- `base_playlist.user` must equal `user` (enforced via access rules)
+- `filter_rules`: Valid JSON conforming to AudioFeatureFilters interface
+- `base_playlist_id.user_id` must equal `user_id` (enforced via access rules)
 
 ### Access Rules
 ```javascript
-listRule: "user = @request.auth.id"
-viewRule: "user = @request.auth.id"
-createRule: "user = @request.auth.id && base_playlist.user = @request.auth.id"
-updateRule: "user = @request.auth.id"
-deleteRule: "user = @request.auth.id"
+listRule: "user_id = @request.auth.id"
+viewRule: "user_id = @request.auth.id"
+createRule: "user_id = @request.auth.id"
+updateRule: "user_id = @request.auth.id"
+deleteRule: "user_id = @request.auth.id"
 ```
 
 ### Indexes
-- `user` (for user playlist lookup)
-- `base_playlist` (for child playlist lookup)
-- `user + spotify_playlist_id` (unique combination)
+- `user_id` (for user playlist lookup)
+- `base_playlist_id` (for child playlist lookup)
+- `user_id + spotify_playlist_id` (unique combination)
 - `is_active` (for active playlists)
-- `sync_status` (for sync operations)
 
 ---
 
-## Business Logic & Computed Fields
+## Business Logic & Current Implementation
 
-### Current Subscription Tier
+### Current Status
+- **No subscription tiers implemented** - all users have unlimited access during MVP phase
+- **No usage limits enforced** - focus on core functionality first
+- **Sync tracking** - all operations logged in `sync_events` collection for future analytics
+
+### Future Business Logic (Planned)
 ```typescript
+// When subscriptions are implemented:
 function getCurrentTier(userId: string): 'free' | 'basic' | 'premium' {
-  const activeSubscription = subscriptions.find(
-    s => s.user === userId && s.status === 'active'
-  );
-  return activeSubscription ? activeSubscription.tier : 'free';
+  // Will query subscriptions collection
+  return 'free'; // Default for MVP
 }
-```
 
-### Usage Limits by Tier
-```typescript
-const TIER_LIMITS = {
+const FUTURE_TIER_LIMITS = {
   free: { monthly_syncs: 10, base_playlists: 0, child_playlists: 0 },
   basic: { monthly_syncs: Infinity, base_playlists: 2, child_playlists_per_base: 5 },
   premium: { monthly_syncs: Infinity, base_playlists: Infinity, child_playlists_per_base: Infinity }
@@ -319,21 +368,26 @@ const TIER_LIMITS = {
 
 ## Data Relationships
 
-### One-to-Many Relationships
-- `users` → `subscriptions` (user can have subscription history)
+### Implemented Relationships
+#### One-to-Many Relationships
 - `users` → `base_playlists` (user can have multiple base playlists)
 - `users` → `child_playlists` (user can have multiple child playlists)
+- `users` → `sync_events` (user can have multiple sync operations)
 - `base_playlists` → `child_playlists` (base playlist can have multiple children)
+- `base_playlists` → `sync_events` (base playlist can have multiple sync operations)
 
-### One-to-One Relationships
+#### One-to-One Relationships
 - `users` → `spotify_integrations` (user can have one Spotify integration)
 
-### Constraints
-- User can have only one active subscription at a time
-- User can have only one Spotify integration (enforced by unique user field)
+### Current Constraints
+- User can have only one Spotify integration (enforced by unique user relation)
 - Each Spotify account can only be linked to one user (enforced by unique spotify_id)
-- User cannot add the same Spotify playlist twice (as base or child)
-- Child playlist must belong to same user as its base playlist
+- User cannot add the same Spotify playlist twice (as base or child) - enforced by unique indexes
+- Child playlist must belong to same user as its base playlist (enforced by access rules)
+
+### Future Constraints (Subscription Phase)
+- User can have only one active subscription at a time
+- Subscription tier limits on playlist counts and sync operations
 
 ---
 

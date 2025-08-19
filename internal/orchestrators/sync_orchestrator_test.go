@@ -56,19 +56,19 @@ func TestDefaultSyncOrchestrator_SyncBasePlaylist_Success(t *testing.T) {
 	// Setup test data
 	userID := "user123"
 	basePlaylistID := "base456"
-	
+
 	childPlaylists := []*models.ChildPlaylist{
 		{
 			ID:                "child1",
-			UserID:           userID,
+			UserID:            userID,
 			SpotifyPlaylistID: "spotify1",
 			Name:              "Child 1",
 			Description:       "Description 1",
 			IsActive:          true,
 		},
 		{
-			ID:                "child2", 
-			UserID:           userID,
+			ID:                "child2",
+			UserID:            userID,
 			SpotifyPlaylistID: "spotify2",
 			Name:              "Child 2",
 			Description:       "Description 2",
@@ -127,12 +127,12 @@ func TestDefaultSyncOrchestrator_SyncBasePlaylist_Success(t *testing.T) {
 				return &spotifyclient.SpotifyPlaylist{ID: "unknown", Name: name}, nil
 			}
 		}).Times(2)
-	
+
 	// Mock child playlist updates - expect each exactly once but in any order
 	mocks.childPlaylistService.EXPECT().UpdateChildPlaylistSpotifyID(gomock.Any(), "child1", userID, "new_spotify1").Return(childPlaylists[0], nil).Times(1)
 	mocks.childPlaylistService.EXPECT().UpdateChildPlaylistSpotifyID(gomock.Any(), "child2", userID, "new_spotify2").Return(childPlaylists[1], nil).Times(1)
-	
-	// Mock track addition - expect each exactly once but in any order  
+
+	// Mock track addition - expect each exactly once but in any order
 	mocks.spotifyClient.EXPECT().AddTracksToPlaylist(gomock.Any(), "new_spotify1", []string{"spotify:track:1"}).Return(nil).Times(1)
 	mocks.spotifyClient.EXPECT().AddTracksToPlaylist(gomock.Any(), "new_spotify2", []string{"spotify:track:2"}).Return(nil).Times(1)
 
@@ -256,7 +256,7 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_Success(t *testing.T) {
 
 	childPlaylist := models.ChildPlaylist{
 		ID:                "child1",
-		UserID:           "user123",
+		UserID:            "user123",
 		SpotifyPlaylistID: "old_spotify1",
 		Name:              "Child Playlist",
 		Description:       "Test Description",
@@ -264,11 +264,11 @@ func TestDefaultSyncOrchestrator_SyncChildPlaylist_Success(t *testing.T) {
 
 	trackURIs := []string{"spotify:track:1", "spotify:track:2"}
 	syncEvent := &models.SyncEvent{ID: "sync123"}
-	
+
 	// Expected formatted names
 	expectedName := models.BuildChildPlaylistName(basePlaylist.Name, childPlaylist.Name)
 	expectedDescription := models.BuildChildPlaylistDescription(childPlaylist.Description)
-	
+
 	newPlaylist := &spotifyclient.SpotifyPlaylist{
 		ID:   "new_spotify1",
 		Name: expectedName,

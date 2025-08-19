@@ -33,7 +33,7 @@ func TestDurationFilter(t *testing.T) {
 
 func TestPopularityFilter(t *testing.T) {
 	filter := &PopularityFilter{&models.RangeFilter{Min: float64Ptr(50), Max: float64Ptr(80)}}
-	
+
 	assert.True(t, filter.Matches(models.TrackInfo{Popularity: 65}))
 	assert.False(t, filter.Matches(models.TrackInfo{Popularity: 30}))
 	assert.False(t, filter.Matches(models.TrackInfo{Popularity: 90}))
@@ -89,7 +89,7 @@ func TestGenresFilter(t *testing.T) {
 
 func TestReleaseYearFilter(t *testing.T) {
 	filter := &ReleaseYearFilter{&models.RangeFilter{Min: float64Ptr(2000), Max: float64Ptr(2020)}}
-	
+
 	assert.True(t, filter.Matches(models.TrackInfo{ReleaseYear: 2010}))
 	assert.False(t, filter.Matches(models.TrackInfo{ReleaseYear: 1995}))
 	assert.False(t, filter.Matches(models.TrackInfo{ReleaseYear: 2025}))
@@ -97,7 +97,7 @@ func TestReleaseYearFilter(t *testing.T) {
 
 func TestArtistPopularityFilter(t *testing.T) {
 	filter := &ArtistPopularityFilter{&models.RangeFilter{Min: float64Ptr(70), Max: nil}}
-	
+
 	assert.True(t, filter.Matches(models.TrackInfo{MaxArtistPop: 80}))
 	assert.False(t, filter.Matches(models.TrackInfo{MaxArtistPop: 50}))
 }
@@ -128,10 +128,10 @@ func TestTrackKeywordsFilter(t *testing.T) {
 
 func TestArtistKeywordsFilter(t *testing.T) {
 	filter := &ArtistKeywordsFilter{&models.SetFilter{Include: []string{"beatles"}}}
-	
+
 	track := models.TrackInfo{ArtistNames: []string{"The Beatles", "John Lennon"}}
 	assert.True(t, filter.Matches(track))
-	
+
 	track2 := models.TrackInfo{ArtistNames: []string{"Led Zeppelin", "Pink Floyd"}}
 	assert.False(t, filter.Matches(track2))
 }

@@ -8,11 +8,8 @@ import (
 )
 
 type Config struct {
-	// PocketBase
-	PBDev  bool   `env:"PB_DEV" envDefault:"true"`
-	PBPort string `env:"PB_PORT" envDefault:"8090"`
-
 	// Application
+	Port     string `env:"PORT" envDefault:"8090"`
 	AppEnv   string `env:"APP_ENV" envDefault:"dev"`
 	LogLevel string `env:"LOG_LEVEL" envDefault:"info"`
 
@@ -22,9 +19,7 @@ type Config struct {
 
 // Load loads configuration from .env file and environment variables
 func Load() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
+	_ = godotenv.Load()
 
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {

@@ -1,6 +1,6 @@
-# PlaylistSync Frontend
+# PlaylistRouter Frontend
 
-A React TypeScript frontend for the PlaylistSync application, built with Vite, Tailwind CSS, and DaisyUI.
+A React TypeScript frontend for the PlaylistRouter application, built with Vite, Tailwind CSS, and DaisyUI.
 
 ## Tech Stack
 

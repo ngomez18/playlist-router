@@ -8,6 +8,7 @@ import type {
   UpdateChildPlaylistRequest
 } from '../types/playlist'
 import type { SpotifyPlaylist } from '../types/spotify'
+import type { SyncEvent } from '../types/playlist'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -131,8 +132,8 @@ class ApiClient {
   }
 
   // Sync endpoints
-  async syncBasePlaylist(basePlaylistId: string): Promise<any> {
-    return this.request<any>(`/api/base_playlist/${basePlaylistId}/sync`, {
+  async syncBasePlaylist(basePlaylistId: string): Promise<SyncEvent> {
+    return this.request<SyncEvent>(`/api/base_playlist/${basePlaylistId}/sync`, {
       method: 'POST',
     })
   }
