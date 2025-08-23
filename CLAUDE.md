@@ -8,18 +8,16 @@ PlaylistRouter is a Spotify playlist management tool that automatically distribu
 
 ## Planned Architecture
 
-This is currently a planning-stage repository. When implementation begins, the architecture will be:
-
 ### Backend
 - **Framework**: Go with PocketBase for rapid development
 - **Database**: SQLite (via PocketBase)
-- **Authentication**: JWT tokens with PocketBase auth + Spotify OAuth
+- **Authentication**: Spotify OAuth + Pocketbase sessions
 - **API**: REST endpoints for playlist management and sync operations
 - **Deployment**: Single Go binary on Fly.io serving both backend and frontend
 
 ### Frontend
 - **Framework**: React 18 with TypeScript
-- **UI Library**: Chakra UI (dark theme, responsive design)
+- **UI Library**: DaisyUI
 - **State Management**: React Query for API state + Context for app state
 - **Build Tool**: Vite
 - **Styling**: Mobile-first, desktop-friendly responsive design
@@ -74,14 +72,12 @@ This is currently a planning-stage repository. When implementation begins, the a
 **ALWAYS use the commands available in the Makefile instead of running Go commands directly:**
 
 ```bash
-make help    # Show all available commands
 make build   # Build the application
 make test    # Run all tests  
 make mocks   # Generate all mocks using go generate
 make lint    # Run golangci-lint to check code quality
 make fix     # Format and fix code issues
 make deps    # Download and tidy dependencies
-make dev     # Run with hot reload (air)
 ```
 
 ## Business Logic Considerations
@@ -112,23 +108,15 @@ make dev     # Run with hot reload (air)
 
 ## Claude Instructions
 ### Development Guidelines
+- **I don't like unnecessary comments. Only really difficult to understand parts of our code should be commented, no need to add comments explaining very simple pieces of code or things that are properly named and self-explanatory**
 - Do what has been asked; nothing more, nothing less
-- Use documentation for Pocketbase v0.29
+- When asked for your thoughts on something, try to be as critical as possible. Don't blindly accept suggestions, always weigh the pros and cons
+- When asked to plan large features or changes, generate a markdown file in the docs/ directory with the final result of the discussion
+- Be concise. Provide only the necessary information
 - Maintain a clear separation of concerns: Repositories handle DB related operations. Services handle all business logic, and use repositories. Controllers handle request logic. Parsing, validation, responses, etc. They use the services
 - Logging and proper error handling should always be taken into account
 - Don't add unnecessary comments to the code. Only annotate important functions, types, or important pieces of code
 - **Don't implement unit tests for large pieces of code until I've reviewed it and tell you to implement them**
 - Unit tests are important. Opt for table-driven tests when possible. Dependency injection is prefered so test code can be easily generated. Use testify by initializing an assert instance for every test and using that for assertions
-- When asked for your thoughts on something, try to be as critical as possible. Don't blindly accept suggestions, always weigh the pros and cons
-- When asked to plan large features or changes, generate a markdown file in the docs/ directory with the final result of the discussion
-- Be concise. Provide only the necessary information
-- **I don't like unnecessary comments. Only really difficult to understand parts of our code should be commented, no need to add comments explaining very simple pieces of code or things that are properly named and self-explanatory**
 
-### MANDATORY: Use Makefile Commands
-**ALWAYS use Makefile commands instead of direct Go commands:**
-- `make test` instead of `go test`
-- `make build` instead of `go build` 
-- `make mocks` instead of `go generate`
-- `make lint` instead of `golangci-lint run`
-- `make fix` instead of `gofmt` or `goimports`
-```
+- Use documentation for Pocketbase v0.29

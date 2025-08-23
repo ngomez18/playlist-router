@@ -334,11 +334,11 @@ cp /data/data.db /data/backup-$(date +%Y%m%d).db
 - [ ] Add error monitoring and alerting
 - [ ] Document rollback procedures
 
-#### Medium Priority  
+##### Medium Priority  
 - [ ] Implement rate limiting per user
 - [ ] Add security headers and CORS configuration
 - [ ] Set up staging environment
-- [ ] Create CI/CD pipeline for automated deployments
+- [x] Create CI/CD pipeline for automated deployments *(documented below)*
 
 #### Low Priority
 - [ ] Add metrics collection and dashboards
@@ -368,3 +368,239 @@ With the current setup, future deployments are simple:
 ```bash
 fly deploy  # ~2-3 minutes
 ```
+
+---
+
+# CI/CD Pipeline with GitHub Actions
+
+## Overview
+Simple deployment pipeline using GitHub Actions to deploy to Fly.io on every push to the main branch, with code formatting, testing, and build validation.
+
+## Pipeline Architecture
+
+### Trigger Strategy
+- **Push to main**: Automatic deployment to production
+- **Manual dispatch**: Allow manual deployments for maintenance
+
+### Workflow Steps
+1. **Code Quality**: Linting and formatting checks
+2. **Testing**: Unit tests
+3. **Build**: Frontend and backend builds
+4. **Deploy**: Automated deployment to Fly.io
+5. **Health Check**: Basic endpoint validation
+
+## Implementation Plan
+
+### Step 1: GitHub Repository Setup
+```bash
+# 1. Create GitHub repository
+gh repo create playlist-router --private --description "Spotify playlist management tool"
+
+# 2. Add remote and push existing code
+git remote add origin https://github.com/YOUR_USERNAME/playlist-router.git
+git branch -M main
+git push -u origin main
+```
+
+### Step 2: GitHub Secrets Configuration
+Set up the following secrets in GitHub repository settings (`Settings > Secrets and variables > Actions`):
+
+#### Required Secrets
+- `FLY_API_TOKEN`: Fly.io API token for deployments
+
+#### Optional Secrets
+- `JWT_SECRET`: Only needed if running integration tests that require JWT signing
+
+### Step 3: Create GitHub Actions Workflow
+
+#### Deploy Workflow: `.github/workflows/deploy.yml`
+```yaml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+jobs:
+  deploy:
+    name: Build, Test & Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'web/package-lock.json'
+        
+    # Backend checks
+    - name: Install Go dependencies
+      run: go mod download
+      
+    - name: Run Go linter
+      run: make lint
+      
+    - name: Run Go tests
+      run: make test
+      
+    # Frontend checks  
+    - name: Install frontend dependencies
+      run: make frontend-install
+      
+    - name: Run frontend linter
+      run: cd web && npm run lint
+      
+    # Build
+    - name: Build application
+      run: make build-all
+      
+    # Deploy
+    - name: Set up Fly CLI
+      uses: superfly/flyctl-actions/setup-flyctl@master
+      
+    - name: Deploy to Fly.io
+      run: flyctl deploy --remote-only
+        
+    - name: Health Check
+      uses: jtalk/url-health-check-action@v4
+      with:
+        url: https://playlist-router.fly.dev/health
+        max-attempts: 12
+        retry-delay: 5s
+```
+
+### Step 4: Fly.io Setup for CI/CD
+
+#### Generate Fly.io API Token
+```bash
+# Generate API token for GitHub Actions
+fly auth token
+
+# The output token should be added as FLY_API_TOKEN secret in GitHub
+```
+
+#### Configure Production Secrets via CLI
+```bash
+# Set production secrets (these are used by the running application, not CI/CD)
+fly secrets set SPOTIFY_CLIENT_ID=$YOUR_CLIENT_ID
+fly secrets set SPOTIFY_CLIENT_SECRET=$YOUR_CLIENT_SECRET  
+fly secrets set JWT_SECRET=$YOUR_JWT_SECRET
+fly secrets set FRONTEND_URL=https://playlist-router.fly.dev
+```
+
+### Step 5: Verify Makefile Commands
+Ensure these commands exist in your Makefile (they should already be there):
+```makefile
+lint:        # Run golangci-lint
+test:        # Run Go tests  
+build-all:   # Build frontend + backend with embedded assets
+frontend-install:  # Install npm dependencies
+```
+
+## Security Considerations
+
+### Secret Management
+- **GitHub Secrets**: Only FLY_API_TOKEN stored in GitHub repository secrets
+- **Principle of Least Privilege**: CI/CD tokens have minimal required permissions
+- **No Secrets in Code**: Zero hardcoded secrets in repository
+
+### Build Security
+- **Code Quality**: Automated linting and formatting checks
+- **Testing**: All tests must pass before deployment
+- **Health Checks**: Post-deployment validation
+
+## Monitoring & Alerting
+
+### Deployment Monitoring
+- **Health Checks**: Automated endpoint validation post-deployment
+- **GitHub Actions**: Deployment status visible in Actions tab
+- **Fly.io Logs**: Real-time application logs via `fly logs`
+
+## Cost Optimization
+
+### GitHub Actions Costs
+- **Free Tier**: 2,000 minutes/month for private repositories
+- **Estimated Usage**: ~50 minutes/month for typical development pace
+- **Cost**: $0 for most usage patterns
+
+### Fly.io Costs  
+- **Current Usage**: ~$5/month for single instance + 1GB volume
+- **CI/CD Impact**: No additional infrastructure costs
+- **Bandwidth**: Minimal additional costs for automated deployments
+
+## Rollback Strategy
+
+### Manual Rollbacks
+If deployment fails or issues are found:
+```bash
+# List recent releases
+fly releases
+
+# Rollback to specific version  
+fly releases rollback v12
+```
+
+## Testing Strategy
+
+### Pre-Deploy Testing  
+- **Linting**: Go linting (includes formatting) and TypeScript linting must pass
+- **Unit Tests**: All Go unit tests must pass
+- **Build Validation**: Frontend and backend builds must succeed
+
+### Post-Deploy Testing
+- **Health Checks**: Basic endpoint availability (`/health`)
+
+## Implementation Timeline
+
+### Simple Deploy Pipeline
+- [x] **Plan documentation and workflow creation** *(completed)*
+- [ ] GitHub repository setup and code push
+- [ ] Set FLY_API_TOKEN secret in GitHub repository
+- [ ] Test first automated deployment
+
+## Benefits
+
+### Development Velocity
+- **Automated Testing**: Catch issues before production
+- **Fast Deployments**: 3-5 minute end-to-end deployment
+- **Zero-Downtime**: Fly.io rolling deployments
+- **Quick Rollbacks**: One-click rollback capability
+
+### Code Quality
+- **Automated Linting**: Consistent code style enforcement
+- **Test Coverage**: All tests run before deployment
+- **Security Scanning**: Vulnerability detection
+- **Documentation**: Self-documenting deployment process
+
+### Operational Excellence  
+- **Audit Trail**: Complete deployment history
+- **Reproducible Builds**: Same artifacts from dev to production
+- **Environment Parity**: Identical deployment process across environments
+- **Reduced Human Error**: Automated, consistent deployments
+
+## Future Enhancements
+
+### Advanced Features (Month 2-3)
+- **Staging Environment**: Deploy PRs to temporary staging instances
+- **Performance Testing**: Load testing in CI/CD pipeline  
+- **Database Migration**: Automated schema migration validation
+- **Multi-Region Deployment**: Deploy to multiple Fly.io regions
+
+### Enterprise Features (Month 4-6)
+- **Blue-Green Deployments**: Zero-downtime deployments with instant rollback
+- **Canary Deployments**: Gradual traffic shifting for risk reduction
+- **A/B Testing**: Feature flag integration with automated deployment
+- **Compliance**: SOC2/PCI compliance for payment features

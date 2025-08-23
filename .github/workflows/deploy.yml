@@ -1,0 +1,64 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build, Test & Deploy
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'web/package-lock.json'
+
+    # Backend checks
+    - name: Install Go dependencies
+      run: go mod download
+
+    - name: Run Go linter
+      run: make lint
+      
+    - name: Run Go tests
+      run: make test
+      
+    # Frontend checks  
+    - name: Install frontend dependencies
+      run: make frontend-install
+      
+    - name: Run frontend linter
+      run: cd web && npm run lint
+      
+    # Build
+    - name: Build application
+      run: make build-all
+      
+    # Deploy
+    - name: Set up Fly CLI
+      uses: superfly/flyctl-actions/setup-flyctl@master
+      
+    - name: Deploy to Fly.io
+      run: flyctl deploy --remote-only
+        
+    - name: Health Check
+      uses: jtalk/url-health-check-action@v4
+      with:
+        url: https://playlist-router.fly.dev/health
+        max-attempts: 12
+        retry-delay: 5s
