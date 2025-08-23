@@ -446,10 +446,21 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'web/package-lock.json'
         
-    # Backend checks
+    # Frontend checks first (creates dist/ for Go embed)
+    - name: Install frontend dependencies
+      run: make frontend-install
+      
+    - name: Run frontend linter
+      run: cd web && npm run lint
+      
+    # Build everything (creates dist/ for Go embed)
+    - name: Build application
+      run: make build-all
+
+    # Backend checks (after build creates internal/static/dist/)
     - name: Install Go dependencies
       run: go mod download
-      
+
     - name: Run Go linter
       uses: golangci/golangci-lint-action@v6
       with:
@@ -457,17 +468,6 @@ jobs:
       
     - name: Run Go tests
       run: make test
-      
-    # Frontend checks  
-    - name: Install frontend dependencies
-      run: make frontend-install
-      
-    - name: Run frontend linter
-      run: cd web && npm run lint
-      
-    # Build
-    - name: Build application
-      run: make build-all
       
     # Deploy
     - name: Set up Fly CLI
