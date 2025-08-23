@@ -451,7 +451,9 @@ jobs:
       run: go mod download
       
     - name: Run Go linter
-      run: make lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
       
     - name: Run Go tests
       run: make test
