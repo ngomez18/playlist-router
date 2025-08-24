@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
@@ -19,11 +17,9 @@ import (
 func TestNewUserService(t *testing.T) {
 	require := require.New(t)
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
+	ctrl := setupMockController(t)
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 
 	service := NewUserService(mockRepo, logger)
 
@@ -73,11 +69,10 @@ func TestUserService_CreateUser_Success(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockRepo := mocks.NewMockUserRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewUserService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -123,11 +118,10 @@ func TestUserService_CreateUser_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockRepo := mocks.NewMockUserRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewUserService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -146,11 +140,10 @@ func TestUserService_CreateUser_Error(t *testing.T) {
 
 func TestUserService_UpdateUser_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewUserService(mockRepo, logger)
 
 	input := &models.User{
@@ -212,11 +205,10 @@ func TestUserService_UpdateUser_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockRepo := mocks.NewMockUserRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewUserService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -235,11 +227,10 @@ func TestUserService_UpdateUser_Error(t *testing.T) {
 
 func TestUserService_GetUserByID_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewUserService(mockRepo, logger)
 
 	userID := "user123"
@@ -287,11 +278,10 @@ func TestUserService_GetUserByID_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockRepo := mocks.NewMockUserRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewUserService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -310,11 +300,10 @@ func TestUserService_GetUserByID_Error(t *testing.T) {
 
 func TestUserService_DeleteUser_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewUserService(mockRepo, logger)
 
 	userID := "user123"
@@ -353,11 +342,10 @@ func TestUserService_DeleteUser_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockRepo := mocks.NewMockUserRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewUserService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -375,11 +363,10 @@ func TestUserService_DeleteUser_Error(t *testing.T) {
 
 func TestUserService_GenerateAuthToken_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewUserService(mockRepo, logger)
 
 	userID := "user123"
@@ -396,11 +383,10 @@ func TestUserService_GenerateAuthToken_Success(t *testing.T) {
 
 func TestUserService_GenerateAuthToken_DatabaseError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewUserService(mockRepo, logger)
 
 	userID := "user123"
@@ -416,11 +402,10 @@ func TestUserService_GenerateAuthToken_DatabaseError(t *testing.T) {
 
 func TestUserService_ValidateAuthToken_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockUserRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewUserService(mockRepo, logger)
 
 	token := "valid_token_123"
@@ -460,11 +445,10 @@ func TestUserService_ValidateAuthToken_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockRepo := mocks.NewMockUserRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewUserService(mockRepo, logger)
 
 			mockRepo.EXPECT().

@@ -3,8 +3,8 @@ package orchestrators
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -416,5 +416,5 @@ func createTestOrchestrator(mocks mockServices) *DefaultSyncOrchestrator {
 }
 
 func createTestLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	return slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
 }

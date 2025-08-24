@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
@@ -22,7 +20,7 @@ func TestNewSyncEventService(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 
 	service := NewSyncEventService(mockRepo, logger)
 
@@ -39,7 +37,7 @@ func TestSyncEventService_CreateSyncEvent_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -93,7 +91,7 @@ func TestSyncEventService_CreateSyncEvent_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -134,7 +132,7 @@ func TestSyncEventService_UpdateSyncEvent_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -181,7 +179,7 @@ func TestSyncEventService_UpdateSyncEvent_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -215,7 +213,7 @@ func TestSyncEventService_GetSyncEvent_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -253,7 +251,7 @@ func TestSyncEventService_GetSyncEvent_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -355,7 +353,7 @@ func TestSyncEventService_HasActiveSyncForBasePlaylist_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewSyncEventService(mockRepo, logger)
 
 			ctx := context.Background()
@@ -384,7 +382,7 @@ func TestSyncEventService_HasActiveSyncForBasePlaylist_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()
@@ -465,7 +463,7 @@ func TestSyncEventService_HasActiveSyncForUser_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewSyncEventService(mockRepo, logger)
 
 			ctx := context.Background()
@@ -494,7 +492,7 @@ func TestSyncEventService_HasActiveSyncForUser_Error(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSyncEventRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewSyncEventService(mockRepo, logger)
 
 	ctx := context.Background()

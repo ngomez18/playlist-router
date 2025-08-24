@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -18,13 +16,12 @@ import (
 func TestNewBasePlaylistService(t *testing.T) {
 	require := require.New(t)
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 	mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 
 	service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
@@ -85,7 +82,7 @@ func TestBasePlaylistService_CreateBasePlaylist_Success(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -140,7 +137,7 @@ func TestBasePlaylistService_CreateBasePlaylist_RepositoryError(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -191,7 +188,7 @@ func TestBasePlaylistService_DeleteBasePlaylist_Success(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -239,7 +236,7 @@ func TestBasePlaylistService_DeleteBasePlaylist_RepositoryErrors(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -304,7 +301,7 @@ func TestBasePlaylistService_GetBasePlaylist_Success(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -358,7 +355,7 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -448,7 +445,7 @@ func TestBasePlaylistService_GetBasePlaylistsByUserID_Success(t *testing.T) {
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
@@ -505,7 +502,7 @@ func TestBasePlaylistService_GetBasePlaylistsByUserID_RepositoryErrors(t *testin
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
