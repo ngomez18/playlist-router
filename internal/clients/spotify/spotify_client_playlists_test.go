@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -93,12 +91,11 @@ func TestSpotifyClient_GetPlaylist_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -164,12 +161,11 @@ func TestSpotifyClient_GetPlaylist_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -289,12 +285,11 @@ func TestSpotifyClient_GetUserPlaylists_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -367,12 +362,11 @@ func TestSpotifyClient_GetUserPlaylists_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -470,12 +464,11 @@ func TestSpotifyClient_GetAllUserPlaylists_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -531,12 +524,11 @@ func TestSpotifyClient_GetAllUserPlaylists_Error(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -645,12 +637,11 @@ func TestSpotifyClient_CreatePlaylist_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -738,12 +729,11 @@ func TestSpotifyClient_CreatePlaylist_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -795,12 +785,11 @@ func TestSpotifyClient_DeletePlaylist_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -867,12 +856,11 @@ func TestSpotifyClient_DeletePlaylist_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -964,12 +952,11 @@ func TestSpotifyClient_UpdatePlaylist_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient
@@ -1069,12 +1056,11 @@ func TestSpotifyClient_UpdatePlaylist_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			client := NewSpotifyClient(cfg, logger)
 			client.HttpClient = mockHTTPClient

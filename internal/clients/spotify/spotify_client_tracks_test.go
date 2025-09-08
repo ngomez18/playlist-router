@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -203,11 +201,10 @@ func TestSpotifyClient_GetPlaylistTracks_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			authConfig := &config.AuthConfig{}
 
 			client := NewSpotifyClient(authConfig, logger)
@@ -311,11 +308,10 @@ func TestSpotifyClient_GetPlaylistTracks_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			authConfig := &config.AuthConfig{}
 
 			client := NewSpotifyClient(authConfig, logger)
@@ -393,11 +389,10 @@ func TestSpotifyClient_AddTracksToPlaylist_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			authConfig := &config.AuthConfig{}
 
 			client := NewSpotifyClient(authConfig, logger)
@@ -499,11 +494,10 @@ func TestSpotifyClient_AddTracksToPlaylist_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			authConfig := &config.AuthConfig{}
 
 			client := NewSpotifyClient(authConfig, logger)

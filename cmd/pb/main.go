@@ -68,7 +68,6 @@ func main() {
 	var deps AppDependencies
 	app := pocketbase.New()
 
-	// Setup routes
 	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
 		if err := e.Next(); err != nil {
 			return err
@@ -76,7 +75,7 @@ func main() {
 
 		deps = initAppDependencies(app)
 
-		if err := pb.InitCollections(app); err != nil {
+		if err := pb.InitCollections(app, deps.config); err != nil {
 			return err
 		}
 
@@ -84,6 +83,7 @@ func main() {
 	})
 
 	app.OnServe().BindFunc(func(e *core.ServeEvent) error {
+		setupCors(e, deps.config)
 		initAppRoutes(deps, e)
 		return e.Next()
 	})
@@ -156,6 +156,27 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		controllers:   controllers,
 		middleware:    middleware,
 	}
+}
+
+func setupCors(e *core.ServeEvent, cfg *config.Config) {
+	e.Router.BindFunc(func(e *core.RequestEvent) error {
+		if cfg.AppEnv == "production" {
+			e.Response.Header().Set("Access-Control-Allow-Origin", cfg.Auth.FrontendURL)
+			e.Response.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
+			e.Response.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+		} else {
+			e.Response.Header().Set("Access-Control-Allow-Origin", "*")
+			e.Response.Header().Set("Access-Control-Allow-Methods", "*")
+			e.Response.Header().Set("Access-Control-Allow-Headers", "*")
+		}
+
+		if e.Request.Method == "OPTIONS" {
+			e.Response.WriteHeader(http.StatusOK)
+			return nil
+		}
+
+		return e.Next()
+	})
 }
 
 func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {

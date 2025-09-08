@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 
@@ -27,7 +25,7 @@ func TestNewSpotifyClient(t *testing.T) {
 		SpotifyClientSecret: "test_client_secret",
 		SpotifyRedirectURI:  "http://localhost:8080/callback",
 	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	client := NewSpotifyClient(cfg, logger)
 
@@ -46,7 +44,7 @@ func TestSpotifyClient_GenerateAuthURL(t *testing.T) {
 		SpotifyClientID:    clientID,
 		SpotifyRedirectURI: redirectURI,
 	}
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 	client := NewSpotifyClient(cfg, logger)
 
 	state := "test_state"
@@ -113,8 +111,7 @@ func TestSpotifyClient_ExchangeCodeForTokens(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{
@@ -122,7 +119,7 @@ func TestSpotifyClient_ExchangeCodeForTokens(t *testing.T) {
 				SpotifyClientSecret: "test_client_secret",
 				SpotifyRedirectURI:  "http://localhost:8080/callback",
 			}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			// Create client and overwrite HTTP client with mock
 			client := NewSpotifyClient(cfg, logger)
@@ -220,15 +217,14 @@ func TestSpotifyClient_RefreshTokens_Success(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{
 				SpotifyClientID:     "test_client_id",
 				SpotifyClientSecret: "test_client_secret",
 			}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			// Create client and overwrite HTTP client with mock
 			client := NewSpotifyClient(cfg, logger)
@@ -299,15 +295,14 @@ func TestSpotifyClient_RefreshTokens_Errors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{
 				SpotifyClientID:     "test_client_id",
 				SpotifyClientSecret: "test_client_secret",
 			}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			// Create client and overwrite HTTP client with mock
 			client := NewSpotifyClient(cfg, logger)
@@ -406,8 +401,7 @@ func TestSpotifyClient_GetUserProfile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := require.New(t)
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockHTTPClient := mocks.NewMockHTTPClient(ctrl)
 			cfg := &config.AuthConfig{
@@ -415,7 +409,7 @@ func TestSpotifyClient_GetUserProfile(t *testing.T) {
 				SpotifyClientSecret: "test_client_secret",
 				SpotifyRedirectURI:  "http://localhost:8080/callback",
 			}
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			// Create client and overwrite HTTP client with mock
 			client := NewSpotifyClient(cfg, logger)

@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -20,7 +18,7 @@ func TestNewSpotifyAPIService(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	service := NewSpotifyAPIService(mockSpotifyClient, logger)
 
@@ -86,7 +84,7 @@ func TestSpotifyAPIService_GetUserPlaylists_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			service := NewSpotifyAPIService(mockSpotifyClient, logger)
 
@@ -132,7 +130,7 @@ func TestSpotifyAPIService_GetUserPlaylists_SpotifyClientError(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockSpotifyClient := spotifyClientMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			service := NewSpotifyAPIService(mockSpotifyClient, logger)
 

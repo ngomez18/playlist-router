@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/ngomez18/playlist-router/internal/models"
@@ -13,7 +11,7 @@ import (
 func TestNewTrackRouterService(t *testing.T) {
 	require := require.New(t)
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewTrackRouterService(logger)
 
 	require.NotNil(service)
@@ -67,8 +65,8 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 					IsActive:          true,
 					FilterRules: &models.MetadataFilters{
 						Duration: &models.RangeFilter{
-							Min: float64Ptr(120000),
-							Max: float64Ptr(240000),
+							Min: float64ToPointer(120000),
+							Max: float64ToPointer(240000),
 						},
 					},
 				},
@@ -97,7 +95,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 					SpotifyPlaylistID: "spotify-child1",
 					IsActive:          true,
 					FilterRules: &models.MetadataFilters{
-						Duration: &models.RangeFilter{Min: float64Ptr(120000)},
+						Duration: &models.RangeFilter{Min: float64ToPointer(120000)},
 					},
 				},
 				{
@@ -133,8 +131,8 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 					SpotifyPlaylistID: "spotify-child1",
 					IsActive:          true,
 					FilterRules: &models.MetadataFilters{
-						Duration:   &models.RangeFilter{Min: float64Ptr(120000)},
-						Popularity: &models.RangeFilter{Min: float64Ptr(50)},
+						Duration:   &models.RangeFilter{Min: float64ToPointer(120000)},
+						Popularity: &models.RangeFilter{Min: float64ToPointer(50)},
 					},
 				},
 			},
@@ -172,7 +170,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 					SpotifyPlaylistID: "spotify-child1",
 					IsActive:          true,
 					FilterRules: &models.MetadataFilters{
-						Duration: &models.RangeFilter{Min: float64Ptr(120000)},
+						Duration: &models.RangeFilter{Min: float64ToPointer(120000)},
 						Genres:   &models.SetFilter{Include: []string{"rock"}},
 					},
 				},
@@ -211,7 +209,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 			require := require.New(t)
 			ctx := context.Background()
 
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 			service := NewTrackRouterService(logger)
 
 			routing, err := service.RouteTracksToChildren(ctx, tt.tracks, tt.childPlaylists)
@@ -232,7 +230,7 @@ func TestTrackRouterService_RouteTracksToChildren_Success(t *testing.T) {
 func TestTrackRouterService_RouteTracksToChildren_EmptyInputs(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewTrackRouterService(logger)
 
 	t.Run("empty tracks", func(t *testing.T) {
@@ -274,7 +272,7 @@ func TestTrackRouterService_RouteTracksToChildren_EmptyInputs(t *testing.T) {
 func TestTrackRouterService_RouteTracksToChildren_ComplexFilters(t *testing.T) {
 	require := require.New(t)
 	ctx := context.Background()
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewTrackRouterService(logger)
 
 	tracks := &models.PlaylistTracksInfo{
@@ -300,12 +298,12 @@ func TestTrackRouterService_RouteTracksToChildren_ComplexFilters(t *testing.T) {
 			SpotifyPlaylistID: "spotify-child1",
 			IsActive:          true,
 			FilterRules: &models.MetadataFilters{
-				Duration:         &models.RangeFilter{Min: float64Ptr(120000), Max: float64Ptr(240000)},
-				Popularity:       &models.RangeFilter{Min: float64Ptr(70)},
-				Explicit:         boolPtr(false),
+				Duration:         &models.RangeFilter{Min: float64ToPointer(120000), Max: float64ToPointer(240000)},
+				Popularity:       &models.RangeFilter{Min: float64ToPointer(70)},
+				Explicit:         boolToPointer(false),
 				Genres:           &models.SetFilter{Include: []string{"rock"}},
-				ReleaseYear:      &models.RangeFilter{Min: float64Ptr(2000), Max: float64Ptr(2020)},
-				ArtistPopularity: &models.RangeFilter{Min: float64Ptr(80)},
+				ReleaseYear:      &models.RangeFilter{Min: float64ToPointer(2000), Max: float64ToPointer(2020)},
+				ArtistPopularity: &models.RangeFilter{Min: float64ToPointer(80)},
 				TrackKeywords:    &models.SetFilter{Include: []string{"love"}},
 				ArtistKeywords:   &models.SetFilter{Include: []string{"beatles"}},
 			},
@@ -320,11 +318,3 @@ func TestTrackRouterService_RouteTracksToChildren_ComplexFilters(t *testing.T) {
 	}, routing)
 }
 
-// Helper functions
-func float64Ptr(f float64) *float64 {
-	return &f
-}
-
-func boolPtr(b bool) *bool {
-	return &b
-}

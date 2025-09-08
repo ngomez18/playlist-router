@@ -501,6 +501,8 @@ fly secrets set SPOTIFY_CLIENT_ID=$YOUR_CLIENT_ID
 fly secrets set SPOTIFY_CLIENT_SECRET=$YOUR_CLIENT_SECRET  
 fly secrets set JWT_SECRET=$YOUR_JWT_SECRET
 fly secrets set FRONTEND_URL=https://playlist-router.fly.dev
+fly secrets set ADMIN_EMAIL=$YOUR_ADMIN_EMAIL
+fly secrets set ADMIN_PASSWORD=$YOUR_ADMIN_PASSWORD
 ```
 
 ### Step 5: Verify Makefile Commands

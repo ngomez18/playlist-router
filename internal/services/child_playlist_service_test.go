@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -20,8 +18,7 @@ func TestNewChildPlaylistService(t *testing.T) {
 	assert := assert.New(t)
 
 	// Setup
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	// Create mocks
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
@@ -43,8 +40,7 @@ func TestNewChildPlaylistService(t *testing.T) {
 
 func TestChildPlaylistService_CreateChildPlaylist_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	// Mocks
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
@@ -112,8 +108,7 @@ func TestChildPlaylistService_CreateChildPlaylist_Success(t *testing.T) {
 
 func TestChildPlaylistService_CreateChildPlaylist_GetBasePlaylistError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockBaseRepo := repoMocks.NewMockBasePlaylistRepository(ctrl)
 	mockBaseRepo.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
@@ -127,8 +122,7 @@ func TestChildPlaylistService_CreateChildPlaylist_GetBasePlaylistError(t *testin
 
 func TestChildPlaylistService_CreateChildPlaylist_SpotifyError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockBaseRepo := repoMocks.NewMockBasePlaylistRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
@@ -144,8 +138,7 @@ func TestChildPlaylistService_CreateChildPlaylist_SpotifyError(t *testing.T) {
 
 func TestChildPlaylistService_CreateChildPlaylist_RepoError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockBaseRepo := repoMocks.NewMockBasePlaylistRepository(ctrl)
@@ -163,13 +156,12 @@ func TestChildPlaylistService_CreateChildPlaylist_RepoError(t *testing.T) {
 
 func TestChildPlaylistService_DeleteChildPlaylist_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	// Mocks
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewChildPlaylistService(mockChildRepo, nil, nil, mockSpotifyClient, logger)
 
 	// Test Data
@@ -194,8 +186,7 @@ func TestChildPlaylistService_DeleteChildPlaylist_Success(t *testing.T) {
 
 func TestChildPlaylistService_DeleteChildPlaylist_GetByIDError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockChildRepo.EXPECT().GetByID(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
@@ -209,8 +200,7 @@ func TestChildPlaylistService_DeleteChildPlaylist_GetByIDError(t *testing.T) {
 
 func TestChildPlaylistService_DeleteChildPlaylist_SpotifyError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
@@ -226,8 +216,7 @@ func TestChildPlaylistService_DeleteChildPlaylist_SpotifyError(t *testing.T) {
 
 func TestChildPlaylistService_DeleteChildPlaylist_RepoError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
@@ -244,11 +233,10 @@ func TestChildPlaylistService_DeleteChildPlaylist_RepoError(t *testing.T) {
 
 func TestChildPlaylistService_GetChildPlaylist_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewChildPlaylistService(mockChildRepo, nil, nil, nil, logger)
 
 	expectedPlaylist := &models.ChildPlaylist{ID: "cp123", Name: "Test"}
@@ -262,11 +250,10 @@ func TestChildPlaylistService_GetChildPlaylist_Success(t *testing.T) {
 
 func TestChildPlaylistService_GetChildPlaylist_Error(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewChildPlaylistService(mockChildRepo, nil, nil, nil, logger)
 
 	mockChildRepo.EXPECT().GetByID(gomock.Any(), "cp123", "user123").Return(nil, repositories.ErrChildPlaylistNotFound)
@@ -280,11 +267,10 @@ func TestChildPlaylistService_GetChildPlaylist_Error(t *testing.T) {
 
 func TestChildPlaylistService_GetChildPlaylistsByBasePlaylistID_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewChildPlaylistService(mockChildRepo, nil, nil, nil, logger)
 
 	expectedPlaylists := []*models.ChildPlaylist{
@@ -301,11 +287,10 @@ func TestChildPlaylistService_GetChildPlaylistsByBasePlaylistID_Success(t *testi
 
 func TestChildPlaylistService_GetChildPlaylistsByBasePlaylistID_Error(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 	service := NewChildPlaylistService(mockChildRepo, nil, nil, nil, logger)
 
 	mockChildRepo.EXPECT().GetByBasePlaylistID(gomock.Any(), "bp123", "user123").Return(nil, repositories.ErrDatabaseOperation)
@@ -453,8 +438,7 @@ func TestChildPlaylistService_UpdateChildPlaylist_Success(t *testing.T) {
 
 func TestChildPlaylistService_UpdateChildPlaylist_RepoError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockChildRepo.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("db error"))
@@ -468,8 +452,7 @@ func TestChildPlaylistService_UpdateChildPlaylist_RepoError(t *testing.T) {
 
 func TestChildPlaylistService_UpdateChildPlaylist_GetBasePlaylistError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockBaseRepo := repoMocks.NewMockBasePlaylistRepository(ctrl)
@@ -490,8 +473,7 @@ func TestChildPlaylistService_UpdateChildPlaylist_GetBasePlaylistError(t *testin
 
 func TestChildPlaylistService_UpdateChildPlaylist_SpotifyError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
 	mockBaseRepo := repoMocks.NewMockBasePlaylistRepository(ctrl)
@@ -518,8 +500,7 @@ func TestChildPlaylistService_UpdateChildPlaylist_SpotifyError(t *testing.T) {
 
 func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	// Setup mocks
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
@@ -549,8 +530,7 @@ func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_Success(t *testing.T)
 
 func TestChildPlaylistService_UpdateChildPlaylistSpotifyID_RepoError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	// Setup mocks
 	mockChildRepo := repoMocks.NewMockChildPlaylistRepository(ctrl)
@@ -581,16 +561,4 @@ func createTestService(
 	spotifyClient spotifyclient.SpotifyAPI,
 ) *ChildPlaylistService {
 	return NewChildPlaylistService(childRepo, baseRepo, spotifyIntegrationRepo, spotifyClient, createTestLogger())
-}
-
-func createTestLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-}
-
-func stringToPointer(s string) *string {
-	return &s
-}
-
-func boolToPointer(b bool) *bool {
-	return &b
 }

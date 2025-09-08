@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"strings"
 	"testing"
 
@@ -24,7 +22,7 @@ func TestNewTrackAggregatorService(t *testing.T) {
 
 	mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
 	mockBasePlaylistRepo := repomocks.NewMockBasePlaylistRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 
 	service := NewTrackAggregatorService(mockSpotifyClient, mockBasePlaylistRepo, logger)
 
@@ -135,7 +133,7 @@ func TestTrackAggregatorService_AggregatePlaylistData_Success(t *testing.T) {
 			// Setup mocks
 			mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
 			mockBasePlaylistRepo := repomocks.NewMockBasePlaylistRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 
 			// Setup expectations
 			mockBasePlaylistRepo.EXPECT().
@@ -237,7 +235,7 @@ func TestTrackAggregatorService_AggregatePlaylistData_Errors(t *testing.T) {
 
 			mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
 			mockBasePlaylistRepo := repomocks.NewMockBasePlaylistRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 
 			// Setup expectations based on error type
 			if tt.basePlaylistError != nil {
@@ -308,7 +306,7 @@ func TestTrackAggregatorService_EmptyPlaylist(t *testing.T) {
 
 	mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
 	mockBasePlaylistRepo := repomocks.NewMockBasePlaylistRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+	logger := createTestLogger()
 
 	basePlaylist := &models.BasePlaylist{
 		ID:                "base123",
@@ -397,7 +395,7 @@ func TestTrackAggregatorService_PreprocessingEdgeCases(t *testing.T) {
 
 			mockSpotifyClient := clientmocks.NewMockSpotifyAPI(ctrl)
 			mockBasePlaylistRepo := repomocks.NewMockBasePlaylistRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
+			logger := createTestLogger()
 
 			basePlaylist := &models.BasePlaylist{
 				ID:                "base123",

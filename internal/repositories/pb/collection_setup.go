@@ -3,12 +3,18 @@ package pb
 import (
 	"fmt"
 
+	"github.com/ngomez18/playlist-router/internal/config"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 )
 
 // InitCollections creates all required collections if they don't exist
-func InitCollections(app *pocketbase.PocketBase) error {
+func InitCollections(app *pocketbase.PocketBase, cfg *config.Config) error {
+	if err := createAdminUser(app, cfg); err != nil {
+		return err
+	}
+
 	if err := createBasePlaylistCollection(app); err != nil {
 		return err
 	}
@@ -26,6 +32,31 @@ func InitCollections(app *pocketbase.PocketBase) error {
 	}
 
 	return nil
+}
+
+func createAdminUser(app *pocketbase.PocketBase, cfg *config.Config) error {
+	superusers, err := app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
+	if err != nil {
+		return err
+	}
+
+	user, err := app.FindRecordsByFilter(
+		superusers,
+		"email = {:email}",
+		"created",
+		1,
+		0,
+		dbx.Params{"email": cfg.AdminEmail},
+	)
+	if err != nil || len(user) > 0 {
+		return err
+	}
+
+	record := core.NewRecord(superusers)
+	record.Set("email", cfg.AdminEmail)
+	record.Set("password", cfg.AdminPassword)
+
+	return app.Save(record)
 }
 
 // createBasePlaylistCollection creates the base_playlists collection

@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -28,7 +28,7 @@ func TestNewSpotifyAuthMiddleware(t *testing.T) {
 
 	mockSpotifyService := servicemocks.NewMockSpotifyIntegrationServicer(ctrl)
 	mockSpotifyClient := spotifymocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	middleware := NewSpotifyAuthMiddleware(mockSpotifyService, mockSpotifyClient, logger)
 
@@ -68,7 +68,7 @@ func TestSpotifyAuthMiddleware_RequireSpotifyAuth_Success(t *testing.T) {
 
 			mockSpotifyService := servicemocks.NewMockSpotifyIntegrationServicer(ctrl)
 			mockSpotifyClient := spotifymocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 			middleware := NewSpotifyAuthMiddleware(mockSpotifyService, mockSpotifyClient, logger)
 
@@ -159,7 +159,7 @@ func TestSpotifyAuthMiddleware_RequireSpotifyAuth_TokenRefreshNoNewRefreshToken(
 
 	mockSpotifyIntegrationService := servicemocks.NewMockSpotifyIntegrationServicer(ctrl)
 	mockSpotifyClient := spotifymocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	middleware := NewSpotifyAuthMiddleware(mockSpotifyIntegrationService, mockSpotifyClient, logger)
 
@@ -264,7 +264,7 @@ func TestSpotifyAuthMiddleware_RequireSpotifyAuth_Errors(t *testing.T) {
 
 			mockSpotifyIntegrationService := servicemocks.NewMockSpotifyIntegrationServicer(ctrl)
 			mockSpotifyClient := spotifymocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 			middleware := NewSpotifyAuthMiddleware(mockSpotifyIntegrationService, mockSpotifyClient, logger)
 

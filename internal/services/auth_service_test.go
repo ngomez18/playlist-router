@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
@@ -22,14 +20,13 @@ func TestNewAuthService(t *testing.T) {
 	assert := require.New(t)
 
 	// Setup
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	// Create real services with mock repositories for testing
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -49,13 +46,12 @@ func TestAuthService_GenerateSpotifyAuthURL(t *testing.T) {
 	assert := require.New(t)
 
 	// Setup
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -79,13 +75,12 @@ func TestAuthService_GenerateSpotifyAuthURL(t *testing.T) {
 
 func TestAuthService_FindUserBySpotifyID_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -131,13 +126,12 @@ func TestAuthService_FindUserBySpotifyID_Success(t *testing.T) {
 
 func TestAuthService_FindUserBySpotifyID_IntegrationNotFound(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -161,13 +155,12 @@ func TestAuthService_FindUserBySpotifyID_IntegrationNotFound(t *testing.T) {
 
 func TestAuthService_FindUserBySpotifyID_IntegrationError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -192,13 +185,12 @@ func TestAuthService_FindUserBySpotifyID_IntegrationError(t *testing.T) {
 
 func TestAuthService_FindUserBySpotifyID_UserError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -233,13 +225,12 @@ func TestAuthService_FindUserBySpotifyID_UserError(t *testing.T) {
 
 func TestAuthService_CreateNewUser_Success(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -323,13 +314,12 @@ func TestAuthService_CreateNewUser_Success(t *testing.T) {
 
 func TestAuthService_CreateNewUser_UserCreationError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -362,13 +352,12 @@ func TestAuthService_CreateNewUser_UserCreationError(t *testing.T) {
 
 func TestAuthService_CreateNewUser_IntegrationCreationError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -415,13 +404,12 @@ func TestAuthService_CreateNewUser_IntegrationCreationError(t *testing.T) {
 
 func TestAuthService_UpdateExistingUser_Success_NoUserChanges(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -492,13 +480,12 @@ func TestAuthService_UpdateExistingUser_Success_NoUserChanges(t *testing.T) {
 
 func TestAuthService_UpdateExistingUser_Success_WithUserChanges(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -576,13 +563,12 @@ func TestAuthService_UpdateExistingUser_Success_WithUserChanges(t *testing.T) {
 
 func TestAuthService_UpdateExistingUser_UserUpdateError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -620,13 +606,12 @@ func TestAuthService_UpdateExistingUser_UserUpdateError(t *testing.T) {
 
 func TestAuthService_UpdateExistingUser_IntegrationUpdateError(t *testing.T) {
 	assert := assert.New(t)
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	ctrl := setupMockController(t)
 
 	mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 	mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := createTestLogger()
 
 	userService := NewUserService(mockUserRepo, logger)
 	spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -853,13 +838,12 @@ func TestAuthService_HandleSpotifyCallback_Success(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 			mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			userService := NewUserService(mockUserRepo, logger)
 			spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)
@@ -1045,13 +1029,12 @@ func TestAuthService_HandleSpotifyCallback_Errors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert := assert.New(t)
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			ctrl := setupMockController(t)
 
 			mockUserRepo := repoMocks.NewMockUserRepository(ctrl)
 			mockSpotifyIntegrationRepo := repoMocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			logger := createTestLogger()
 
 			userService := NewUserService(mockUserRepo, logger)
 			spotifyIntegrationService := NewSpotifyIntegrationService(mockSpotifyIntegrationRepo, logger)

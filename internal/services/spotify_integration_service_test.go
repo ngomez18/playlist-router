@@ -3,8 +3,6 @@ package services
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
 	"testing"
 	"time"
 
@@ -23,7 +21,7 @@ func TestNewSpotifyIntegrationService(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 
 	service := NewSpotifyIntegrationService(mockRepo, logger)
 
@@ -96,7 +94,7 @@ func TestSpotifyIntegrationService_CreateOrUpdateIntegration_Success(t *testing.
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewSpotifyIntegrationService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -149,7 +147,7 @@ func TestSpotifyIntegrationService_CreateOrUpdateIntegration_Error(t *testing.T)
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewSpotifyIntegrationService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -172,7 +170,7 @@ func TestSpotifyIntegrationService_GetIntegrationByUserID_Success(t *testing.T) 
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewSpotifyIntegrationService(mockRepo, logger)
 
 	userID := "user123"
@@ -227,7 +225,7 @@ func TestSpotifyIntegrationService_GetIntegrationByUserID_Error(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewSpotifyIntegrationService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -250,7 +248,7 @@ func TestSpotifyIntegrationService_GetIntegrationBySpotifyID_Success(t *testing.
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewSpotifyIntegrationService(mockRepo, logger)
 
 	spotifyID := "spotify_user_123"
@@ -305,7 +303,7 @@ func TestSpotifyIntegrationService_GetIntegrationBySpotifyID_Error(t *testing.T)
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewSpotifyIntegrationService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -328,7 +326,7 @@ func TestSpotifyIntegrationService_UpdateTokens_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewSpotifyIntegrationService(mockRepo, logger)
 
 	integrationID := "integration123"
@@ -383,7 +381,7 @@ func TestSpotifyIntegrationService_UpdateTokens_Error(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewSpotifyIntegrationService(mockRepo, logger)
 
 			mockRepo.EXPECT().
@@ -405,7 +403,7 @@ func TestSpotifyIntegrationService_DeleteIntegration_Success(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	logger := createTestLogger()
 	service := NewSpotifyIntegrationService(mockRepo, logger)
 
 	userID := "user123"
@@ -448,7 +446,7 @@ func TestSpotifyIntegrationService_DeleteIntegration_Error(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
-			logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+			logger := createTestLogger()
 			service := NewSpotifyIntegrationService(mockRepo, logger)
 
 			mockRepo.EXPECT().
