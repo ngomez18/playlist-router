@@ -15,7 +15,7 @@ func setupMockController(t *testing.T) *gomock.Controller {
 	t.Cleanup(func() {
 		ctrl.Finish()
 	})
-	
+
 	return ctrl
 }
 
