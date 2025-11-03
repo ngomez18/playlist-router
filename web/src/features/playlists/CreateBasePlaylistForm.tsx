@@ -24,12 +24,13 @@ export function CreateBasePlaylistForm({
 }: CreateBasePlaylistFormProps) {
   const [name, setName] = useState("");
   const [selectedSpotifyPlaylist, setSelectedSpotifyPlaylist] = useState("");
-  const [spotifyPlaylists, setSpotifyPlaylists] = useState<SpotifyPlaylist[]>([]);
+  const [spotifyPlaylists, setSpotifyPlaylists] = useState<SpotifyPlaylist[]>(
+    []
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load user's Spotify playlists on component mount
   useEffect(() => {
     const loadSpotifyPlaylists = async () => {
       try {

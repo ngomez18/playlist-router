@@ -117,7 +117,7 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
 		childPlaylistService:      services.NewChildPlaylistService(repositories.childPlaylistRepository, repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
 		spotifyIntegrationService: spotifyIntegrationService,
-		spotifyApiService:         services.NewSpotifyAPIService(spotifyClient, logger),
+		spotifyApiService:         services.NewSpotifyAPIService(spotifyClient, repositories.basePlaylistRepository, repositories.childPlaylistRepository, logger),
 		syncEventService:          syncEventService,
 		trackAggregatorService:    services.NewTrackAggregatorService(spotifyClient, repositories.basePlaylistRepository, logger),
 		trackRouterService:        services.NewTrackRouterService(logger),

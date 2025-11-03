@@ -58,7 +58,7 @@ func TestSpotifyController_GetUserPlaylists_Success(t *testing.T) {
 
 			// Mock the service call
 			mockSpotifyApiService.EXPECT().
-				GetUserPlaylists(gomock.Any(), "test_user_123").
+				GetFilteredUserPlaylists(gomock.Any(), "test_user_123").
 				Return(tt.serviceResult, nil).
 				Times(1)
 
@@ -123,7 +123,7 @@ func TestSpotifyController_GetUserPlaylists_Errors(t *testing.T) {
 
 			if tt.serviceError != nil {
 				mockSpotifyApiService.EXPECT().
-					GetUserPlaylists(gomock.Any(), "test_user_123").
+					GetFilteredUserPlaylists(gomock.Any(), "test_user_123").
 					Return(nil, tt.serviceError).
 					Times(1)
 			}
