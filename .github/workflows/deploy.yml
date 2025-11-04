@@ -37,6 +37,11 @@ jobs:
     - name: Run frontend linter
       run: cd web && npm run lint
 
+    - name: Create Frontend Production Environment File
+      run: |
+        echo "VITE_API_BASE_URL=''" > web/.env.production
+        echo "VITE_FULLSTORY_ORG_ID=${{ secrets.VITE_FULLSTORY_ORG_ID }}" >> web/.env.production
+
     - name: Build application
       run: make build-all
 
