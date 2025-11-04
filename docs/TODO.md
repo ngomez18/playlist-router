@@ -1,5 +1,4 @@
 TODOS:
-- CORS blocking
 - Rate limiting
 - Review auth, use encryption key? CSRF
 

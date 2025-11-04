@@ -19,14 +19,13 @@ func NewSpotifyController(spotifyApiService services.SpotifyAPIServicer) *Spotif
 }
 
 func (c *SpotifyController) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
-	// Extract user ID from auth context
 	user, ok := requestcontext.GetUserFromContext(r.Context())
 	if !ok {
 		http.Error(w, "user not found in context", http.StatusUnauthorized)
 		return
 	}
 
-	playlists, err := c.spotifyApiService.GetUserPlaylists(r.Context(), user.ID)
+	playlists, err := c.spotifyApiService.GetFilteredUserPlaylists(r.Context(), user.ID)
 	if err != nil {
 		http.Error(w, "unable to retrieve spotify playlists", http.StatusInternalServerError)
 		return

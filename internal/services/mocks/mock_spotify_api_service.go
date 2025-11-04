@@ -35,17 +35,17 @@ func (m *MockSpotifyAPIServicer) EXPECT() *MockSpotifyAPIServicerMockRecorder {
 	return m.recorder
 }
 
-// GetUserPlaylists mocks base method.
-func (m *MockSpotifyAPIServicer) GetUserPlaylists(ctx context.Context, userID string) ([]*models.SpotifyPlaylist, error) {
+// GetFilteredUserPlaylists mocks base method.
+func (m *MockSpotifyAPIServicer) GetFilteredUserPlaylists(ctx context.Context, userID string) ([]*models.SpotifyPlaylist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUserPlaylists", ctx, userID)
+	ret := m.ctrl.Call(m, "GetFilteredUserPlaylists", ctx, userID)
 	ret0, _ := ret[0].([]*models.SpotifyPlaylist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUserPlaylists indicates an expected call of GetUserPlaylists.
-func (mr *MockSpotifyAPIServicerMockRecorder) GetUserPlaylists(ctx, userID interface{}) *gomock.Call {
+// GetFilteredUserPlaylists indicates an expected call of GetFilteredUserPlaylists.
+func (mr *MockSpotifyAPIServicerMockRecorder) GetFilteredUserPlaylists(ctx, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserPlaylists", reflect.TypeOf((*MockSpotifyAPIServicer)(nil).GetUserPlaylists), ctx, userID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFilteredUserPlaylists", reflect.TypeOf((*MockSpotifyAPIServicer)(nil).GetFilteredUserPlaylists), ctx, userID)
 }
