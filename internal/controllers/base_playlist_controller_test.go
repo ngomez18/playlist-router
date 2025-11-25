@@ -633,6 +633,148 @@ func TestBasePlaylistController_GetByUserID_ResponseEncodingError(t *testing.T) 
 	assert.Equal("application/json", w.Header().Get("Content-Type"))
 }
 
+func TestBasePlaylistController_GetByUserIDWithChilds_Success(t *testing.T) {
+	tests := []struct {
+		name           string
+		serviceResult  []*models.BasePlaylistWithChilds
+		expectedStatus int
+	}{
+		{
+			name: "successful retrieval with multiple playlists and childs",
+			serviceResult: []*models.BasePlaylistWithChilds{
+				{
+					BasePlaylist: &models.BasePlaylist{ID: "playlist123"},
+					Childs: []*models.ChildPlaylist{
+						{ ID: "child123" },
+						{ ID: "child456" },
+					},
+				},
+				{
+					BasePlaylist: &models.BasePlaylist{ID: "playlist456"},
+					Childs: []*models.ChildPlaylist{
+						{ ID: "child789" },
+					},
+				},
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "successful retrieval with single playlist and childs",
+			serviceResult: []*models.BasePlaylistWithChilds{
+				{
+					BasePlaylist: &models.BasePlaylist{ID: "playlist123"},
+					Childs: []*models.ChildPlaylist{{ ID: "child123" }},
+				},
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "successful retrieval with no playlists",
+			serviceResult:  []*models.BasePlaylistWithChilds{},
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			// Setup
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			// Prepare request
+			req := httptest.NewRequest(http.MethodGet, "/api/base_playlist/with_childs", nil)
+			req = addUserToContext(req)
+			w := httptest.NewRecorder()
+
+			// Set expectations
+			mockService.EXPECT().
+				GetBasePlaylistsByUserIDWithChilds(gomock.Any(), "test_user_123").
+				Return(tt.serviceResult, nil).
+				Times(1)
+
+			// Execute
+			controller.GetByUserIDWithChilds(w, req)
+
+			// Verify response
+			assert.Equal(tt.expectedStatus, w.Code)
+			assert.Equal("application/json", w.Header().Get("Content-Type"))
+
+			// Verify response body
+			var responseBody []*models.BasePlaylistWithChilds
+			err := json.Unmarshal(w.Body.Bytes(), &responseBody)
+			assert.NoError(err)
+			assert.Equal(len(tt.serviceResult), len(responseBody))
+
+			for i, expectedPlaylist := range tt.serviceResult {
+				assert.Equal(expectedPlaylist.ID, responseBody[i].ID)
+				assert.Equal(len(expectedPlaylist.Childs), len(responseBody[i].Childs))
+
+				for j, expectedChild := range expectedPlaylist.Childs {
+					assert.Equal(expectedChild.ID, responseBody[i].Childs[j].ID)
+				}
+			}
+		})
+	}
+}
+
+func TestBasePlaylistController_GetByUserIDWithChilds_Errors(t *testing.T) {
+	tests := []struct {
+		name               string
+		serviceError        error
+		noUserInContext     bool
+		expectedStatusCode  int
+		expectedError       string
+	}{
+		{
+			name:               "service error",
+			serviceError:       errors.New("some service error"),
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedError:      "unable to retrieve base playlists with childs",
+		},
+		{
+			name:               "no user in context",
+			noUserInContext:    true,
+			expectedStatusCode: http.StatusUnauthorized,
+			expectedError:      "user not found in context",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockService := mocks.NewMockBasePlaylistServicer(ctrl)
+			controller := NewBasePlaylistController(mockService)
+
+			if tt.serviceError != nil {
+				mockService.EXPECT().
+					GetBasePlaylistsByUserIDWithChilds(gomock.Any(), "test_user_123").
+					Return(nil, tt.serviceError).
+					Times(1)
+			}
+
+			req := httptest.NewRequest(http.MethodGet, "/api/base_playlist/with_childs", nil)
+			if !tt.noUserInContext {
+				req = addUserToContext(req)
+			}
+
+			w := httptest.NewRecorder()
+			controller.GetByUserIDWithChilds(w, req)
+
+			assert.Equal(tt.expectedStatusCode, w.Code)
+			assert.Contains(w.Body.String(), tt.expectedError)
+		})
+	}
+}
+
 // Helper function to add user to request context
 func addUserToContext(req *http.Request) *http.Request {
 	user := &models.User{ID: "test_user_123", Email: "test@example.com", Name: "Test User"}

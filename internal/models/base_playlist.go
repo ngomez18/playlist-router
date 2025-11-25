@@ -12,6 +12,11 @@ type BasePlaylist struct {
 	Updated           time.Time `json:"updated"`
 }
 
+type BasePlaylistWithChilds struct {
+	*BasePlaylist
+	Childs []*ChildPlaylist `json:"childs"`
+}
+
 type CreateBasePlaylistRequest struct {
 	Name              string `json:"name" validate:"required,min=1,max=100"`
 	SpotifyPlaylistID string `json:"spotify_playlist_id"`

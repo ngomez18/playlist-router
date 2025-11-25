@@ -1,26 +1,41 @@
 import type { ChildPlaylist, RangeFilter, SetFilter } from '../../types/playlist'
 import { Card, CardBody, CardTitle, CardActions } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { LoadingSpinner } from "../../components/ui";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface ChildPlaylistCardProps {
-  childPlaylist: ChildPlaylist
-  onEdit?: (playlist: ChildPlaylist) => void
-  onDelete?: (id: string) => void
-  loading?: boolean
+  childPlaylist: ChildPlaylist;
+  onEdit?: (playlist: ChildPlaylist) => void;
+  onDelete?: (id: string) => void;
+  isLoading?: boolean;
 }
 
-export function ChildPlaylistCard({ 
-  childPlaylist, 
-  onEdit, 
+export function ChildPlaylistCard({
+  childPlaylist,
+  onEdit,
   onDelete,
-  loading = false
+  isLoading = false,
 }: ChildPlaylistCardProps) {
-  const createdDate = new Date(childPlaylist.created).toLocaleDateString()
-  const hasFilters = childPlaylist.filter_rules && Object.keys(childPlaylist.filter_rules).length > 0
+  const createdDate = new Date(childPlaylist.created).toLocaleDateString();
+  const hasFilters =
+    childPlaylist.filter_rules &&
+    Object.keys(childPlaylist.filter_rules).length > 0;
 
   return (
-    <Card className="w-full bg-base-100 border-2 border-base-300 shadow-lg">
+    <Card
+      className={`w-full bg-base-100 border-2 border-base-300 shadow-lg relative ${
+        isLoading ? "opacity-60" : ""
+      }`}
+    >
+      {isLoading && (
+        <div className="absolute inset-0 bg-base-100/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+          <div className="text-center">
+            <LoadingSpinner size="md" />
+            <p className="text-sm text-base-content/70 mt-2">Syncing...</p>
+          </div>
+        </div>
+      )}
       <CardBody>
         <CardTitle className="flex items-center justify-between">
           <span className="truncate">{childPlaylist.name}</span>
@@ -77,31 +92,37 @@ export function ChildPlaylistCard({
                               }
                               return value ? "Yes" : "No";
                             }
-                            
+
                             // Handle object values (ranges and sets)
                             if (typeof value === "object" && value !== null) {
                               if ("min" in value || "max" in value) {
                                 const range = value as RangeFilter;
-                                let minVal =
-                                  range.min !== undefined ? range.min : "N/A";
-                                let maxVal =
-                                  range.max !== undefined ? range.max : "N/A";
+                                let minVal = range.min || -1;
+                                let maxVal = range.max || -1;
 
                                 // Convert duration from ms to seconds for display
                                 if (key === "duration_ms") {
                                   minVal =
-                                    minVal !== "N/A" && typeof minVal === "number"
-                                      ? Math.round(minVal / 1000) + "s"
-                                      : "N/A";
+                                    minVal > 0
+                                      ? Math.round(minVal / 1000)
+                                      : minVal;
                                   maxVal =
-                                    maxVal !== "N/A" && typeof maxVal === "number"
-                                      ? Math.round(maxVal / 1000) + "s"
-                                      : "N/A";
+                                    maxVal > 0
+                                      ? Math.round(maxVal / 1000)
+                                      : maxVal;
+                                }
+
+                                if (minVal < 0) {
+                                  return `> ${maxVal}`;
+                                }
+
+                                if (maxVal < 0) {
+                                  return `< ${minVal}`;
                                 }
 
                                 return `${minVal} - ${maxVal}`;
                               }
-                              
+
                               // Handle set filters (include/exclude)
                               if ("include" in value || "exclude" in value) {
                                 const set = value as SetFilter;
@@ -114,10 +135,10 @@ export function ChildPlaylistCard({
                                 }
                                 return parts.join("; ");
                               }
-                              
+
                               return "Custom";
                             }
-                            
+
                             // Fallback for other types
                             return String(value);
                           })()}
@@ -139,7 +160,6 @@ export function ChildPlaylistCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onEdit(childPlaylist)}
-                disabled={loading}
                 className="btn-sm"
               >
                 <PencilIcon className="h-4 w-4" />
@@ -150,7 +170,6 @@ export function ChildPlaylistCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onDelete(childPlaylist.id)}
-                disabled={loading}
                 className="btn-sm btn-error"
               >
                 <TrashIcon className="h-4 w-4" />

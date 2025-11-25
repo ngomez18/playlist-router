@@ -6,6 +6,7 @@ export interface BasePlaylist {
   is_active: boolean
   created: string
   updated: string
+  childs?: ChildPlaylist[]
 }
 
 export interface CreateBasePlaylistRequest {

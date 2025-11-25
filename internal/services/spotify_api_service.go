@@ -17,10 +17,10 @@ type SpotifyAPIServicer interface {
 }
 
 type SpotifyAPIService struct {
-	spotifyClient          spotifyclient.SpotifyAPI
-	basePlaylistRepo       repositories.BasePlaylistRepository
-	childPlaylistRepo      repositories.ChildPlaylistRepository
-	logger                 *slog.Logger
+	spotifyClient     spotifyclient.SpotifyAPI
+	basePlaylistRepo  repositories.BasePlaylistRepository
+	childPlaylistRepo repositories.ChildPlaylistRepository
+	logger            *slog.Logger
 }
 
 func NewSpotifyAPIService(
@@ -57,7 +57,7 @@ func (sas *SpotifyAPIService) GetFilteredUserPlaylists(ctx context.Context, user
 	for _, basePlaylist := range basePlaylists {
 		baseChildPlaylists, err := sas.childPlaylistRepo.GetByBasePlaylistID(ctx, basePlaylist.ID, userID)
 		if err != nil {
-			sas.logger.ErrorContext(ctx, "failed to fetch child playlists for base playlist", 
+			sas.logger.ErrorContext(ctx, "failed to fetch child playlists for base playlist",
 				"user_id", userID, "base_playlist_id", basePlaylist.ID, "error", err.Error())
 
 			return nil, fmt.Errorf("failed to fetch child playlists: %w", err)
@@ -65,7 +65,7 @@ func (sas *SpotifyAPIService) GetFilteredUserPlaylists(ctx context.Context, user
 		childPlaylists = append(childPlaylists, baseChildPlaylists...)
 	}
 
-	usedPlaylistIDs := make(map[string]bool)	
+	usedPlaylistIDs := make(map[string]bool)
 	for _, basePlaylist := range basePlaylists {
 		usedPlaylistIDs[basePlaylist.SpotifyPlaylistID] = true
 	}
@@ -80,11 +80,11 @@ func (sas *SpotifyAPIService) GetFilteredUserPlaylists(ctx context.Context, user
 		}
 	}
 
-	sas.logger.InfoContext(ctx, "successfully filtered user playlists", 
-		"user_id", userID, 
+	sas.logger.InfoContext(ctx, "successfully filtered user playlists",
+		"user_id", userID,
 		"total_playlists", len(allPlaylists),
 		"filtered_playlists", len(filteredPlaylists),
 		"excluded_count", len(usedPlaylistIDs))
-	
+
 	return filteredPlaylists, nil
 }

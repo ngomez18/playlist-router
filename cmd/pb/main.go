@@ -112,15 +112,43 @@ func initAppDependencies(app *pocketbase.PocketBase) AppDependencies {
 	syncEventService := services.NewSyncEventService(repositories.syncEventRepository, logger)
 
 	serviceInstances := Services{
-		authService:               services.NewAuthService(userService, spotifyIntegrationService, spotifyClient, logger),
 		userService:               userService,
-		basePlaylistService:       services.NewBasePlaylistService(repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
-		childPlaylistService:      services.NewChildPlaylistService(repositories.childPlaylistRepository, repositories.basePlaylistRepository, repositories.spotifyIntegrationRepository, spotifyClient, logger),
+		authService:               services.NewAuthService(
+			userService, 
+			spotifyIntegrationService, 
+			spotifyClient, 
+			logger,
+		),
+		basePlaylistService:       services.NewBasePlaylistService(
+			repositories.basePlaylistRepository, 
+			repositories.childPlaylistRepository, 
+			repositories.spotifyIntegrationRepository, 
+			spotifyClient, 
+			logger,
+		),
+		childPlaylistService:      services.NewChildPlaylistService(
+			repositories.childPlaylistRepository, 
+			repositories.basePlaylistRepository, 
+			repositories.spotifyIntegrationRepository, 
+			spotifyClient, 
+			logger,
+		),
 		spotifyIntegrationService: spotifyIntegrationService,
-		spotifyApiService:         services.NewSpotifyAPIService(spotifyClient, repositories.basePlaylistRepository, repositories.childPlaylistRepository, logger),
+		spotifyApiService:         services.NewSpotifyAPIService(
+			spotifyClient, 
+			repositories.basePlaylistRepository, 
+			repositories.childPlaylistRepository, 
+			logger,
+		),
 		syncEventService:          syncEventService,
-		trackAggregatorService:    services.NewTrackAggregatorService(spotifyClient, repositories.basePlaylistRepository, logger),
-		trackRouterService:        services.NewTrackRouterService(logger),
+		trackAggregatorService:    services.NewTrackAggregatorService(
+			spotifyClient, 
+			repositories.basePlaylistRepository, 
+			logger,
+		),
+		trackRouterService:        services.NewTrackRouterService(
+			logger,
+		),
 	}
 
 	orchestratorInstances := Orchestrators{
@@ -193,7 +221,7 @@ func initAppRoutes(deps AppDependencies, e *core.ServeEvent) {
 	// Base Playlist routes
 	basePlaylist := api.Group("/base_playlist")
 	basePlaylist.POST("", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.basePlaylistController.Create))))
-	basePlaylist.GET("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserID)))
+	basePlaylist.GET("", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByUserIDWithChilds)))
 	basePlaylist.GET("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.GetByID)))
 	basePlaylist.DELETE("/{id}", apis.WrapStdHandler(http.HandlerFunc(deps.controllers.basePlaylistController.Delete)))
 	basePlaylist.POST("/{basePlaylistID}/sync", apis.WrapStdHandler(deps.middleware.spotifyAuth.RequireSpotifyAuth(http.HandlerFunc(deps.controllers.syncController.SyncBasePlaylist))))
