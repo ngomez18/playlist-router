@@ -131,3 +131,24 @@ func (c *BasePlaylistController) GetByUserID(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "unable to encode response", http.StatusInternalServerError)
 	}
 }
+
+func (c *BasePlaylistController) GetByUserIDWithChilds(w http.ResponseWriter, r *http.Request) {
+	// Extract user ID from auth context
+	user, ok := requestcontext.GetUserFromContext(r.Context())
+	if !ok {
+		http.Error(w, "user not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	basePlaylistsWithChilds, err := c.basePlaylistService.GetBasePlaylistsByUserIDWithChilds(r.Context(), user.ID)
+	if err != nil {
+		http.Error(w, "unable to retrieve base playlists with childs", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(basePlaylistsWithChilds); err != nil {
+		http.Error(w, "unable to encode response", http.StatusInternalServerError)
+	}
+}

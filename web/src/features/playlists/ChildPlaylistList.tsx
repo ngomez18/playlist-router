@@ -1,45 +1,21 @@
 import type { ChildPlaylist } from '../../types/playlist'
-import { ChildPlaylistCard } from './ChildPlaylistCard'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { Alert } from '../../components/ui/Alert'
+import { ChildPlaylistCard } from "./ChildPlaylistCard";
 
 interface ChildPlaylistListProps {
-  childPlaylists: ChildPlaylist[]
-  loading?: boolean
-  error?: string | null
-  onEdit?: (playlist: ChildPlaylist) => void
-  onDelete?: (id: string) => void
-  className?: string
+  childPlaylists: ChildPlaylist[];
+  onEdit?: (playlist: ChildPlaylist) => void;
+  onDelete?: (id: string) => void;
+  className?: string;
+  isSyncing?: boolean;
 }
 
-export function ChildPlaylistList({ 
-  childPlaylists, 
-  loading = false,
-  error = null,
-  onEdit, 
+export function ChildPlaylistList({
+  childPlaylists,
+  onEdit,
   onDelete,
-  className = ''
+  className = "",
+  isSyncing = false,
 }: ChildPlaylistListProps) {
-  // Loading state
-  if (loading) {
-    return (
-      <div className={`flex justify-center items-center py-8 ${className}`}>
-        <LoadingSpinner size="lg" />
-      </div>
-    )
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className={className}>
-        <Alert type="error">
-          <span>Failed to load child playlists: {error}</span>
-        </Alert>
-      </div>
-    )
-  }
-
   // Empty state
   if (!childPlaylists || childPlaylists.length === 0) {
     return (
@@ -47,14 +23,17 @@ export function ChildPlaylistList({
         <div className="hero-content text-center">
           <div className="max-w-md">
             <div className="text-6xl mb-4">🎵</div>
-            <h3 className="text-lg font-semibold mb-2">No Child Playlists Yet</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              No Child Playlists Yet
+            </h3>
             <p className="text-base-content/70">
-              Create your first child playlist to start organizing your music with custom filters and rules.
+              Create your first child playlist to start organizing your music
+              with custom filters and rules.
             </p>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // List with data
@@ -63,10 +42,10 @@ export function ChildPlaylistList({
       {/* Status Summary */}
       <div className="flex gap-2 text-sm justify-end">
         <span className="badge badge-success badge-sm">
-          {childPlaylists.filter(p => p.is_active).length} Active
+          {childPlaylists.filter((p) => p.is_active).length} Active
         </span>
         <span className="badge badge-neutral badge-sm">
-          {childPlaylists.filter(p => !p.is_active).length} Inactive
+          {childPlaylists.filter((p) => !p.is_active).length} Inactive
         </span>
       </div>
 
@@ -78,10 +57,10 @@ export function ChildPlaylistList({
             childPlaylist={playlist}
             onEdit={onEdit}
             onDelete={onDelete}
-            loading={loading}
+            isLoading={isSyncing}
           />
         ))}
       </div>
     </div>
-  )
+  );
 }

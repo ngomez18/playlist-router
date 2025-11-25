@@ -26,131 +26,129 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
     queryFn: () => apiClient.getUserBasePlaylists(),
   })
 
-  // Query for child playlists of expanded base playlist
-  const { data: childPlaylists, isLoading: childLoading, error: childError } = useQuery({
-    queryKey: ['childPlaylists', expandedPlaylist],
-    queryFn: () => expandedPlaylist ? apiClient.getChildPlaylists(expandedPlaylist) : Promise.resolve([]),
-    enabled: !!expandedPlaylist,
-  })
-
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiClient.deleteBasePlaylist(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['basePlaylists'] })
-      setSuccessMessage('Base playlist deleted successfully!')
-      setTimeout(() => setSuccessMessage(null), 5000)
+      queryClient.invalidateQueries({ queryKey: ["basePlaylists"] });
+      setSuccessMessage("Base playlist deleted successfully!");
+      setTimeout(() => setSuccessMessage(null), 5000);
     },
     onError: () => {
-      setSuccessMessage('Failed to delete base playlist')
-      setTimeout(() => setSuccessMessage(null), 5000)
-    }
-  })
+      setSuccessMessage("Failed to delete base playlist");
+      setTimeout(() => setSuccessMessage(null), 5000);
+    },
+  });
 
   const deleteChildMutation = useMutation({
     mutationFn: (id: string) => apiClient.deleteChildPlaylist(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['childPlaylists', expandedPlaylist] })
-      setSuccessMessage('Child playlist deleted successfully!')
-      setTimeout(() => setSuccessMessage(null), 5000)
+      queryClient.invalidateQueries({ queryKey: ["basePlaylists"] });
+      setSuccessMessage("Child playlist deleted successfully!");
+      setTimeout(() => setSuccessMessage(null), 5000);
     },
     onError: () => {
-      setSuccessMessage('Failed to delete child playlist')
-      setTimeout(() => setSuccessMessage(null), 5000)
-    }
-  })
+      setSuccessMessage("Failed to delete child playlist");
+      setTimeout(() => setSuccessMessage(null), 5000);
+    },
+  });
 
   const syncMutation = useMutation({
-    mutationFn: (basePlaylistId: string) => apiClient.syncBasePlaylist(basePlaylistId),
+    mutationFn: (basePlaylistId: string) =>
+      apiClient.syncBasePlaylist(basePlaylistId),
     onSuccess: () => {
-      setSuccessMessage('Playlist synced successfully!')
-      setTimeout(() => setSuccessMessage(null), 5000)
+      setSuccessMessage("Playlist synced successfully!");
+      setTimeout(() => setSuccessMessage(null), 5000);
     },
     onError: (error) => {
-      if (error.message.includes('409')) {
-        setSuccessMessage('Sync already in progress for this playlist')
+      if (error.message.includes("409")) {
+        setSuccessMessage("Sync already in progress for this playlist");
       } else {
-        setSuccessMessage('Failed to sync playlist')
+        setSuccessMessage("Failed to sync playlist");
       }
-      setTimeout(() => setSuccessMessage(null), 5000)
-    }
-  })
+      setTimeout(() => setSuccessMessage(null), 5000);
+    },
+  });
 
   const handleCreateSuccess = () => {
-    setShowCreateForm(false)
-    queryClient.invalidateQueries({ queryKey: ['basePlaylists'] })
-    setSuccessMessage('Base playlist created successfully!')
-    setTimeout(() => setSuccessMessage(null), 5000)
-  }
+    setShowCreateForm(false);
+    queryClient.invalidateQueries({ queryKey: ["basePlaylists"] });
+    setSuccessMessage("Base playlist created successfully!");
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
 
   const handleDelete = (playlist: BasePlaylist) => {
     if (confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
-      deleteMutation.mutate(playlist.id)
+      deleteMutation.mutate(playlist.id);
     }
-  }
+  };
 
   const handleChildDelete = (childId: string) => {
-    if (confirm('Are you sure you want to delete this child playlist?')) {
-      deleteChildMutation.mutate(childId)
+    if (confirm("Are you sure you want to delete this child playlist?")) {
+      deleteChildMutation.mutate(childId);
     }
-  }
+  };
 
   const handleChildEdit = (childPlaylist: ChildPlaylist) => {
-    setEditingChildPlaylist(childPlaylist)
+    setEditingChildPlaylist(childPlaylist);
     // Ensure the base playlist is expanded
     if (expandedPlaylist !== childPlaylist.base_playlist_id) {
-      setExpandedPlaylist(childPlaylist.base_playlist_id)
+      setExpandedPlaylist(childPlaylist.base_playlist_id);
     }
-  }
+  };
 
   const togglePlaylistExpansion = (playlistId: string) => {
-    setExpandedPlaylist(expandedPlaylist === playlistId ? null : playlistId)
-  }
+    setExpandedPlaylist(expandedPlaylist === playlistId ? null : playlistId);
+  };
 
   const handleCreateChild = (basePlaylistId: string) => {
-    setShowCreateChildForm(basePlaylistId)
+    setShowCreateChildForm(basePlaylistId);
     // Ensure the base playlist is expanded to show the new child playlist
     if (expandedPlaylist !== basePlaylistId) {
-      setExpandedPlaylist(basePlaylistId)
+      setExpandedPlaylist(basePlaylistId);
     }
-  }
+  };
 
   const handleCreateChildSuccess = () => {
-    setShowCreateChildForm(null)
-    queryClient.invalidateQueries({ queryKey: ['childPlaylists', expandedPlaylist] })
-    setSuccessMessage('Child playlist created successfully!')
-    setTimeout(() => setSuccessMessage(null), 5000)
-  }
+    setShowCreateChildForm(null);
+    queryClient.invalidateQueries({ queryKey: ["basePlaylists"] });
+    setSuccessMessage("Child playlist created successfully!");
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
 
   const handleCreateChildCancel = () => {
-    setShowCreateChildForm(null)
-  }
+    setShowCreateChildForm(null);
+  };
 
   const handleEditChildSuccess = () => {
-    setEditingChildPlaylist(null)
-    queryClient.invalidateQueries({ queryKey: ['childPlaylists', expandedPlaylist] })
-    setSuccessMessage('Child playlist updated successfully!')
-    setTimeout(() => setSuccessMessage(null), 5000)
-  }
+    setEditingChildPlaylist(null);
+    queryClient.invalidateQueries({ queryKey: ["basePlaylists"] });
+    setSuccessMessage("Child playlist updated successfully!");
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
 
   const handleEditChildCancel = () => {
-    setEditingChildPlaylist(null)
-  }
+    setEditingChildPlaylist(null);
+  };
 
   const handleSync = (basePlaylistId: string) => {
-    if (confirm('Are you sure you want to sync this playlist? This will distribute new songs to child playlists.')) {
-      syncMutation.mutate(basePlaylistId)
+    if (
+      confirm(
+        "Are you sure you want to sync this playlist? This will distribute new songs to child playlists."
+      )
+    ) {
+      syncMutation.mutate(basePlaylistId);
     }
-  }
+  };
 
   if (showCreateForm) {
     return (
       <div className="max-w-md mx-auto">
-        <CreateBasePlaylistForm 
+        <CreateBasePlaylistForm
           onSuccess={handleCreateSuccess}
           onCancel={() => setShowCreateForm(false)}
         />
       </div>
-    )
+    );
   }
 
   if (showCreateChildForm) {
@@ -162,7 +160,7 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
           onCancel={handleCreateChildCancel}
         />
       </div>
-    )
+    );
   }
 
   if (editingChildPlaylist) {
@@ -174,7 +172,7 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
           onCancel={handleEditChildCancel}
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -182,7 +180,9 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Base Playlists</h1>
-          <p className="text-gray-600 mt-2">Manage your source playlists that songs will be distributed from</p>
+          <p className="text-gray-600 mt-2">
+            Manage your source playlists that songs will be distributed from
+          </p>
         </div>
         <Button onClick={onBack} variant="outline">
           <ArrowLeftIcon className="h-4 w-4" />
@@ -191,7 +191,7 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
       </div>
 
       {successMessage && (
-        <Alert type={successMessage.includes('success') ? 'success' : 'error'}>
+        <Alert type={successMessage.includes("success") ? "success" : "error"}>
           {successMessage}
         </Alert>
       )}
@@ -199,9 +199,7 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Your Base Playlists</h2>
         {basePlaylists && basePlaylists.length > 0 && (
-          <Button onClick={() => setShowCreateForm(true)}>
-            Create New
-          </Button>
+          <Button onClick={() => setShowCreateForm(true)}>Create New</Button>
         )}
       </div>
 
@@ -217,14 +215,16 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {basePlaylists.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-600 mb-4">You don't have any base playlists yet.</p>
+              <p className="text-gray-600 mb-4">
+                You don't have any base playlists yet.
+              </p>
               <Button onClick={() => setShowCreateForm(true)}>
                 Create Your First
               </Button>
             </div>
           ) : (
             basePlaylists.map((playlist) => {
-              const isExpanded = expandedPlaylist === playlist.id
+              const isExpanded = expandedPlaylist === playlist.id;
               return (
                 <div key={playlist.id} className="col-span-full">
                   <Card className="bg-base-200 shadow-md border border-base-300">
@@ -235,7 +235,9 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => togglePlaylistExpansion(playlist.id)}
+                              onClick={() =>
+                                togglePlaylistExpansion(playlist.id)
+                              }
                               className="p-1 h-6 w-6"
                             >
                               {isExpanded ? (
@@ -250,33 +252,64 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
                             Spotify ID: {playlist.spotify_playlist_id}
                           </p>
                           <p className="text-sm">
-                            Status: <span className={playlist.is_active ? 'text-green-600' : 'text-gray-500'}>
-                              {playlist.is_active ? 'Active' : 'Inactive'}
+                            Status:{" "}
+                            <span
+                              className={
+                                playlist.is_active
+                                  ? "text-green-600"
+                                  : "text-gray-500"
+                              }
+                            >
+                              {playlist.is_active ? "Active" : "Inactive"}
                             </span>
                           </p>
                         </div>
                         <CardActions>
-                          <Button 
-                            onClick={() => handleSync(playlist.id)}
-                            variant="outline"
-                            size="sm"
-                            disabled={syncMutation.isPending || deleteMutation.isPending}
-                            className="btn-primary"
+                          <div
+                            className={
+                              playlist.childs?.length === 0
+                                ? "tooltip tooltip-bottom"
+                                : ""
+                            }
+                            data-tip={
+                              playlist.childs?.length === 0
+                                ? "Create some child playlists to enable sync"
+                                : undefined
+                            }
                           >
-                            {syncMutation.isPending && syncMutation.variables === playlist.id ? (
-                              <span className="loading loading-spinner loading-sm"></span>
-                            ) : (
-                              <ArrowPathIcon className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button 
+                            <Button
+                              onClick={() => handleSync(playlist.id)}
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                playlist.childs?.length === 0 ||
+                                syncMutation.isPending ||
+                                deleteMutation.isPending
+                              }
+                              className="btn-primary"
+                            >
+                              {syncMutation.isPending &&
+                              syncMutation.variables === playlist.id ? (
+                                <span className="loading loading-spinner loading-sm"></span>
+                              ) : (
+                                <ArrowPathIcon className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <Button
                             onClick={() => handleDelete(playlist)}
                             variant="outline"
                             size="sm"
-                            disabled={deleteMutation.isPending || syncMutation.isPending}
+                            disabled={
+                              deleteMutation.isPending || syncMutation.isPending
+                            }
                             className="btn-error"
                           >
-                            {deleteMutation.isPending ? '...' : <TrashIcon className="h-4 w-4" />}
+                            {deleteMutation.isPending ? (
+                              "..."
+                            ) : (
+                              <TrashIcon className="h-4 w-4" />
+                            )}
                           </Button>
                         </CardActions>
                       </div>
@@ -286,9 +319,9 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="flex items-center justify-between mb-4">
                             <h4 className="text-lg font-medium">
-                              Child Playlists ({(childPlaylists || []).length})
+                              Child Playlists ({(playlist.childs || []).length})
                             </h4>
-                            <Button 
+                            <Button
                               onClick={() => handleCreateChild(playlist.id)}
                               variant="outline"
                               size="sm"
@@ -299,23 +332,25 @@ export function BasePlaylistsPage({ onBack }: BasePlaylistsPageProps) {
                             </Button>
                           </div>
                           <ChildPlaylistList
-                            childPlaylists={childPlaylists || []}
-                            loading={childLoading || (syncMutation.isPending && syncMutation.variables === playlist.id)}
-                            error={childError?.message}
+                            childPlaylists={playlist.childs || []}
                             onEdit={handleChildEdit}
                             onDelete={handleChildDelete}
                             className="max-w-none"
+                            isSyncing={
+                              syncMutation.isPending &&
+                              syncMutation.variables === playlist.id
+                            }
                           />
                         </div>
                       )}
                     </CardBody>
                   </Card>
                 </div>
-              )
+              );
             })
           )}
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -222,7 +222,7 @@ func TestSpotifyAPIService_GetFilteredUserPlaylists_Errors(t *testing.T) {
 					GetAllUserPlaylists(gomock.Any()).
 					Return([]*spotifyclient.SpotifyPlaylist{}, nil).
 					Times(1)
-				
+
 				mockBasePlaylistRepo.EXPECT().
 					GetByUserID(gomock.Any(), tt.userID).
 					Return(nil, tt.baseErr).
@@ -231,17 +231,17 @@ func TestSpotifyAPIService_GetFilteredUserPlaylists_Errors(t *testing.T) {
 				basePlaylists := []*models.BasePlaylist{
 					{ID: "base1", SpotifyPlaylistID: "playlist1", UserID: tt.userID, Name: "Test Base"},
 				}
-				
+
 				mockSpotifyClient.EXPECT().
 					GetAllUserPlaylists(gomock.Any()).
 					Return([]*spotifyclient.SpotifyPlaylist{}, nil).
 					Times(1)
-				
+
 				mockBasePlaylistRepo.EXPECT().
 					GetByUserID(gomock.Any(), tt.userID).
 					Return(basePlaylists, nil).
 					Times(1)
-				
+
 				mockChildPlaylistRepo.EXPECT().
 					GetByBasePlaylistID(gomock.Any(), "base1", tt.userID).
 					Return(nil, tt.childErr).

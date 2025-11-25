@@ -17,10 +17,12 @@ type BasePlaylistServicer interface {
 	DeleteBasePlaylist(ctx context.Context, id, userId string) error
 	GetBasePlaylist(ctx context.Context, id, userId string) (*models.BasePlaylist, error)
 	GetBasePlaylistsByUserID(ctx context.Context, userId string) ([]*models.BasePlaylist, error)
+	GetBasePlaylistsByUserIDWithChilds(ctx context.Context, userId string) ([]*models.BasePlaylistWithChilds, error)
 }
 
 type BasePlaylistService struct {
 	basePlaylistRepo       repositories.BasePlaylistRepository
+	childPlaylistRepo      repositories.ChildPlaylistRepository
 	spotifyIntegrationRepo repositories.SpotifyIntegrationRepository
 	spotifyClient          spotifyclient.SpotifyAPI
 	logger                 *slog.Logger
@@ -28,12 +30,14 @@ type BasePlaylistService struct {
 
 func NewBasePlaylistService(
 	basePlaylistRepo repositories.BasePlaylistRepository,
+	childPlaylistRepo repositories.ChildPlaylistRepository,
 	spotifyIntegrationRepo repositories.SpotifyIntegrationRepository,
 	spotifyClient spotifyclient.SpotifyAPI,
 	logger *slog.Logger,
 ) *BasePlaylistService {
 	return &BasePlaylistService{
 		basePlaylistRepo:       basePlaylistRepo,
+		childPlaylistRepo:      childPlaylistRepo,
 		spotifyIntegrationRepo: spotifyIntegrationRepo,
 		spotifyClient:          spotifyClient,
 		logger:                 logger.With("component", "BasePlaylistService"),
@@ -116,4 +120,31 @@ func (bpService *BasePlaylistService) GetBasePlaylistsByUserID(ctx context.Conte
 
 	bpService.logger.InfoContext(ctx, "base playlists retrieved successfully", "user_id", userId, "count", len(playlists))
 	return playlists, nil
+}
+
+func (bpService *BasePlaylistService) GetBasePlaylistsByUserIDWithChilds(ctx context.Context, userId string) ([]*models.BasePlaylistWithChilds, error) {
+	bpService.logger.InfoContext(ctx, "retrieving base playlists with childs for user", "user_id", userId)
+
+	playlists, err := bpService.basePlaylistRepo.GetByUserID(ctx, userId)
+	if err != nil {
+		bpService.logger.ErrorContext(ctx, "failed to retrieve base playlists with childs for user", "user_id", userId, "error", err.Error())
+		return nil, fmt.Errorf("failed to retrieve playlists: %w", err)
+	}
+
+	playlistsWithChilds := make([]*models.BasePlaylistWithChilds, 0, len(playlists))
+	for _, playlist := range playlists {
+		childPlaylists, err := bpService.childPlaylistRepo.GetByBasePlaylistID(ctx, playlist.ID, userId)
+		if err != nil {
+			bpService.logger.ErrorContext(ctx, "failed to retrieve child playlists for base playlist", "base_playlist_id", playlist.ID, "user_id", userId, "error", err.Error())
+			return nil, fmt.Errorf("failed to retrieve child playlists: %w", err)
+		}
+
+		playlistsWithChilds = append(playlistsWithChilds, &models.BasePlaylistWithChilds{
+			BasePlaylist: playlist,
+			Childs:       childPlaylists,
+		})
+	}
+
+	bpService.logger.InfoContext(ctx, "base playlists with childs retrieved successfully", "user_id", userId, "count", len(playlists))
+	return playlistsWithChilds, nil
 }

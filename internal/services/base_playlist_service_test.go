@@ -19,14 +19,16 @@ func TestNewBasePlaylistService(t *testing.T) {
 	ctrl := setupMockController(t)
 
 	mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+	mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 	mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 	mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 	logger := createTestLogger()
 
-	service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+	service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 	require.NotNil(service)
-	require.Equal(mockRepo, service.basePlaylistRepo)
+	require.Equal(mockRepo, service.basePlaylistRepo)	
+	require.Equal(mockChildRepo, service.childPlaylistRepo)
 	require.Equal(mockSpotifyIntegrationRepo, service.spotifyIntegrationRepo)
 	require.Equal(mockSpotifyClient, service.spotifyClient)
 	require.NotNil(service.logger)
@@ -80,10 +82,11 @@ func TestBasePlaylistService_CreateBasePlaylist_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -135,10 +138,11 @@ func TestBasePlaylistService_CreateBasePlaylist_RepositoryError(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -186,10 +190,11 @@ func TestBasePlaylistService_DeleteBasePlaylist_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -234,10 +239,11 @@ func TestBasePlaylistService_DeleteBasePlaylist_RepositoryErrors(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -299,10 +305,11 @@ func TestBasePlaylistService_GetBasePlaylist_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -353,10 +360,11 @@ func TestBasePlaylistService_GetBasePlaylist_RepositoryErrors(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -443,10 +451,11 @@ func TestBasePlaylistService_GetBasePlaylistsByUserID_Success(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
@@ -500,10 +509,11 @@ func TestBasePlaylistService_GetBasePlaylistsByUserID_RepositoryErrors(t *testin
 			defer ctrl.Finish()
 
 			mockRepo := mocks.NewMockBasePlaylistRepository(ctrl)
+			mockChildRepo := mocks.NewMockChildPlaylistRepository(ctrl)
 			mockSpotifyIntegrationRepo := mocks.NewMockSpotifyIntegrationRepository(ctrl)
 			mockSpotifyClient := spotifyMocks.NewMockSpotifyAPI(ctrl)
 			logger := createTestLogger()
-			service := NewBasePlaylistService(mockRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
+			service := NewBasePlaylistService(mockRepo, mockChildRepo, mockSpotifyIntegrationRepo, mockSpotifyClient, logger)
 
 			ctx := context.Background()
 
