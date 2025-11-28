@@ -138,9 +138,9 @@ Content-Type: application/json
   "name": "High Energy Tracks",
   "description": "Songs with high energy for workouts",
   "filter_rules": {
-    "energy": { "min": 0.7, "max": 1.0 },
-    "danceability": { "min": 0.6 },
-    "tempo": { "min": 120, "max": 180 }
+    "genres": { "include": ["rock", "indie"] },
+    "popularity": { "min": 50 },
+    "release_year": { "min": 2020 }
   }
 }
 ```
@@ -155,9 +155,9 @@ Content-Type: application/json
   "description": "Songs with high energy for workouts",
   "spotify_playlist_id": "3cEYpjA9oz9GiPac4AsH4n",
   "filter_rules": {
-    "energy": { "min": 0.7, "max": 1.0 },
-    "danceability": { "min": 0.6 },
-    "tempo": { "min": 120, "max": 180 }
+    "genres": { "include": ["rock", "indie"] },
+    "popularity": { "min": 50 },
+    "release_year": { "min": 2020 }
   },
   "is_active": true,
   "created": "2025-08-20T11:00:00Z",
@@ -175,7 +175,7 @@ Content-Type: application/json
   "name": "Updated High Energy",
   "description": "Updated description",
   "filter_rules": {
-    "energy": { "min": 0.8, "max": 1.0 }
+    "popularity": { "min": 60 }
   },
   "is_active": false
 }
@@ -264,23 +264,24 @@ OK
 
 ## 7. Filter Types Reference
 
-### Audio Feature Filters
-All audio features support range filtering with optional min/max values:
+### Metadata Filters
+The Spotify API has deprecated access to detailed audio features (energy, danceability, etc.). PlaylistRouter now uses metadata-based filtering.
 
 ```typescript
-interface AudioFeatureFilters {
-  energy?: RangeFilter;        // 0.0 - 1.0
-  danceability?: RangeFilter;  // 0.0 - 1.0
-  valence?: RangeFilter;       // 0.0 - 1.0 (happiness)
-  tempo?: RangeFilter;         // BPM (typically 50-200)
-  acousticness?: RangeFilter;  // 0.0 - 1.0
-  instrumentalness?: RangeFilter; // 0.0 - 1.0
-  liveness?: RangeFilter;      // 0.0 - 1.0
-  speechiness?: RangeFilter;   // 0.0 - 1.0
-  loudness?: RangeFilter;      // dB (typically -60 to 0)
-  key?: SetFilter;             // 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
-  mode?: SetFilter;            // 0 (minor) or 1 (major)
-  time_signature?: SetFilter;  // 3, 4, 5, 6, 7
+interface MetadataFilters {
+  // Track Information
+  duration_ms?: RangeFilter;   // Track duration in milliseconds
+  popularity?: RangeFilter;    // 0-100 (Spotify popularity score)
+  explicit?: boolean;          // true = explicit only, false = clean only, nil = both
+
+  // Artist & Album Information
+  genres?: SetFilter;          // List of genres (e.g., "rock", "pop")
+  release_year?: RangeFilter;  // Year of release (e.g., 2023)
+  artist_popularity?: RangeFilter; // 0-100 (Artist popularity score)
+
+  // Search-based Filters
+  track_keywords?: SetFilter;  // Keywords to match in track name
+  artist_keywords?: SetFilter; // Keywords to match in artist name
 }
 
 interface RangeFilter {
@@ -289,7 +290,8 @@ interface RangeFilter {
 }
 
 interface SetFilter {
-  values: (string | number)[];
+  include?: string[];
+  exclude?: string[];
 }
 ```
 
@@ -328,25 +330,9 @@ Content-Type: application/json
 
 ### Advanced Spotify Integration
 
-#### Get Track Audio Features
-```http
-GET /api/spotify/tracks/{track_id}/audio-features
-Authorization: Bearer <jwt_token>
-```
 
-#### Advanced Filtering Support
-```json
-{
-  "filter_rules": {
-    "energy": { "min": 0.7, "max": 1.0 },
-    "genres": ["rock", "indie"],
-    "release_year": { "min": 2020, "max": 2025 },
-    "popularity": { "min": 50 },
-    "artist_exclusions": ["Artist Name"],
-    "track_exclusions": ["Track Name"]
-  }
-}
-```
+
+
 
 ### Subscription Management (Planned)
 
@@ -418,7 +404,7 @@ Authorization: Bearer <jwt_token>
 - **Authentication**: Spotify OAuth flow with JWT tokens
 - **User Management**: User creation and management with PocketBase
 - **Base Playlists**: Full CRUD operations (create, read, delete)
-- **Child Playlists**: Full CRUD operations with audio feature filtering
+- **Child Playlists**: Full CRUD operations with metadata filtering (genres, popularity, etc.)
 - **Manual Sync**: Trigger sync operations for base playlists
 - **Spotify Integration**: List user playlists, create/delete playlists
 - **Frontend**: React app with Chakra UI served as static assets
@@ -432,14 +418,14 @@ Authorization: Bearer <jwt_token>
 - **Usage Analytics**: Dashboard with playlist performance metrics
 - **Subscription Tiers**: Free/Basic/Premium with usage limits
 - **Billing Integration**: Stripe integration for subscription management
-- **Advanced Spotify Features**: Track audio features endpoint, batch operations
+- **Advanced Spotify Features**: Batch operations
 - **Performance Optimizations**: Caching, pagination, rate limiting
 - **Mobile Optimizations**: Enhanced mobile experience
 - **Social Features**: Playlist sharing and templates
 
 ### 🚧 Known Limitations (Current MVP)
 - **Manual Sync Only**: No automated sync scheduling
-- **Basic Filtering**: Only audio features supported (no genres, years, etc.)
+- **Metadata Filtering**: Filtering limited to available metadata (no audio analysis like BPM/energy)
 - **No Usage Tracking**: Unlimited usage during MVP phase
 - **Limited Analytics**: No detailed performance metrics
 - **Basic Error Handling**: Simple error responses

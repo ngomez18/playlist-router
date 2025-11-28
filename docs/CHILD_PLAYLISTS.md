@@ -46,11 +46,7 @@ Based on available Spotify Web API data:
 - **Track Keywords** (string array): Include/exclude based on track name keywords
 - **Artist Keywords** (string array): Include/exclude based on artist name keywords
 
-### Legacy Audio Features (DEPRECATED)
-~~The following were planned but are no longer available via Spotify API:~~
-- ~~Energy, Danceability, Valence, Tempo~~
-- ~~Acousticness, Instrumentalness, Loudness~~
-- ~~Key, Mode, Time Signature, Liveness, Speechiness~~
+
 
 ### Exclusion Filters [Will not be implemented yet]
 - **Artist Exclusions**: Blacklist specific artists
@@ -74,7 +70,7 @@ type ChildPlaylist struct {
     Name              string               `json:"name" validate:"required,min=1,max=100"`
     Description       string               `json:"description,omitempty"`
     SpotifyPlaylistID string               `json:"spotify_playlist_id" validate:"required"`
-    FilterRules       *AudioFeatureFilters `json:"filter_rules,omitempty"`
+    FilterRules       *MetadataFilters     `json:"filter_rules,omitempty"`
     IsActive          bool                 `json:"is_active"`
     Created           time.Time            `json:"created"`
     Updated           time.Time            `json:"updated"`
@@ -97,8 +93,7 @@ type MetadataFilters struct {
     ArtistKeywords *SetFilter `json:"artist_keywords,omitempty"`
 }
 
-// Legacy type alias for backward compatibility
-type AudioFeatureFilters = MetadataFilters
+
 
 type ExclusionFilters struct {
     ExcludedArtists []string `json:"excluded_artists,omitempty"`
@@ -122,14 +117,14 @@ type SetFilter struct {
 type CreateChildPlaylistRequest struct {
     Name           string                 `json:"name" validate:"required,min=1,max=100"`
     Description    string                 `json:"description,omitempty"`
-    FilterRules    *AudioFeatureFilters   `json:"filter_rules,omitempty"`
+    FilterRules    *MetadataFilters       `json:"filter_rules,omitempty"`
     ExclusionRules *ExclusionFilters      `json:"exclusion_rules,omitempty"` // not yet
 }
 
 type UpdateChildPlaylistRequest struct {
     Name           *string                `json:"name,omitempty" validate:"omitempty,min=1,max=100"`
     Description    *string                `json:"description,omitempty"`
-    FilterRules    *AudioFeatureFilters   `json:"filter_rules,omitempty"`
+    FilterRules    *MetadataFilters       `json:"filter_rules,omitempty"`
     ExclusionRules *ExclusionFilters      `json:"exclusion_rules,omitempty"`
     IsActive       *bool                  `json:"is_active,omitempty"`
     SyncEnabled    *bool                  `json:"sync_enabled,omitempty"`
@@ -161,7 +156,7 @@ type UpdateChildPlaylistRequest struct {
 - `CreateChildPlaylistModal` - Multi-step creation wizard
 - `EditChildPlaylistModal` - Edit existing child playlist
 - `FilterRulesEditor` - Comprehensive filter configuration component
-- `AudioFeatureSlider` - Range slider for audio features (0.0-1.0)
+
 - `FilterTemplateSelector` - Predefined filter templates
 - `ExclusionListEditor` - Artist/song/album exclusion management
 
@@ -183,7 +178,7 @@ type UpdateChildPlaylistRequest struct {
 1. Click "Create Child Playlist" button
 2. Multi-step modal opens:
    - **Step 1**: Basic info (name, description)
-   - **Step 2**: Audio feature filters (collapsible sections)
+   - **Step 2**: Metadata filters (collapsible sections)
    - **Step 3**: Exclusion filters (optional)
    - **Step 4**: Preview matching songs
    - **Step 5**: Confirm and create
@@ -227,7 +222,6 @@ type UpdateChildPlaylistRequest struct {
 2. Get audio features for each song via Spotify API
 3. Apply filter rules in order:
    - Check exclusion filters first (early exit)
-   - Apply audio feature filters
    - Apply metadata filters
 4. Add matching songs to child playlists
 5. Update sync timestamps and counts
@@ -241,13 +235,10 @@ type UpdateChildPlaylistRequest struct {
 ## Templates & Presets
 
 ### Predefined Filter Templates
-- **High Energy**: Energy > 0.7, Danceability > 0.6
-- **Chill Vibes**: Energy < 0.5, Valence 0.3-0.7
-- **Workout**: Energy > 0.8, Tempo > 120 BPM
-- **Focus Music**: Instrumentalness > 0.8, Energy 0.3-0.7
-- **Party Mix**: Danceability > 0.7, Valence > 0.6
-- **Acoustic**: Acousticness > 0.7
+- **High Popularity**: Popularity > 80
 - **Recent Releases**: Release year >= current year - 2
+- **Short Tracks**: Duration < 3 minutes
+- **Clean Only**: Explicit = false
 
 ### Custom Template Creation
 - Users can save their filter combinations as personal templates
@@ -320,17 +311,14 @@ type UpdateChildPlaylistRequest struct {
    - ✅ Automatic playlist description with PlaylistRouter branding
 
 ### 🚧 REMAINING
-1. **Sync Engine**
-   - ⏳ Song distribution logic based on metadata filters
-   - ⏳ Metadata retrieval and matching for existing songs
-   - ⏳ Batch processing for large playlists
+1. **Frontend Integration**
+   - ⏳ Sync status indicators in UI
+   - ⏳ Manual sync trigger button
+   - ⏳ Filter preview UI
 
 ### ❌ NOT IMPLEMENTED (Future)
 1. **Advanced Features**
-   - ❌ Manual sync triggers
-   - ❌ Sync status indicators and progress tracking
    - ❌ Filter templates and presets
-   - ❌ Filter preview functionality
    - ❌ Exclusion filters for specific artists/songs
    - ❌ Analytics and usage insights
    - ❌ Bulk operations and batch actions
@@ -344,20 +332,23 @@ type UpdateChildPlaylistRequest struct {
 
 ## Implementation Priority (Updated)
 
-### Phase 1 (COMPLETED) ✅
+### Phase 1 & 2 (COMPLETED) ✅
 1. ✅ Enhanced data models with metadata filter support
 2. ✅ Complete CRUD operations for child playlists
-3. ✅ Advanced filter editor UI with user-friendly controls
+3. ✅ Advanced filter editor UI
 4. ✅ Full frontend integration with base playlist management
+5. ✅ **Sync Engine Implementation**
+   - Song distribution logic
+   - Metadata retrieval
+   - Batch processing
 
-### Phase 2 (NEXT) 🎯
-1. **Sync Engine Implementation**
-   - Song distribution logic based on metadata filters
-   - Metadata retrieval from Spotify Web API
-   - Batch processing and sync orchestration
+### Phase 3 (NEXT) 🎯
+1. **Frontend Sync Integration**
+   - Manual sync buttons
+   - Sync progress indicators
+   - Filter preview functionality
 
-### Phase 3 (FUTURE) 🔮
-1. Advanced sync features and status tracking
-2. Filter templates and presets
-3. Analytics and insights
-4. Performance optimizations and caching
+### Phase 4 (FUTURE) 🔮
+1. Filter templates and presets
+2. Analytics and insights
+3. Performance optimizations and caching

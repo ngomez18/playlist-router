@@ -49,11 +49,10 @@ Create a streamlined tool that automatically distributes songs from user's "base
 - **MUST:** Support for multiple base playlists per user
 - **MUST:** Each base playlist can have multiple child playlists
 - **MUST:** Child playlist creation with comprehensive rule-based filtering
-- **MUST:** Support for all Spotify audio features as filter criteria:
-  - **Musical Qualities:** Energy, Danceability, Valence, Tempo
-  - **Technical Attributes:** Acousticness, Instrumentalness, Loudness, Key & Mode, Time Signature
-  - **Context:** Liveness, Speechiness, Duration, Popularity
-  - **Basic Metadata:** Genre, Release year
+- **MUST:** Support for available Spotify metadata as filter criteria:
+  - **Track Info:** Duration, Popularity, Explicit
+  - **Artist/Album:** Genre, Release Year, Artist Popularity
+  - **Search:** Track/Artist keywords
 - **MUST:** Pre-defined playlist templates (e.g., "2000s Rock", "Chill Vibes", "Workout Music")
 - **COULD:** Child playlist templates for easy reuse across base playlists
 - **COULD:** Artist and song exclusion filters (text input with validation)
@@ -149,14 +148,14 @@ Create a streamlined tool that automatically distributes songs from user's "base
 ### Phase 1: Core MVP (Weeks 1-4)
 - Authentication system (Spotify OAuth + PocketBase users)
 - Single base playlist with basic child playlist creation
-- Essential audio feature filters (energy, danceability, valence, genre, year)
+- Essential metadata filters (genre, year, popularity)
 - Manual sync functionality
 - Basic dashboard with Chakra UI
 
 ### Phase 2: Multiple Base Playlists (Weeks 5-6)
 - Support for multiple base playlists per user
 - Enhanced dashboard showing base/child relationships
-- All audio feature filters with collapsible UI organization
+- All metadata filters with collapsible UI organization
 - Mobile-responsive multi-step wizard
 - Sync history and detailed status tracking
 - Free tier limits and usage tracking

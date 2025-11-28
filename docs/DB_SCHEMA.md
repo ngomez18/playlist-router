@@ -283,7 +283,7 @@ interface ChildPlaylist {
   spotify_playlist_id: string; // Spotify playlist ID (required)
   
   // Filtering Rules
-  filter_rules?: AudioFeatureFilters; // JSON object with audio feature filtering
+  filter_rules?: MetadataFilters; // JSON object with metadata filtering
   
   // Status
   is_active: boolean;          // Default: true
@@ -294,19 +294,21 @@ interface ChildPlaylist {
 }
 
 // Supporting Types (matches current implementation)
-interface AudioFeatureFilters {
-  energy?: RangeFilter;
-  danceability?: RangeFilter;
-  valence?: RangeFilter;
-  tempo?: RangeFilter;
-  acousticness?: RangeFilter;
-  instrumentalness?: RangeFilter;
-  liveness?: RangeFilter;
-  speechiness?: RangeFilter;
-  loudness?: RangeFilter;
-  key?: SetFilter;
-  mode?: SetFilter;
-  time_signature?: SetFilter;
+// Supporting Types (matches current implementation)
+interface MetadataFilters {
+  // Track Information
+  duration_ms?: RangeFilter;
+  popularity?: RangeFilter;
+  explicit?: boolean;
+
+  // Artist & Album Information
+  genres?: SetFilter;
+  release_year?: RangeFilter;
+  artist_popularity?: RangeFilter;
+
+  // Search-based Filters
+  track_keywords?: SetFilter;
+  artist_keywords?: SetFilter;
 }
 
 interface RangeFilter {
@@ -315,14 +317,15 @@ interface RangeFilter {
 }
 
 interface SetFilter {
-  values: (string | number)[];
+  include?: string[];
+  exclude?: string[];
 }
 ```
 
 ### Field Validations
 - `spotify_playlist_id`: Unique per user
 - `name`: 1-100 characters
-- `filter_rules`: Valid JSON conforming to AudioFeatureFilters interface
+- `filter_rules`: Valid JSON conforming to MetadataFilters interface
 - `base_playlist_id.user_id` must equal `user_id` (enforced via access rules)
 
 ### Access Rules
